@@ -12,7 +12,7 @@ func addCryptoGrowthMonitor(id int64, args string) {
 		fmt.Printf("addCryptoGrowthMonitor 参数有误: %s", args)
 		return
 	}
+	
 	api.CryptoApi.Add(id, arg[0], arg[1])
 	
-
 }

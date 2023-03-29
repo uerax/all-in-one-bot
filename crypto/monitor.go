@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -17,6 +18,15 @@ type Monitor struct {
 	api *Crypto
 	notify map[int64]map[string]string
 	notifyLog map[int64]map[string]int64
+	C chan map[int64]map[string]string // id -> crypto -> price
+}
+
+func greaterThen(cur, line float64) bool {
+	return cur >= line
+}
+
+func lessThen(cur, line float64) bool {
+	return cur <= line
 }
 
 func NewCryptoMonitor() *Monitor {
@@ -29,8 +39,13 @@ func NewCryptoMonitor() *Monitor {
 		api: NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"),goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
 		notify: make(map[int64]map[string]string),
 		notifyLog: make(map[int64]map[string]int64),
+		C: make(chan map[int64]map[string]string, 0),
 	}
 	
+}
+
+func (t *Monitor) Do() {
+	go t.Start()
 }
 
 func (t *Monitor) Add(id int64, crypto, price string) {
@@ -39,13 +54,20 @@ func (t *Monitor) Add(id int64, crypto, price string) {
 	ctu, _ := t.CryptoToUser.LoadOrStore(crypto+"USDT", make(map[int64]string))
 	ctu.(map[int64]string)[id] = price
 	t.cancel()
+	t.NewContext()
 	go t.Start()
 }
 
-func (t *Monitor) Start() {
-	ticker := time.NewTicker(time.Minute)
-    defer ticker.Stop()
+func (t *Monitor) NewContext() {
+	parent, done := context.WithCancel(context.Background())
+	t.ctx = parent
+	t.cancel = done
+}
 
+func (t *Monitor) Start() {
+	ticker := time.NewTicker(10 * time.Second)
+    defer ticker.Stop()
+	fmt.Println("[开始执行定时探测]")
     for {
         select {
         case <-ticker.C:
@@ -59,6 +81,7 @@ func (t *Monitor) Start() {
 
         case <-t.ctx.Done():
             // 当收到ctx的完成信号时，停止探测
+			fmt.Println("[定时探测结束]")
             return
         }
     }
@@ -96,11 +119,11 @@ func (t *Monitor) probe(cryptos []string) {
 				}
 				if last, ok := t.notifyLog[k1][k]; ok {
 					if now - last >= 3600 {
-						t.notify[k1][k] = v1
+						t.notify[k1][k] = v
 						t.notifyLog[k1][k] = now
 					}
 				} else {
-					t.notify[k1][k] = v1
+					t.notify[k1][k] = v
 					t.notifyLog[k1][k] = now
 				}
 				
@@ -108,4 +131,8 @@ func (t *Monitor) probe(cryptos []string) {
 		}
 		
 	}
+	if len(t.notify) != 0 {
+		t.C <- t.notify
+	}
+
 }

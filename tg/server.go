@@ -1,14 +1,10 @@
 package tg
 
 import (
-	"log"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/uerax/goconf"
-)
-
-var (
-	bot *tgbotapi.BotAPI
 )
 
 func Server() {
@@ -19,23 +15,15 @@ func Server() {
 		panic(err)
 	}
 
-	bot, err = tgbotapi.NewBotAPI(token)
-	if err != nil {
-		log.Panic(err)
-	}
+	api.NewBot(token)
 
-	// Set bot options
-	bot.Debug = true
-	
-	 
 	// Create a new update channel
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	api.New()
-
+	
 	// Start listening for updates
-	updates := bot.GetUpdatesChan(u)
+	updates := api.bot.GetUpdatesChan(u)
 	for update := range updates {
 		if update.Message == nil { // ignore non-Message updates
 			continue
@@ -44,10 +32,10 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
             continue
         }
-
-
+		
 		switch update.Message.Command() {
 		case "addCryptoGrowthMonitor":
+			fmt.Println("-----------",update.Message.Text)
 			addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
 		}
 		
