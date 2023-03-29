@@ -1,7 +1,6 @@
 一.加密货币监控功能清单
 (所有单位均为USDT)
-1.addCryptoGrowthMonitor 加密货币 提示价格
-根据userid绑定
-2.addCryptoDeclineMonitor 加密货币 提示价格
+1.addCryptoGrowthMonitor 加密货币 提示价格  (finished)
+2.addCryptoDeclineMonitor 加密货币 提示价格 (todo)
 3.getCryptoPrice 加密货币[可选]
 默认返回绑定的关注虚拟货币, 否则返回指定货币
