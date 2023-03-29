@@ -1,11 +1,14 @@
 package tg
 
 import (
-	"fmt"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/uerax/goconf"
+)
+
+var (
+	bot *tgbotapi.BotAPI
 )
 
 func Server() {
@@ -16,7 +19,7 @@ func Server() {
 		panic(err)
 	}
 
-	bot, err := tgbotapi.NewBotAPI(token)
+	bot, err = tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -42,13 +45,10 @@ func Server() {
             continue
         }
 
+
 		switch update.Message.Command() {
-		case "addCryptoMoniter":
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%v", api.cryptoApi.Price(update.Message.CommandArguments())))
-			_, err := bot.Send(msg)
-			if err != nil {
-				log.Println(err)
-			}
+		case "addCryptoGrowthMonitor":
+			addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
 		}
 		
 	}
