@@ -32,11 +32,14 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
             continue
         }
-		
+		fmt.Println("receive msg : " + update.Message.Text)
 		switch update.Message.Command() {
 		case "addCryptoGrowthMonitor":
-			fmt.Println("-----------",update.Message.Text)
 			addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
+		case "addCryptoDeclineMonitor":
+			addCryptoDeclineMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
+		case "getCryptoPrice":
+			getCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
 		}
 		
 	}
