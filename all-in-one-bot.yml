@@ -5,3 +5,8 @@ crypto:
   binance:
     secretKey: 
     apiKey: 
+  monitor:
+    # 探测间隔 默认10秒
+    interval: 10 
+    # 通知间隔 默认10分钟
+    frequency: 600
