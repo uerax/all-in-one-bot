@@ -40,6 +40,8 @@ func Server() {
 			addCryptoDeclineMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
 		case "get_crypto_price":
 			getCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
+		case "delete_crypto_minitor":
+			deleteCryptoMinitor(update.Message.Chat.ID, update.Message.CommandArguments())
 		}
 		
 	}
