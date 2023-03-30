@@ -41,8 +41,14 @@ func getCryptoPrice(id int64, args string) {
 		sb.WriteString(":")
 		sb.WriteString(v)
 	}
+	api.SendMsg(id, sb.String())	
+}
 
-	api.SendMsg(id, sb.String())
-	
+func deleteCryptoMinitor(id int64, args string) {
+	arg := strings.Split(args, ",")
+	if args == "" {
+		return
+	}
+	api.CryptoApi.DeleteMonitor(id, arg...)
 }
 
