@@ -3,3 +3,9 @@
 1.addCryptoGrowthMonitor 加密货币 提示价格  (finished)
 2.addCryptoDeclineMonitor 加密货币 提示价格 (finished)
 3.getCryptoPrice 加密货币[可选] (finished)
+
+
+Telegram Commands
+add_crypto_growth_monitor  - 添加加密货币高线监控 例: BNB 1.1 (单位USD)
+add_crypto_decline_monitor  - 添加加密货币低线监控 例: BNB 1.1 (单位USD)
+get_crypto_price - 查询当前价格(默认查询监控的加密货币) 例 : BNB
