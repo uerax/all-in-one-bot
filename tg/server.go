@@ -34,11 +34,11 @@ func Server() {
         }
 		fmt.Println("receive msg : " + update.Message.Text)
 		switch update.Message.Command() {
-		case "addCryptoGrowthMonitor":
+		case "add_crypto_growth_monitor":
 			addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
-		case "addCryptoDeclineMonitor":
+		case "add_crypto_decline_monitor":
 			addCryptoDeclineMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
-		case "getCryptoPrice":
+		case "get_crypto_price":
 			getCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
 		}
 		
