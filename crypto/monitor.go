@@ -5,66 +5,84 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"tg-aio-bot/common"
 	"time"
 
 	"github.com/uerax/goconf"
 )
 
-type Monitor struct {
-	UserToCrypto sync.Map // key id value map[crypto]value
-	CryptoToUser sync.Map // key crypto value map[user]value
+type user struct {
+	Id int64
+	HighLine map[string]string //crypto -> priceline
+	lowLine map[string]string
+}
+
+type CryptoMonitor struct {
+	UTC sync.Map	// id -> user
+	CTU sync.Map	// crypto -> user
 	ctx	context.Context
 	cancel context.CancelFunc
 	api *Crypto
-	notify map[int64]map[string]string
-	notifyLog map[int64]map[string]int64
+	notifyHigher map[int64]map[string]string	// id -> crypto -> price
+	notifyHigherLog map[int64]map[string]int64
+	notifyLower map[int64]map[string]string
+	notifyLowerLog map[int64]map[string]int64
 	C chan map[int64]map[string]string // id -> crypto -> price
 }
 
-func greaterThen(cur, line float64) bool {
-	return cur >= line
-}
-
-func lessThen(cur, line float64) bool {
-	return cur <= line
-}
-
-func NewCryptoMonitor() *Monitor {
+func NewCryptoMonitor() *CryptoMonitor {
 	parent, done := context.WithCancel(context.Background())
-	return &Monitor{
-		UserToCrypto: sync.Map{},
-		CryptoToUser: sync.Map{},
+	return &CryptoMonitor{
+		UTC: sync.Map{},
+		CTU: sync.Map{},
 		ctx: parent,
 		cancel: done,
+		notifyHigher: make(map[int64]map[string]string),
+		notifyHigherLog: make(map[int64]map[string]int64),
+		notifyLower: make(map[int64]map[string]string),
+		notifyLowerLog: make(map[int64]map[string]int64),
 		api: NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"),goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
-		notify: make(map[int64]map[string]string),
-		notifyLog: make(map[int64]map[string]int64),
-		C: make(chan map[int64]map[string]string, 0),
+		C: make(chan map[int64]map[string]string, 1),
 	}
-	
 }
 
-func (t *Monitor) Do() {
-	go t.Start()
-}
-
-func (t *Monitor) Add(id int64, crypto, price string) {
-	utc, _ := t.UserToCrypto.LoadOrStore(id, make(map[string]string))
-	utc.(map[string]string)[crypto+"USDT"] = price
-	ctu, _ := t.CryptoToUser.LoadOrStore(crypto+"USDT", make(map[int64]string))
-	ctu.(map[int64]string)[id] = price
+func (t *CryptoMonitor) Context() {
 	t.cancel()
-	t.NewContext()
-	go t.Start()
-}
-
-func (t *Monitor) NewContext() {
+	t.notifyHigher = make(map[int64]map[string]string)
+	t.notifyLower = make(map[int64]map[string]string)
 	parent, done := context.WithCancel(context.Background())
 	t.ctx = parent
 	t.cancel = done
+	go t.Start()
 }
 
-func (t *Monitor) Start() {
+func (t *CryptoMonitor) AddHighMonitor(id int64, crypto, price string) {
+	usr, _ := t.UTC.LoadOrStore(id, &user{
+		Id: id,
+		HighLine: make(map[string]string),
+		lowLine: make(map[string]string),
+	})
+	usr.(*user).HighLine[crypto+"USDT"] = price
+	t.CTU.LoadOrStore(crypto+"USDT", usr)
+
+	t.Context()
+	
+}
+
+func (t *CryptoMonitor) AddLowMonitor(id int64, crypto, price string) {
+	usr, _ := t.UTC.LoadOrStore(id, &user{
+		Id: id,
+		HighLine: make(map[string]string),
+		lowLine: make(map[string]string),
+	})
+	usr.(*user).lowLine[crypto+"USDT"] = price
+	t.CTU.LoadOrStore(crypto+"USDT", usr)
+
+	t.Context()
+	
+}
+
+func (t *CryptoMonitor) Start() {
 	ticker := time.NewTicker(10 * time.Second)
     defer ticker.Stop()
 	fmt.Println("[开始执行定时探测]")
@@ -72,11 +90,10 @@ func (t *Monitor) Start() {
         select {
         case <-ticker.C:
 			keys := make([]string, 0, 10)
-			t.CryptoToUser.Range(func(key, value any) bool {
+			t.CTU.Range(func(key, value any) bool {
 				keys = append(keys, key.(string))
 				return true
 			})
-			t.clearNotify()
 			t.probe(keys)
 
         case <-t.ctx.Done():
@@ -87,52 +104,103 @@ func (t *Monitor) Start() {
     }
 }
 
-func (t *Monitor) clearNotify() {
-	t.notify = make(map[int64]map[string]string)
-}
-
-func (t *Monitor) probe(cryptos []string) {
+func (t *CryptoMonitor) probe(cryptos []string) {
 	now := time.Now().Unix()
 	m := t.api.Price(cryptos...)
 	for k, v := range m {
 		// k crypto v price
+		val, ok := t.CTU.Load(k)
+		if !ok {
+			continue
+		}
 		curPrice, err := strconv.ParseFloat(v, 64)
 		if err != nil {
 			continue
 		}
-		val, ok := t.CryptoToUser.Load(k)
-		if !ok {
-			continue
-		}
-		for k1, v1 := range val.(map[int64]string) {
-			// k user value price
+		for _, v1 := range val.(*user).HighLine {
+			// k1 crypto v1 priceline
+
 			threshold, err := strconv.ParseFloat(v1, 64)
 			if err != nil {
 				continue
 			}
+
 			if curPrice >= threshold {
-				if _, ok := t.notify[k1]; !ok {
-					t.notify[k1] = make(map[string]string)
+				if _, ok := t.notifyHigher[val.(*user).Id]; !ok {
+					t.notifyHigher[val.(*user).Id] = make(map[string]string)
 				}
-				if _, ok := t.notifyLog[k1]; !ok {
-					t.notifyLog[k1] = make(map[string]int64)
+				if _, ok := t.notifyHigherLog[val.(*user).Id]; !ok {
+					t.notifyHigherLog[val.(*user).Id] = make(map[string]int64)
 				}
-				if last, ok := t.notifyLog[k1][k]; ok {
+				if last, ok := t.notifyHigherLog[val.(*user).Id][k]; ok {
 					if now - last >= 3600 {
-						t.notify[k1][k] = v
-						t.notifyLog[k1][k] = now
+						t.notifyHigher[val.(*user).Id][k] = v
+						t.notifyHigherLog[val.(*user).Id][k] = now
 					}
 				} else {
-					t.notify[k1][k] = v
-					t.notifyLog[k1][k] = now
+					t.notifyHigher[val.(*user).Id][k] = v
+					t.notifyHigherLog[val.(*user).Id][k] = now
+				}
+				
+			}
+		}
+		for _, v1 := range val.(*user).lowLine {
+			// k1 crypto v1 priceline
+
+			threshold, err := strconv.ParseFloat(v1, 64)
+			if err != nil {
+				continue
+			}
+
+			if curPrice <= threshold {
+				if _, ok := t.notifyLower[val.(*user).Id]; !ok {
+					t.notifyLower[val.(*user).Id] = make(map[string]string)
+				}
+				if _, ok := t.notifyLowerLog[val.(*user).Id]; !ok {
+					t.notifyLowerLog[val.(*user).Id] = make(map[string]int64)
+				}
+				if last, ok := t.notifyLowerLog[val.(*user).Id][k]; ok {
+					if now - last >= 3600 {
+						t.notifyLower[val.(*user).Id][k] = v
+						t.notifyLowerLog[val.(*user).Id][k] = now
+					}
+				} else {
+					t.notifyLower[val.(*user).Id][k] = v
+					t.notifyLowerLog[val.(*user).Id][k] = now
 				}
 				
 			}
 		}
 		
 	}
-	if len(t.notify) != 0 {
-		t.C <- t.notify
+	if len(t.notifyHigher) != 0 && t.notifyHigher != nil {
+		t.C <- t.notifyHigher
+		t.notifyHigher = make(map[int64]map[string]string)
+	
+	}
+	
+	if len(t.notifyLower) != 0 && t.notifyLower != nil {
+		t.C <- t.notifyLower
+		t.notifyLower = make(map[int64]map[string]string)
 	}
 
+}
+
+func (t *CryptoMonitor) GetPrice(id int64, crypto ...string) map[string]string {
+	for k := range crypto {
+		crypto[k] = crypto[k] + "USDT"
+	}
+	if len(crypto) == 0 || crypto == nil {
+		if value, ok := t.UTC.Load(id); ok {
+			for k := range value.(*user).lowLine {
+				crypto = append(crypto, k)
+			}
+			for k := range value.(*user).HighLine {
+				if !common.InSlice(crypto, k) {
+					crypto = append(crypto, k)
+				}
+			}
+		}
+	}
+	return t.api.Price(crypto...)
 }

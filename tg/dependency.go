@@ -12,7 +12,11 @@ var api = &Aio{}
 
 type Aio struct {
 	bot       *tgbotapi.BotAPI
-	CryptoApi *crypto.Monitor
+	CryptoApi *crypto.CryptoMonitor
+}
+
+func (t *Aio) SendMsg(id int64, msg string) {
+	t.bot.Send(tgbotapi.NewMessage(id, msg))
 }
 
 func (t *Aio) NewBot(token string) {
@@ -26,7 +30,6 @@ func (t *Aio) NewBot(token string) {
 	go t.WaitToSend()
 
 	t.CryptoApi = crypto.NewCryptoMonitor()
-	t.CryptoApi.Do()
 }
 
 func (t *Aio) WaitToSend() {
@@ -38,14 +41,14 @@ func (t *Aio) WaitToSend() {
 					continue
 				}
 				sb := strings.Builder{}
-				sb.WriteString("当前监控的加密货币超过监控线的有:")
+				sb.WriteString("有加密货币触发监控线 :")
 				for crypto, price := range cryptoToPrice {
 					sb.WriteString("\n")
 					sb.WriteString(crypto)
 					sb.WriteString(" : ")
 					sb.WriteString(price)
 				}
-				t.bot.Send(tgbotapi.NewMessage(id, sb.String()))
+				go t.bot.Send(tgbotapi.NewMessage(id, sb.String()))
 			}
 		}
 	}
