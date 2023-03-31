@@ -12,6 +12,8 @@ crypto:
     interval: 10 
     # 通知间隔 默认10分钟
     frequency: 600
+  # 单位
+  unit: USDT
 chatgpt:
   apikey: 
   model: gpt-3.5-turbo

@@ -28,6 +28,7 @@ type CryptoMonitor struct {
 	notifyLower map[int64]map[string]string
 	notifyLowerLog map[int64]map[string]int64
 	C chan map[int64]map[string]string // id -> crypto -> price
+	unit string
 }
 
 func NewCryptoMonitor() *CryptoMonitor {
@@ -43,6 +44,7 @@ func NewCryptoMonitor() *CryptoMonitor {
 		notifyLowerLog: make(map[int64]map[string]int64),
 		api: NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"),goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
 		C: make(chan map[int64]map[string]string, 1),
+		unit: goconf.VarStringOrDefault("USDT", "crypto", "unit"),
 	}
 }
 
@@ -60,8 +62,8 @@ func (t *CryptoMonitor) AddHighMonitor(id int64, crypto, price string) {
 		HighLine: make(map[string]string),
 		LowLine: make(map[string]string),
 	})
-	usr.(*user).HighLine[crypto+"USDT"] = price
-	ctp, _ := t.CTU.LoadOrStore(crypto+"USDT", make(map[int64]*user))
+	usr.(*user).HighLine[crypto+t.unit] = price
+	ctp, _ := t.CTU.LoadOrStore(crypto+t.unit, make(map[int64]*user))
 	ctp.(map[int64]*user)[id] = usr.(*user)
 	t.Context()
 	
@@ -73,8 +75,8 @@ func (t *CryptoMonitor) AddLowMonitor(id int64, crypto, price string) {
 		HighLine: make(map[string]string),
 		LowLine: make(map[string]string),
 	})
-	usr.(*user).LowLine[crypto+"USDT"] = price
-	ctp, _ := t.CTU.LoadOrStore(crypto+"USDT", make(map[int64]*user))
+	usr.(*user).LowLine[crypto+t.unit] = price
+	ctp, _ := t.CTU.LoadOrStore(crypto+t.unit, make(map[int64]*user))
 	ctp.(map[int64]*user)[id] = usr.(*user)
 
 	t.Context()
@@ -191,7 +193,7 @@ func (t *CryptoMonitor) probe(cryptos []string) {
 
 func (t *CryptoMonitor) GetPrice(id int64, crypto ...string) map[string]string {
 	for k := range crypto {
-		crypto[k] = crypto[k] + "USDT"
+		crypto[k] = crypto[k] + t.unit
 	}
 	if crypto == nil {
 		if value, ok := t.UTC.Load(id); ok {
@@ -210,7 +212,7 @@ func (t *CryptoMonitor) GetPrice(id int64, crypto ...string) map[string]string {
 
 func (t *CryptoMonitor) DeleteMonitor(id int64, crypto ...string) {
 	for k := range crypto {
-		crypto[k] = crypto[k] + "USDT"
+		crypto[k] = crypto[k] + t.unit
 	}
 	if crypto != nil {
 		value, ok := t.UTC.Load(id)
