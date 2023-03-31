@@ -218,8 +218,8 @@ func (t *CryptoMonitor) DeleteMonitor(id int64, crypto ...string) {
 			for k := range crypto {
 				delete(value.(*user).LowLine, crypto[k])
 				delete(value.(*user).HighLine, crypto[k])
-				delete(t.notifyHigherLog[id], crypto[k])
-				delete(t.notifyLowerLog[id], crypto[k])
+				//delete(t.notifyHigherLog[id], crypto[k]) 如果删除后需要刷新通知状态,会出现并发操作的情况需要改造成sync.Map.
+				//delete(t.notifyLowerLog[id], crypto[k])
 			}	
 		}
 	}

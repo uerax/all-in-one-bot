@@ -28,12 +28,17 @@ func Server() {
 		if update.Message == nil { // ignore non-Message updates
 			continue
 		}
-
+		fmt.Println("receive msg : " + update.Message.Text)
+		
 		if !update.Message.IsCommand() { // ignore any non-command Messages
+			if goconf.VarBoolOrDefault(false, "telegram", "chat") {
+				execute(update.Message.Chat.ID, update.Message.Text)
+			}
             continue
         }
-		fmt.Println("receive msg : " + update.Message.Text)
+		
 		switch update.Message.Command() {
+		// Crypto
 		case "add_crypto_growth_monitor":
 			addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
 		case "add_crypto_decline_monitor":
@@ -42,6 +47,10 @@ func Server() {
 			getCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
 		case "delete_crypto_minitor":
 			deleteCryptoMinitor(update.Message.Chat.ID, update.Message.CommandArguments())
+		// ChatGPT
+		case "chatgpt":
+			chatGPT(update.Message.Chat.ID, update.Message.CommandArguments())
+			
 		}
 		
 	}
