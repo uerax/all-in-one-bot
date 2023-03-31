@@ -1,26 +1,26 @@
-## Usage
+## 一. Usage
 
 在 all-in-one-bot.yml 添加你的 telegram token(从telegram的 @BotFather /newbot 获取)
 
-## Command List
-### 加密货币监控功能清单
+## 二. Command List
+### 1. 加密货币监控功能清单
 
-__所有单位均为USDT__
+__单位默认USDT,可在配置文件crypto -> unit修改__
 
 - [x] add_crypto_growth_monitor 加密货币 提示价格 例: BNB 1110
 - [x] add_crypto_decline_monitor 加密货币 提示价格 例: BNB 1110
 - [x] get_crypto_price 加密货币[可选]
 - [x] delete_crypto_minitor 加密货币(多个用逗号隔开) 例子: BNB,ARB
 
-### ChatGPT功能清单
+### 2. ChatGPT功能清单
 
 - [x] chatgpt msg (如果在配置文件把chat设为true, 可以省略/chatgpt直接发送信息进行交互)
 
-### VPS库存监控功能清单
+### 3. VPS库存监控功能清单
 
 - [ ] vps_monitor_supported_list 查看支持监控的网站
 - [ ] add_vps_monitor vps地址(必须是vps_monitor_supported_list有的,或者系统站点模版的商家)
-## Telegram Commands
+## 三. Telegram Commands
 
 __通过 @BotFather /setcommands 添加__
 
