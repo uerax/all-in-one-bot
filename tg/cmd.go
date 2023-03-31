@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// must Coin Value
+// Crypto Start
 func addCryptoGrowthMonitor(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
@@ -52,3 +52,20 @@ func deleteCryptoMinitor(id int64, args string) {
 	api.CryptoApi.DeleteMonitor(id, arg...)
 }
 
+// ChatGPT
+func chatGPT(id int64, args string) {
+	if args == "" {
+		return
+	}
+
+	api.ChatGPTApi.Ask(id, args)
+}
+
+// Default
+func execute(id int64, args string) {
+	if args == "" {
+		return
+	}
+
+	api.ChatGPTApi.Ask(id, args)
+}

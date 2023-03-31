@@ -1,5 +1,7 @@
 telegram:
   token: 
+  # chat为true的时候,所有非命令的消息都会由chatgpt回复(存在配置里填写了apikey取得情况下)
+  chat: true 
 
 crypto:
   binance:
@@ -10,3 +12,6 @@ crypto:
     interval: 10 
     # 通知间隔 默认10分钟
     frequency: 600
+chatgpt:
+  apikey: 
+  model: gpt-3.5-turbo
