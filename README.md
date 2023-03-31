@@ -2,21 +2,28 @@
 
 在 all-in-one-bot.yml 添加你的 telegram token(从telegram的 @BotFather /newbot 获取)
 
-## 加密货币监控功能清单
+## Command List
+### 加密货币监控功能清单
 
 __所有单位均为USDT__
 
-1. add_crypto_growth_monitor 加密货币 提示价格 例: BNB 1110
-2. add_crypto_decline_monitor 加密货币 提示价格 例: BNB 1110
-3. get_crypto_price 加密货币[可选]
-4. delete_crypto_minitor 加密货币(多个用逗号隔开) 例子: BNB,ARB
+- [x] add_crypto_growth_monitor 加密货币 提示价格 例: BNB 1110
+- [x] add_crypto_decline_monitor 加密货币 提示价格 例: BNB 1110
+- [x] get_crypto_price 加密货币[可选]
+- [x] delete_crypto_minitor 加密货币(多个用逗号隔开) 例子: BNB,ARB
 
-5. chatgpt msg (如果在配置文件把chat设为true, 可以省略/chatgpt直接发送信息进行交互)
+### ChatGPT功能清单
 
+- [x] chatgpt msg (如果在配置文件把chat设为true, 可以省略/chatgpt直接发送信息进行交互)
 
-6. vps_monitor_supported_list 查看支持监控的网站 TODO
-7. add_vps_monitor vps地址(必须是vps_monitor_supported_list有的,或者系统站点模版的商家) TODO
+### VPS库存监控功能清单
+
+- [ ] vps_monitor_supported_list 查看支持监控的网站
+- [ ] add_vps_monitor vps地址(必须是vps_monitor_supported_list有的,或者系统站点模版的商家)
 ## Telegram Commands
+
+__通过 @BotFather /setcommands 添加__
+
 ```
 add_crypto_growth_monitor  - 添加加密货币高线监控 例: BNB 1.1 (单位USD)
 add_crypto_decline_monitor  - 添加加密货币低线监控 例: BNB 1.1 (单位USD)
