@@ -61,6 +61,28 @@ func chatGPT(id int64, args string) {
 	api.ChatGPTApi.Ask(id, args)
 }
 
+// Vps
+func vpsMonitorSupportedList(id int64) {
+	list := api.VpsApi.GetList()
+	sb := strings.Builder{}
+	sb.WriteString("目前可监控列表如下:")
+	for _, v := range list {
+		sb.WriteString("\n[")
+		sb.WriteString(v.Name)
+		sb.WriteString("] - ")
+		sb.WriteString(v.Url)
+	}
+	api.SendMsg(id, sb.String())
+}
+
+func addVpsMonitor(id int64, args string) {
+	if args == "" {
+		return
+	}
+
+	api.VpsApi.AddMonitor(id, args)
+}
+
 // Default
 func execute(id int64, args string) {
 	if args == "" {
