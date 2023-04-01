@@ -17,3 +17,21 @@ crypto:
 chatgpt:
   apikey: 
   model: gpt-3.5-turbo
+
+vps:
+  # 通知间隔 默认10分钟
+  frequency: 600
+  list:
+    - url: https://my.frantech.ca/cart.php?a=add&pid=1511
+      keyword: Out of Stock
+      name: MIA Block Storage Slab - 256GB
+      desc: $1.25 USD/mo
+    - url: https://idc.hytron.io/cart.php?a=add&pid=2
+      keyword: 缺货
+      name: HKBGP-Standard-Lite
+      desc: $1 USD/mo 1 vCPU 512MB RAM 10G SSD 3TB Transfer (IN & OUT) 1 IPv4
+    - url: https://billing.spartanhost.net/cart.php?pid=171
+      keyword: Out of Stock
+      name: 2048MB SEABKVM
+      desc: 测试用
+    

@@ -50,7 +50,11 @@ func Server() {
 		// ChatGPT
 		case "chatgpt":
 			chatGPT(update.Message.Chat.ID, update.Message.CommandArguments())
-			
+		// Vps
+		case "vps_monitor_supported_list":
+			vpsMonitorSupportedList(update.Message.Chat.ID)
+		case "add_vps_monitor":
+			addVpsMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
 		}
 		
 	}

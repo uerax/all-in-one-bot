@@ -18,8 +18,9 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 ### 3. VPS库存监控功能清单
 
-- [ ] vps_monitor_supported_list 查看支持监控的网站
-- [ ] add_vps_monitor vps地址(必须是vps_monitor_supported_list有的,或者系统站点模版的商家)
+- [x] vps_monitor_supported_list 查看支持监控的网站
+- [ ] vps_add_supported_list 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
+- [x] add_vps_monitor url(必须是vps_monitor_supported_list有的,或者系统站点模版的商家)
 ## 三. Telegram Commands
 
 __通过 @BotFather /setcommands 添加__
@@ -31,5 +32,6 @@ get_crypto_price - 查询当前价格(默认查询监控的加密货币) 例 : B
 delete_crypto_minitor - 删除监控的加密货币 例: BNB,ARB
 chatgpt - chatgpt功能
 vps_monitor_supported_list - 查看支持监控的网站
-add_vps_monitor - 添加VPS库存监控
+add_vps_monitor - 添加VPS库存监控 例: URL(vps_monitor_supported_list里的)
+vps_add_supported_list - 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
 ```

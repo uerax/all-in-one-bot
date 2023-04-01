@@ -5,6 +5,7 @@ import (
 	"strings"
 	"tg-aio-bot/chatgpt"
 	"tg-aio-bot/crypto"
+	"tg-aio-bot/vps"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -15,10 +16,12 @@ type Aio struct {
 	bot       *tgbotapi.BotAPI
 	CryptoApi *crypto.CryptoMonitor
 	ChatGPTApi *chatgpt.ChatGPT
+	VpsApi *vps.VpsMonitor
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
-	t.bot.Send(tgbotapi.NewMessage(id, msg))
+	mc := tgbotapi.NewMessage(id, msg)
+	t.bot.Send(mc)
 }
 
 func (t *Aio) NewBot(token string) {
@@ -31,6 +34,7 @@ func (t *Aio) NewBot(token string) {
 
 	t.CryptoApi = crypto.NewCryptoMonitor()
 	t.ChatGPTApi = chatgpt.NewChatGPT()
+	t.VpsApi = vps.NewVpsMonitor()
 
 	go t.WaitToSend()
 }
@@ -66,6 +70,11 @@ func (t *Aio) WaitToSend() {
 				} else {
 					go t.SendMsg(id, msg)
 				}
+			}
+
+		case v := <- t.VpsApi.C:
+			for k, v := range v {
+				go t.SendMsg(k, v)
 			}
 		}
 		
