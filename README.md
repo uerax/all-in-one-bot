@@ -21,6 +21,11 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] vps_monitor_supported_list 查看支持监控的网站
 - [ ] vps_add_supported_list 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
 - [x] add_vps_monitor url(必须是vps_monitor_supported_list有的,或者系统站点模版的商家)
+
+### 4. 抠图功能
+
+- [x] 检测到图片直接抠图 (需要在配置文件将 photo -> enable 设为true并添加apikey)
+
 ## 三. Telegram Commands
 
 __通过 @BotFather /setcommands 添加__
