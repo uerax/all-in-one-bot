@@ -1,8 +1,10 @@
 telegram:
+  # 必填
   token: 
   # chat为true的时候,所有非命令的消息都会由chatgpt回复(存在配置里填写了apikey取得情况下)
   chat: true 
 
+# 加密货币配置项 
 crypto:
   binance:
     secretKey: 
@@ -14,10 +16,14 @@ crypto:
     frequency: 600
   # 单位
   unit: USDT
+
+# ChatGPT 配置项 
 chatgpt:
   apikey: 
+  # 不兼容3.5以下版本
   model: gpt-3.5-turbo
 
+# Vps库存监控 配置项
 vps:
   # 通知间隔 默认10分钟
   frequency: 600
@@ -34,4 +40,12 @@ vps:
       keyword: Out of Stock
       name: 2048MB SEABKVM
       desc: 测试用
-    
+
+# 智能抠图 配置项 
+photo:
+  # 开启后所有图片会走抠图的逻辑,默认关闭
+  enable: true
+  path: /tmp/aio-tgbot/
+  removebg:
+    # www.remove.bg 注册获取, 免费版每个月只能使用40次
+    apikey: 
