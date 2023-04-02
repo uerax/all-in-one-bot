@@ -13,19 +13,19 @@ import (
 )
 
 type VpsMonitor struct {
-	valid map[string]*Vps // vps -> keyword
-	VTU   sync.Map // map[string]map[int64]struct{} vps -> user
-	C     chan map[int64]string         // user -> msg
-	notify map[string]map[int64]int64  // url ->  user -> date
-	ctx   context.Context
-	cancel	context.CancelFunc
+	valid  map[string]*Vps            // vps -> keyword
+	VTU    sync.Map                   // map[string]map[int64]struct{} vps -> user
+	C      chan map[int64]string      // user -> msg
+	notify map[string]map[int64]int64 // url ->  user -> date
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 type Vps struct {
-	Url string
+	Url     string
 	Keyword string
-	Desc string
-	Name string
+	Desc    string
+	Name    string
 }
 
 func NewVpsMonitor() *VpsMonitor {
@@ -33,19 +33,19 @@ func NewVpsMonitor() *VpsMonitor {
 	vps := make(map[string]*Vps)
 	for _, v := range vpsList {
 		vps[v.(map[string]interface{})["url"].(string)] = &Vps{
-			Url: v.(map[string]interface{})["url"].(string),
-			Desc: v.(map[string]interface{})["desc"].(string),
+			Url:     v.(map[string]interface{})["url"].(string),
+			Desc:    v.(map[string]interface{})["desc"].(string),
 			Keyword: v.(map[string]interface{})["keyword"].(string),
-			Name: v.(map[string]interface{})["name"].(string),
+			Name:    v.(map[string]interface{})["name"].(string),
 		}
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return &VpsMonitor{
-		valid: vps,
-		VTU: sync.Map{},
-		C: make(chan map[int64]string, 1),
+		valid:  vps,
+		VTU:    sync.Map{},
+		C:      make(chan map[int64]string, 1),
 		notify: make(map[string]map[int64]int64),
-		ctx: ctx,
+		ctx:    ctx,
 		cancel: cancel,
 	}
 }
@@ -71,58 +71,49 @@ func (t *VpsMonitor) Start() {
 
 	for {
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 			for k, v := range t.valid {
 				go t.probe(k, v.Url)
 			}
-		case <- t.ctx.Done():
+		case <-t.ctx.Done():
 			return
 		}
 	}
 }
 
 func (t *VpsMonitor) probe(url, keyword string) {
-	for {
-		select {
-		case <- t.ctx.Done():
-			return;
-		default:
-			resp, err := http.Get(url)
-			if err != nil {
-				fmt.Printf("%s 访问失败\n", url)
-				return
-			}
 
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				fmt.Println("body解析失败")
-				return
-			}
-			now := time.Now().Unix()
-			frequency := goconf.VarIntOrDefault(600, "vps", "frequency")
-			if !strings.Contains(string(b), keyword) {
-				s := make(map[int64]string)
-				if value, ok := t.VTU.Load(url); ok {
-					for k := range value.(map[int64]struct{}) {
-						
-						if _, ok := t.notify[url]; !ok {
-							t.notify[url] = make(map[int64]int64)
-						}
-
-						if v, exist := t.notify[url][k]; !exist || now - v >= int64(frequency) {
-							s[k] = fmt.Sprintf("主机补货通知:\n商 品：%s \n详 情：%s \n链 接: %s", t.valid[url].Name, t.valid[url].Desc, url)
-							t.notify[url][k] = now
-						} 
-					}
-					t.C <- s
-				}
-			
-				
-			}
-			return
-		}
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Printf("%s 访问失败\n", url)
+		return
 	}
-	
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("body解析失败")
+		return
+	}
+	now := time.Now().Unix()
+	frequency := goconf.VarIntOrDefault(600, "vps", "frequency")
+	if !strings.Contains(string(b), keyword) {
+		s := make(map[int64]string)
+		if value, ok := t.VTU.Load(url); ok {
+			for k := range value.(map[int64]struct{}) {
+
+				if _, ok := t.notify[url]; !ok {
+					t.notify[url] = make(map[int64]int64)
+				}
+
+				if v, exist := t.notify[url][k]; !exist || now-v >= int64(frequency) {
+					s[k] = fmt.Sprintf("主机补货通知:\n商 品：%s \n详 情：%s \n链 接: %s", t.valid[url].Name, t.valid[url].Desc, url)
+					t.notify[url][k] = now
+				}
+			}
+			t.C <- s
+		}
+
+	}
 
 }
 
