@@ -44,7 +44,7 @@ vps:
 # 智能抠图 配置项 
 photo:
   # 开启后所有图片会走抠图的逻辑,默认关闭
-  enable: true
+  enable: false
   path: /tmp/aio-tgbot/
   removebg:
     # www.remove.bg 注册获取, 免费版每个月只能使用40次
