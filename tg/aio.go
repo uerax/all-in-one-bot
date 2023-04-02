@@ -5,6 +5,7 @@ import (
 	"strings"
 	"tg-aio-bot/chatgpt"
 	"tg-aio-bot/crypto"
+	"tg-aio-bot/photo"
 	"tg-aio-bot/vps"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -17,12 +18,19 @@ type Aio struct {
 	CryptoApi *crypto.CryptoMonitor
 	ChatGPTApi *chatgpt.ChatGPT
 	VpsApi *vps.VpsMonitor
+	PhotoApi *photo.Cutouts
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
 	mc := tgbotapi.NewMessage(id, msg)
 	t.bot.Send(mc)
 }
+
+func (t *Aio) SendImg(id int64, img string) {
+	mc := tgbotapi.NewPhoto(id, tgbotapi.FilePath(img))
+	t.bot.Send(mc)
+}
+
 
 func (t *Aio) NewBot(token string) {
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -35,6 +43,7 @@ func (t *Aio) NewBot(token string) {
 	t.CryptoApi = crypto.NewCryptoMonitor()
 	t.ChatGPTApi = chatgpt.NewChatGPT()
 	t.VpsApi = vps.NewVpsMonitor()
+	t.PhotoApi = photo.NewCutouts()
 
 	go t.WaitToSend()
 }
@@ -75,6 +84,11 @@ func (t *Aio) WaitToSend() {
 		case v := <- t.VpsApi.C:
 			for k, v := range v {
 				go t.SendMsg(k, v)
+			}
+
+		case v := <- t.PhotoApi.C:
+			for k, v := range v {
+				go t.SendImg(k, v)
 			}
 		}
 		

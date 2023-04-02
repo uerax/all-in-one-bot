@@ -3,6 +3,8 @@ package tg
 import (
 	"fmt"
 	"strings"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // Crypto Start
@@ -81,6 +83,19 @@ func addVpsMonitor(id int64, args string) {
 	}
 
 	api.VpsApi.AddMonitor(id, args)
+}
+
+// Photo
+func cutouts(id int64, photos []tgbotapi.PhotoSize) {
+	photo := photos[len(photos)-1] // get the largest available photo
+	fileID := photo.FileID
+	file, err := api.bot.GetFileDirectURL(fileID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	
+	api.PhotoApi.RemoveBackground(id, file)
 }
 
 // Default

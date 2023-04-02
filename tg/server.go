@@ -31,6 +31,9 @@ func Server() {
 		fmt.Println("receive msg : " + update.Message.Text)
 		
 		if !update.Message.IsCommand() { // ignore any non-command Messages
+			if goconf.VarBoolOrDefault(false, "photo", "enable") && update.Message.Photo != nil {
+				cutouts(update.Message.Chat.ID, update.Message.Photo)
+			}
 			if goconf.VarBoolOrDefault(false, "telegram", "chat") {
 				execute(update.Message.Chat.ID, update.Message.Text)
 			}
