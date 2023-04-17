@@ -40,11 +40,16 @@ vps:
       keyword: Out of Stock
       name: 2048MB SEABKVM
       desc: 测试用
+    - url: https://greencloudvps.com/billing/cart.php?a=add&pid=977
+      keyword: Out of Stock
+      name: GreenCloudVPS 2222 JP
+      desc: $22.00 USD Annually 2 cores, 2GB, 22GB NVMe RAID-10, 750GB Bandwidth@10Gbps Port
+    
 
 # 智能抠图 配置项 
 photo:
   # 开启后所有图片会走抠图的逻辑,默认关闭
-  enable: false
+  enable: true
   path: /tmp/aio-tgbot/
   removebg:
     # www.remove.bg 注册获取, 免费版每个月只能使用40次
