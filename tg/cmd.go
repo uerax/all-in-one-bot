@@ -54,6 +54,18 @@ func deleteCryptoMinitor(id int64, args string) {
 	api.CryptoApi.DeleteMonitor(id, arg...)
 }
 
+func getUFuturesCryptoPrice(id int64, args string) {
+	if args == "" {
+		args = "BTCUSDT"
+	}
+	ctp := api.CryptoApi.GetUFuturePrice(id, args)
+	sb := strings.Builder{}
+	sb.WriteString(args)
+	sb.WriteString(":")
+	sb.WriteString(ctp)
+	api.SendMsg(id, sb.String())	
+}
+
 // ChatGPT
 func chatGPT(id int64, args string) {
 	if args == "" {

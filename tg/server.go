@@ -50,6 +50,8 @@ func Server() {
 			getCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
 		case "delete_crypto_minitor":
 			deleteCryptoMinitor(update.Message.Chat.ID, update.Message.CommandArguments())
+		case "get_crypto_ufutures_price":
+			getUFuturesCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
 		// ChatGPT
 		case "chatgpt":
 			chatGPT(update.Message.Chat.ID, update.Message.CommandArguments())
