@@ -73,7 +73,7 @@ func (t *VpsMonitor) Start() {
 		select {
 		case <-ticker.C:
 			for k, v := range t.valid {
-				go t.probe(k, v.Url)
+				go t.probe(k, v.Keyword)
 			}
 		case <-t.ctx.Done():
 			return
@@ -110,7 +110,10 @@ func (t *VpsMonitor) probe(url, keyword string) {
 					t.notify[url][k] = now
 				}
 			}
-			t.C <- s
+			if len(s) > 0 {
+				t.C <- s
+			}
+			
 		}
 
 	}
