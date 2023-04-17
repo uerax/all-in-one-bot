@@ -1,6 +1,6 @@
 package crypto
 
 type priceResp struct {
-	Price  string
-	Symbol string
+	Price  string `json:"price"`
+	Symbol string `json:"symbol"`
 }

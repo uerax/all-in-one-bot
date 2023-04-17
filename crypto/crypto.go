@@ -11,6 +11,7 @@ import (
 var (
 	apiUrl  = "https://api.binance.com"
 	dataUrl = "https://data.binance.com"
+	fapiUrl = "https://fapi.binance.com"
 )
 
 type Crypto struct {
@@ -67,4 +68,33 @@ func (t *Crypto) Price(name ...string) (prices map[string]string) {
 	return 
 }
 
+func (t *Crypto) FuturesPrice(name string) (prices string) {
+	if len(name) == 0 {
+		return 
+	}
+	symbols := fmt.Sprintf(`/fapi/v1/ticker/price?symbol=%s`, name)
+	res, err := http.NewRequest(http.MethodGet, fapiUrl+symbols, nil)
+	if err != nil {
+		return 
+	}
+
+	resp, err := http.DefaultClient.Do(res)
+	if err != nil {
+		return
+	}
+
+	resBody, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return
+	}
+	
+	price := priceResp{}
+	if err = json.Unmarshal(resBody, &price); err != nil {
+		return
+	}
+	
+
+	return price.Price 
+}
 

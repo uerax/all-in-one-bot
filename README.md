@@ -11,6 +11,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] add_crypto_decline_monitor 加密货币 提示价格 例: BNB 1110
 - [x] get_crypto_price 加密货币[可选]
 - [x] delete_crypto_minitor 加密货币(多个用逗号隔开) 例子: BNB,ARB
+- [x] get_crypto_ufutures_price u本位合约[可选,默认BTCUSDT] 例子: ETHBTC
 
 ### 2. ChatGPT功能清单
 
@@ -35,6 +36,7 @@ add_crypto_growth_monitor  - 添加加密货币高线监控 例: BNB 1.1 (单位
 add_crypto_decline_monitor  - 添加加密货币低线监控 例: BNB 1.1 (单位USD)
 get_crypto_price - 查询当前价格(默认查询监控的加密货币) 例 : BNB
 delete_crypto_minitor - 删除监控的加密货币 例: BNB,ARB
+get_crypto_ufutures_price - 查询当前合约价格 例 : ETHUSDT
 chatgpt - chatgpt功能
 vps_monitor_supported_list - 查看支持监控的网站
 add_vps_monitor - 添加VPS库存监控 例: URL(vps_monitor_supported_list里的)

@@ -227,3 +227,7 @@ func (t *CryptoMonitor) DeleteMonitor(id int64, crypto ...string) {
 	}
 
 }
+
+func (t *CryptoMonitor) GetUFuturePrice(id int64, crypto string) string {
+	return t.api.FuturesPrice(crypto)
+}
