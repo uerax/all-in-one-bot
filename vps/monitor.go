@@ -97,6 +97,7 @@ func (t *VpsMonitor) probe(url, keyword string) {
 	now := time.Now().Unix()
 	frequency := goconf.VarIntOrDefault(600, "vps", "frequency")
 	if !strings.Contains(string(b), keyword) {
+		fmt.Println(string(b))
 		s := make(map[int64]string)
 		if value, ok := t.VTU.Load(url); ok {
 			for k := range value.(map[int64]struct{}) {
@@ -105,7 +106,7 @@ func (t *VpsMonitor) probe(url, keyword string) {
 					t.notify[url] = make(map[int64]int64)
 				}
 
-				if v, exist := t.notify[url][k]; !exist || now-v >= int64(frequency) {
+				if v, exist := t.notify[url][k]; exist || now-v >= int64(frequency) {
 					s[k] = fmt.Sprintf("主机补货通知:\n商 品：%s \n详 情：%s \n链 接: %s", t.valid[url].Name, t.valid[url].Desc, url)
 					t.notify[url][k] = now
 				}
