@@ -14,11 +14,11 @@ import (
 var api = &Aio{}
 
 type Aio struct {
-	bot       *tgbotapi.BotAPI
-	CryptoApi *crypto.CryptoMonitor
+	bot        *tgbotapi.BotAPI
+	CryptoApi  *crypto.CryptoMonitor
 	ChatGPTApi *chatgpt.ChatGPT
-	VpsApi *vps.VpsMonitor
-	PhotoApi *photo.Cutouts
+	VpsApi     *vps.VpsMonitor
+	PhotoApi   *photo.Cutouts
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -30,7 +30,6 @@ func (t *Aio) SendImg(id int64, img string) {
 	mc := tgbotapi.NewPhoto(id, tgbotapi.FilePath(img))
 	t.bot.Send(mc)
 }
-
 
 func (t *Aio) NewBot(token string) {
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -69,7 +68,7 @@ func (t *Aio) WaitToSend() {
 		case v := <-t.ChatGPTApi.C:
 			for id, msg := range v {
 				if len(msg) > 4096 {
-					for i,j := 0,4000; j < len(msg); j = j << 1 {
+					for i, j := 0, 4000; j < len(msg); j = j << 1 {
 						if j > len(msg) {
 							j = len(msg)
 						}
@@ -81,16 +80,16 @@ func (t *Aio) WaitToSend() {
 				}
 			}
 
-		case v := <- t.VpsApi.C:
+		case v := <-t.VpsApi.C:
 			for k, v := range v {
 				go t.SendMsg(k, v)
 			}
 
-		case v := <- t.PhotoApi.C:
+		case v := <-t.PhotoApi.C:
 			for k, v := range v {
 				go t.SendImg(k, v)
 			}
 		}
-		
+
 	}
 }
