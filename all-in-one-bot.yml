@@ -1,8 +1,7 @@
 telegram:
   # 必填
   token: 
-  # chat为true的时候,所有非命令的消息都会由chatgpt回复(存在配置里填写了apikey取得情况下)
-  chat: true 
+  chatId:  
 
 # 加密货币配置项 
 crypto:
