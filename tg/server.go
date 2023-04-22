@@ -7,6 +7,9 @@ import (
 	"github.com/uerax/goconf"
 )
 
+var Cmd string
+var ChatId int64
+
 func Server() {
 
 	// Create a new bot instance
@@ -21,7 +24,8 @@ func Server() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	
+	ChatId = goconf.VarInt64OrDefault(0, "telegram", "chatid")
+
 	// Start listening for updates
 	updates := api.bot.GetUpdatesChan(u)
 	for update := range updates {
@@ -29,38 +33,75 @@ func Server() {
 			continue
 		}
 		fmt.Println("receive msg : " + update.Message.Text)
-		
+
+		if ChatId != 0 && update.Message.Chat.ID != ChatId {
+			continue
+		}
+
 		if !update.Message.IsCommand() { // ignore any non-command Messages
-			if goconf.VarBoolOrDefault(false, "photo", "enable") && update.Message.Photo != nil {
-				cutouts(update.Message.Chat.ID, update.Message.Photo)
+			switch Cmd {
+			// Crypto
+			case "add_crypto_growth_monitor":
+				addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.Text)
+			case "add_crypto_decline_monitor":
+				addCryptoDeclineMonitor(update.Message.Chat.ID, update.Message.Text)
+			case "get_crypto_price":
+				getCryptoPrice(update.Message.Chat.ID, update.Message.Text)
+			case "delete_crypto_minitor":
+				deleteCryptoMinitor(update.Message.Chat.ID, update.Message.Text)
+			case "get_crypto_ufutures_price":
+				getUFuturesCryptoPrice(update.Message.Chat.ID, update.Message.Text)
+			// Vps
+			// case "vps_monitor_supported_list":
+			// 	vpsMonitorSupportedList(update.Message.Chat.ID)
+			// case "add_vps_monitor":
+			// 	addVpsMonitor(update.Message.Chat.ID, update.Message.Text)
+			// ChatGPT
+			case "chatgpt":
+				if goconf.VarBoolOrDefault(false, "telegram", "chat") {
+					execute(update.Message.Chat.ID, update.Message.Text)
+				}
+			// Cutout
+			case "cutout":
+				if goconf.VarBoolOrDefault(false, "photo", "enable") && update.Message.Photo != nil {
+					cutouts(update.Message.Chat.ID, update.Message.Photo)
+				}
 			}
-			if goconf.VarBoolOrDefault(false, "telegram", "chat") {
-				execute(update.Message.Chat.ID, update.Message.Text)
-			}
-            continue
-        }
-		
+		}
+
 		switch update.Message.Command() {
-		// Crypto
 		case "add_crypto_growth_monitor":
-			addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
+			Cmd = "add_crypto_growth_monitor"
+			tips(update.Message.Chat.ID, "添加加密货币高线监控 例: \nBNB 1.1 (单位USDT)")
 		case "add_crypto_decline_monitor":
-			addCryptoDeclineMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
+			Cmd = "add_crypto_decline_monitor"
+			tips(update.Message.Chat.ID, "添加加密货币低线监控 例: \nBNB 1.1 (单位USDT)")
 		case "get_crypto_price":
-			getCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
+			Cmd = "get_crypto_price"
+			tips(update.Message.Chat.ID, "查询加密货币价格 例: \nBNB")
 		case "delete_crypto_minitor":
-			deleteCryptoMinitor(update.Message.Chat.ID, update.Message.CommandArguments())
+			Cmd = "delete_crypto_minitor"
+			tips(update.Message.Chat.ID, "删除加密货币监控线 例: \nBNB")
 		case "get_crypto_ufutures_price":
-			getUFuturesCryptoPrice(update.Message.Chat.ID, update.Message.CommandArguments())
+			Cmd = "get_crypto_ufutures_price"
+			tips(update.Message.Chat.ID, "查询加密货币合约价格 例: \nBNBUSDT")
+		// Vps
+		// case "vps_monitor_supported_list":
+		// 	Cmd = "get_crypto_ufutures_price"
+		// 	vpsMonitorSupportedList(update.Message.Chat.ID)
+		// case "add_vps_monitor":
+		// 	addVpsMonitor(update.Message.Chat.ID, update.Message.Text)
 		// ChatGPT
 		case "chatgpt":
-			chatGPT(update.Message.Chat.ID, update.Message.CommandArguments())
-		// Vps
-		case "vps_monitor_supported_list":
-			vpsMonitorSupportedList(update.Message.Chat.ID)
-		case "add_vps_monitor":
-			addVpsMonitor(update.Message.Chat.ID, update.Message.CommandArguments())
+			Cmd = "chatgpt"
+			tips(update.Message.Chat.ID, "发送你的问题 例: \n今天的天气")
+		// Cutout
+		case "cutout":
+			Cmd = "cutout"
+			tips(update.Message.Chat.ID, "发送图片")
+		// Telegram Info
+		case "chatid":
+			chatid(update.Message.Chat.ID)
 		}
-		
 	}
 }

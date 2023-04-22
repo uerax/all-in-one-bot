@@ -110,6 +110,11 @@ func cutouts(id int64, photos []tgbotapi.PhotoSize) {
 	api.PhotoApi.RemoveBackground(id, file)
 }
 
+// Telegram
+func chatid(id int64) {
+	api.SendMsg(id, fmt.Sprintf("你的ChatId为 : %d", id))
+}
+
 // Default
 func execute(id int64, args string) {
 	if args == "" {
@@ -117,4 +122,8 @@ func execute(id int64, args string) {
 	}
 
 	api.ChatGPTApi.Ask(id, args)
+}
+
+func tips(id int64, msg string) {
+	api.SendMsg(id, msg)
 }
