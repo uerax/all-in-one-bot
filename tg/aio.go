@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 	"tg-aio-bot/chatgpt"
+	"tg-aio-bot/cron"
 	"tg-aio-bot/crypto"
 	"tg-aio-bot/photo"
 	"tg-aio-bot/vps"
@@ -19,6 +20,8 @@ type Aio struct {
 	ChatGPTApi *chatgpt.ChatGPT
 	VpsApi     *vps.VpsMonitor
 	PhotoApi   *photo.Cutouts
+	CryptoV2Api *crypto.Probe
+	Cron *cron.Task
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -43,6 +46,8 @@ func (t *Aio) NewBot(token string) {
 	t.ChatGPTApi = chatgpt.NewChatGPT()
 	t.VpsApi = vps.NewVpsMonitor()
 	t.PhotoApi = photo.NewCutouts()
+	t.CryptoV2Api = crypto.NewProbe()
+	t.Cron = cron.NewTask()
 
 	go t.WaitToSend()
 }
@@ -89,6 +94,10 @@ func (t *Aio) WaitToSend() {
 			for k, v := range v {
 				go t.SendImg(k, v)
 			}
+		case v := <-t.CryptoV2Api.Kline:
+			go t.SendMsg(ChatId, v)
+		case v := <-t.Cron.C:
+			go t.SendMsg(ChatId, v)
 		}
 
 	}

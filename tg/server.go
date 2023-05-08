@@ -17,14 +17,15 @@ func Server() {
 	if err != nil {
 		panic(err)
 	}
+	id := goconf.VarIntOrDefault(0, "telegram", "chatId")
+	
+	ChatId = int64(id)
 
 	api.NewBot(token)
 
 	// Create a new update channel
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-
-	ChatId = goconf.VarInt64OrDefault(0, "telegram", "chatid")
 
 	// Start listening for updates
 	updates := api.bot.GetUpdatesChan(u)
@@ -41,6 +42,10 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Crypto
+			case "add_kline_strategy_probe":
+				addKlineStrategyProbe(update.Message.Text)
+			case "delete_kline_strategy_probe":
+				deleteKlineStrategyProbe(update.Message.Text)
 			case "add_crypto_growth_monitor":
 				addCryptoGrowthMonitor(update.Message.Chat.ID, update.Message.Text)
 			case "add_crypto_decline_monitor":
@@ -66,10 +71,20 @@ func Server() {
 				if goconf.VarBoolOrDefault(false, "photo", "enable") && update.Message.Photo != nil {
 					cutouts(update.Message.Chat.ID, update.Message.Photo)
 				}
+			case "delete_cron":
+				deleteCron(update.Message.Text)
+			case "add_cron":
+				addCron(update.Message.Text)
 			}
 		}
 
 		switch update.Message.Command() {
+		case "add_kline_strategy_probe":
+			Cmd = "add_kline_strategy_probe"
+			tips(update.Message.Chat.ID, "输入要监控的u本位合约 例: \nbtcusdt")
+		case "delete_kline_strategy_probe":
+			Cmd = "delete_kline_strategy_probe"
+			tips(update.Message.Chat.ID, "输入要删除的u本位合约监控 例: \nbtcusdt")
 		case "add_crypto_growth_monitor":
 			Cmd = "add_crypto_growth_monitor"
 			tips(update.Message.Chat.ID, "添加加密货币高线监控 例: \nBNB 1.1 (单位USDT)")
@@ -102,6 +117,15 @@ func Server() {
 		// Telegram Info
 		case "chatid":
 			chatid(update.Message.Chat.ID)
+		// Cron
+		case "add_cron":
+			Cmd = "add_cron"
+			tips(update.Message.Chat.ID, "每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)")
+		case "delete_cron":
+			Cmd = "delete_cron"
+			tips(update.Message.Chat.ID, "输入id(每次触发通知发送的消息带有) 例: 1")
+		
 		}
+		
 	}
 }

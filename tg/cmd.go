@@ -8,6 +8,24 @@ import (
 )
 
 // Crypto Start
+func addKlineStrategyProbe(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("addKlineStrategyProbe 参数有误: %s", args)
+		return
+	}
+	api.CryptoV2Api.AddKLineProbe(arg[0])
+}
+
+func deleteKlineStrategyProbe(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("deleteKlineStrategyProbe 参数有误: %s", args)
+		return
+	}
+	api.CryptoV2Api.StopKLineProbe(arg[0])
+}
+
 func addCryptoGrowthMonitor(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
@@ -113,6 +131,25 @@ func cutouts(id int64, photos []tgbotapi.PhotoSize) {
 // Telegram
 func chatid(id int64) {
 	api.SendMsg(id, fmt.Sprintf("你的ChatId为 : %d", id))
+}
+
+// Cron
+func addCron(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 2 {
+		fmt.Printf("addCron 参数有误: %s", args)
+		return
+	}
+	api.Cron.AddTask(arg[0], arg[1])
+}
+
+func deleteCron(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("deleteCron 参数有误: %s", args)
+		return
+	}
+	api.Cron.CloseTask(arg[0])
 }
 
 // Default
