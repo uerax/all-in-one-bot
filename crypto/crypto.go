@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -97,4 +98,42 @@ func (t *Crypto) FuturesPrice(name string) (prices string) {
 
 	return price.Price 
 }
+
+// 前3根k线的涨跌结果,1 涨 -1 跌
+func (t *Crypto) UFutureKline(interval string, limit int, symbol string) int {
+	url := fmt.Sprintf("https://fapi.binance.com/fapi/v1/klines?symbol=%s&interval=%s&limit=%d", symbol, interval, limit)
+
+	res := 0
+
+	// 发送HTTP请求
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("请求失败：", err)
+		return res
+	}
+	defer resp.Body.Close()
+
+	// 解析JSON数据
+	
+	b, _ := ioutil.ReadAll(resp.Body)
+
+	var result [][]interface{}
+	json.Unmarshal(b, &result)
+	
+	// 打印K线数据
+	for _, kline := range result {
+		end, _ := strconv.ParseFloat(kline[4].(string), 64)
+		start, _ := strconv.ParseFloat(kline[1].(string), 64)
+		if end - start >= 0 {
+			res += 1
+		} else {
+			res += -1
+		}
+		
+	}
+
+	return res
+}
+
+
 

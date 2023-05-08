@@ -1,12 +1,17 @@
 ## 一. Usage
 
-在 all-in-one-bot.yml 添加你的 telegram token(从telegram的 @BotFather /newbot 获取)
-
+1. 在 all-in-one-bot.yml 添加你的 telegram token
+    从telegram的 @BotFather 发送 /newbot 获取
+2. 在 all-in-one-bot.yml 添加你的 telegram chatId
+    添加token后启动应用,去你的bot发送 /chatid 即可获取
+    
 ## 二. Command List
 ### 1. 加密货币监控功能清单
 
 __单位默认USDT,可在配置文件crypto -> unit修改__
 
+- [x] add_kline_strategy_probe 探测连续3根一直走势的k线 例: btcusdt
+- [x] delete_kline_strategy_probe 删除探测 例: btcusdt
 - [x] add_crypto_growth_monitor 加密货币 提示价格 例: BNB 1110
 - [x] add_crypto_decline_monitor 加密货币 提示价格 例: BNB 1110
 - [x] get_crypto_price 加密货币[可选]
@@ -31,14 +36,23 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 - [x] chatid
 
+### 6. Cron 定时提醒
+
+- [x] add_cron 每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)
+- [x] delete_cron 删除 例: 1
+ 
 ## 三. Telegram Commands
 
 __通过 @BotFather /setcommands 添加__
 
 ```
 chatid - 查询chatid
-add_crypto_growth_monitor  - 添加加密货币高线监控 例: BNB 1.1 (单位USD)
-add_crypto_decline_monitor  - 添加加密货币低线监控 例: BNB 1.1 (单位USD)
+add_kline_strategy_probe - 探测连续3根一直走势的k线 例: btcusdt
+delete_kline_strategy_probe - 删除探测 例: btcusdt
+add_cron - 每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)
+delete_cron - 删除 例: 1
+add_crypto_growth_monitor - 添加加密货币高线监控 例: BNB 1.1 (单位USD)
+add_crypto_decline_monitor - 添加加密货币低线监控 例: BNB 1.1 (单位USD)
 get_crypto_price - 查询当前价格(默认查询监控的加密货币) 例 : BNB
 delete_crypto_minitor - 删除监控的加密货币 例: BNB,ARB
 get_crypto_ufutures_price - 查询当前合约价格 例 : ETHUSDT
