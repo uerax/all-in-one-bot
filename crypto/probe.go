@@ -68,7 +68,7 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 	}
 	do()
 
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(15 * time.Minute)
 
 	for {
 		select {
