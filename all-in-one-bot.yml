@@ -1,7 +1,7 @@
 telegram:
   # 必填
   token: 
-  chatId:  
+  chatId: 
 
 # 加密货币配置项 
 crypto:
@@ -48,8 +48,13 @@ vps:
 # 智能抠图 配置项 
 photo:
   # 开启后所有图片会走抠图的逻辑,默认关闭
+  # 优先使用pixian
   enable: true
+  # windows下调试需要改这个临时文件路径, 否则会出现报错
   path: /tmp/aio-tgbot/
   removebg:
     # www.remove.bg 注册获取, 免费版每个月只能使用40次
     apikey: 
+  pixian:
+    # https://pixian.ai/api 注册获取
+    authorization: 
