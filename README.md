@@ -1,9 +1,9 @@
 ## 一. Usage
 
-1. 在 all-in-one-bot.yml 添加你的 telegram token
-    从telegram的 @BotFather 发送 /newbot 获取
-2. 在 all-in-one-bot.yml 添加你的 telegram chatId
-    添加token后启动应用,去你的bot发送 /chatid 即可获取
+* 在 all-in-one-bot.yml 添加你的 telegram token
+`从telegram的 @BotFather 发送 /newbot 获取`
+* 在 all-in-one-bot.yml 添加你的 telegram chatId
+`添加token后启动应用,去你的bot发送 /chatid 即可获取`
     
 ## 二. Command List
 ### 1. 加密货币监控功能清单
