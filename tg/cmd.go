@@ -152,6 +152,18 @@ func deleteCron(args string) {
 	api.Cron.CloseTask(arg[0])
 }
 
+// Video
+func ytbDownload(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("ytbDownload 参数有误: %s", args)
+		return
+	}
+
+	api.Video.YoutubeDownload(arg[0], false)
+	
+}
+
 // Default
 func execute(id int64, args string) {
 	if args == "" {

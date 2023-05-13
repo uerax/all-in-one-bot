@@ -22,7 +22,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 - [x] chatgpt
 
-### 3. VPS库存监控功能清单
+### 3. VPS库存监控功能清单(已弃用)
 
 - [ ] vps_monitor_supported_list 查看支持监控的网站
 - [ ] vps_add_supported_list 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
@@ -40,6 +40,11 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 - [x] add_cron 每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)
 - [x] delete_cron 删除 例: 1
+
+### 7. 视频下载
+
+- [x] youtube_download 下载ytb视频
+- [ ] bilibili_download 下载bilibili视频
  
 ## 三. Telegram Commands
 
@@ -60,7 +65,15 @@ chatgpt - chatgpt功能
 cutout - 抠图功能
 ```
 
-`未实现`
+__待实现__
+
+```
+youtube_download - 下载youtube的视频
+bilibili_download - 下载bilibili的视频
+```
+
+__弃用__
+
 ```
 vps_monitor_supported_list - 查看支持监控的网站
 add_vps_monitor - 添加VPS库存监控 例: URL(vps_monitor_supported_list里的)

@@ -75,6 +75,9 @@ func Server() {
 				deleteCron(update.Message.Text)
 			case "add_cron":
 				addCron(update.Message.Text)
+			// Video
+			case "youtube_download":
+				ytbDownload(update.Message.Text)
 			}
 		}
 
@@ -124,7 +127,9 @@ func Server() {
 		case "delete_cron":
 			Cmd = "delete_cron"
 			tips(update.Message.Chat.ID, "输入id(每次触发通知发送的消息带有) 例: 1")
-		
+		case "youtube_download":
+			Cmd = "youtube_download"
+			tips(update.Message.Chat.ID, "输入url或者vid 例: ISqZpXkgNNs")			
 		}
 		
 	}
