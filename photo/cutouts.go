@@ -23,7 +23,7 @@ func NewCutouts() *Cutouts {
 		rmbgKey: goconf.VarStringOrDefault("", "photo", "removebg", "apikey"),
 		pixianKey: goconf.VarStringOrDefault("", "photo", "pixian", "authorization"),
 		C: make(chan map[int64]string, 5),
-		path: goconf.VarStringOrDefault("", "photo", "path"),
+		path: goconf.VarStringOrDefault("/tmp/aio-tgbot/", "photo", "path"),
 	}
 }
 

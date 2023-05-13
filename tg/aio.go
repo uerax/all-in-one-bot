@@ -7,6 +7,7 @@ import (
 	"tg-aio-bot/cron"
 	"tg-aio-bot/crypto"
 	"tg-aio-bot/photo"
+	"tg-aio-bot/video"
 	"tg-aio-bot/vps"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -22,6 +23,7 @@ type Aio struct {
 	PhotoApi   *photo.Cutouts
 	CryptoV2Api *crypto.Probe
 	Cron *cron.Task
+	Video *video.VideoDownload
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -33,6 +35,12 @@ func (t *Aio) SendImg(id int64, img string) {
 	mc := tgbotapi.NewPhoto(id, tgbotapi.FilePath(img))
 	t.bot.Send(mc)
 }
+
+func (t *Aio) SendVideo(id int64, video string) {
+	mc := tgbotapi.NewVideo(id, tgbotapi.FilePath(video))
+	t.bot.Send(mc)
+}
+
 
 func (t *Aio) NewBot(token string) {
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -48,6 +56,7 @@ func (t *Aio) NewBot(token string) {
 	t.PhotoApi = photo.NewCutouts()
 	t.CryptoV2Api = crypto.NewProbe()
 	t.Cron = cron.NewTask()
+	t.Video = video.NewVideoDownload()
 
 	go t.WaitToSend()
 }
@@ -97,6 +106,11 @@ func (t *Aio) WaitToSend() {
 		case v := <-t.CryptoV2Api.Kline:
 			go t.SendMsg(ChatId, v)
 		case v := <-t.Cron.C:
+			go t.SendMsg(ChatId, v)
+		case v := <-t.Video.C:
+			go t.SendVideo(ChatId, v)
+		// error msg
+		case v := <-t.Video.MsgC:
 			go t.SendMsg(ChatId, v)
 		}
 
