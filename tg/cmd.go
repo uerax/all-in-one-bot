@@ -164,6 +164,17 @@ func ytbDownload(args string) {
 	
 }
 
+func ytbAudioDownload(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("ytbDownload 参数有误: %s", args)
+		return
+	}
+
+	api.Video.YoutubeDownload(arg[0], true)
+	
+}
+
 // Default
 func execute(id int64, args string) {
 	if args == "" {

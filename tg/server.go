@@ -78,7 +78,10 @@ func Server() {
 			// Video
 			case "youtube_download":
 				ytbDownload(update.Message.Text)
+			case "youtube_audio_download":
+				ytbAudioDownload(update.Message.Text)
 			}
+			
 		}
 
 		switch update.Message.Command() {
@@ -127,8 +130,12 @@ func Server() {
 		case "delete_cron":
 			Cmd = "delete_cron"
 			tips(update.Message.Chat.ID, "输入id(每次触发通知发送的消息带有) 例: 1")
+		// Video
 		case "youtube_download":
 			Cmd = "youtube_download"
+			tips(update.Message.Chat.ID, "输入url或者vid 例: ISqZpXkgNNs")			
+		case "youtube_audio_download":
+			Cmd = "youtube_audio_download"
 			tips(update.Message.Chat.ID, "输入url或者vid 例: ISqZpXkgNNs")			
 		}
 		
