@@ -44,6 +44,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 ### 7. 视频下载
 
 - [x] youtube_download 下载ytb视频
+- [x] youtube_audio_download 下载ytb音频
 - [ ] bilibili_download 下载bilibili视频
  
 ## 三. Telegram Commands
@@ -63,12 +64,13 @@ delete_crypto_minitor - 删除监控的加密货币 例: BNB,ARB
 get_crypto_ufutures_price - 查询当前合约价格 例 : ETHUSDT
 chatgpt - chatgpt功能
 cutout - 抠图功能
+youtube_download - 下载youtube的视频
+youtube_audio_download - 下载ytb音频
 ```
 
 __待实现__
 
 ```
-youtube_download - 下载youtube的视频
 bilibili_download - 下载bilibili的视频
 ```
 
