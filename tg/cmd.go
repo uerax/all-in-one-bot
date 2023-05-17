@@ -160,8 +160,7 @@ func ytbDownload(args string) {
 		return
 	}
 
-	api.Video.YoutubeDownload(arg[0], false)
-	
+	api.Video.YoutubeDownload(arg[0])
 }
 
 func ytbAudioDownload(args string) {
@@ -171,8 +170,27 @@ func ytbAudioDownload(args string) {
 		return
 	}
 
-	api.Video.YoutubeDownload(arg[0], true)
-	
+	api.Video.YoutubeDownload(arg[0])
+}
+
+func ytbDownloadCut(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 3 {
+		fmt.Printf("ytbDownload 参数有误: %s", args)
+		return
+	}
+
+	api.Video.YoutubeDownload(arg[0], arg[1], arg[2])
+}
+
+func ytbAudioDownloadCut(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 3 {
+		fmt.Printf("ytbAudioDownloadCut 参数有误: %s", args)
+		return
+	}
+
+	api.Video.YoutubeDownload(arg[0], arg[1], arg[2])
 }
 
 // Default

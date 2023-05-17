@@ -80,6 +80,10 @@ func Server() {
 				ytbDownload(update.Message.Text)
 			case "youtube_audio_download":
 				ytbAudioDownload(update.Message.Text)
+			case "youtube_download_cut":
+				ytbDownloadCut(update.Message.Text)
+			case "youtube_audio_download_cut":
+				ytbAudioDownloadCut(update.Message.Text)
 			}
 			
 		}
@@ -137,6 +141,12 @@ func Server() {
 		case "youtube_audio_download":
 			Cmd = "youtube_audio_download"
 			tips(update.Message.Chat.ID, "输入url或者vid 例: ISqZpXkgNNs")			
+		case "youtube_download_cut":
+			Cmd = "youtube_download_cut"
+			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 例: ISqZpXkgNNs 100 2000(s)")
+		case "youtube_audio_download_cut":
+			Cmd = "youtube_download_cut"
+			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 例: ISqZpXkgNNs 0:12:22 0:33:22")			
 		}
 		
 	}
