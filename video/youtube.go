@@ -3,12 +3,11 @@ package video
 import (
 	"io"
 	"os"
-	"time"
 
 	"github.com/kkdai/youtube/v2"
 )
 
-func (v *VideoDownload) YoutubeDownload(url string, audioOnly bool)  {
+func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) {
 
 	client := youtube.Client{}
 
@@ -18,56 +17,83 @@ func (v *VideoDownload) YoutubeDownload(url string, audioOnly bool)  {
 		panic(err)
 	}
 
-	filename := v.path + time.Now().Format("200612150405")
+	filename := v.path + video.Title
 
-	if audioOnly {
-		formats := video.Formats.FindByItag(140)
-	
-		stream, _, err := client.GetStream(video, formats)
-		if err != nil {
-			v.MsgC <- "出现异常,请重试"
-			panic(err)
-		}
+	formats := video.Formats.FindByItag(140)
 
-		filename = filename + ".m4a"
-
-		file, err := os.Create(filename)
-		if err != nil {
-			v.MsgC <- "出现异常,请重试"
-			panic(err)
-		}
-		defer file.Close()
-
-		_, err = io.Copy(file, stream)
-		if err != nil {
-			v.MsgC <- "出现异常,请重试"
-			panic(err)
-		}
-		
-	} else {
-		formats := video.Formats.WithAudioChannels() // only get videos with audio
-		stream, _, err := client.GetStream(video, &formats[0])
-		if err != nil {
-			v.MsgC <- "出现异常,请重试"
-			panic(err)
-		}
-		filename = filename + ".mp4"
-		file, err := os.Create(filename)
-		if err != nil {
-			v.MsgC <- "出现异常,请重试"
-			panic(err)
-		}
-		defer file.Close()
-
-		_, err = io.Copy(file, stream)
-		if err != nil {
-			v.MsgC <- "出现异常,请重试"
-			panic(err)
-		}
-
-		v.C <- filename
-
+	stream, _, err := client.GetStream(video, formats)
+	if err != nil {
+		v.MsgC <- "出现异常,请重试"
+		panic(err)
 	}
-	
+
+	file, err := os.Create(filename + ".m4a")
+	if err != nil {
+		v.MsgC <- "出现异常,请重试"
+		panic(err)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, stream)
+	if err != nil {
+		v.MsgC <- "出现异常,请重试"
+		panic(err)
+	}
+
+	if len(startAndEnd) == 2 {
+		err = v.Cut(filename + ".m4a", startAndEnd[0], startAndEnd[1], filename + "_cut.m4a")
+		if err != nil {
+			v.MsgC <- "请检查是否安装ffmpeg"
+			panic(err)
+		}
+		v.C <- filename + "_cut.m4a"
+		return
+	}
+
+	v.C <- filename + ".m4a"
+
 }
 
+func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
+
+	client := youtube.Client{}
+
+	video, err := client.GetVideo(url)
+	if err != nil {
+		v.MsgC <- "出现异常,请重试"
+		panic(err)
+	}
+
+	filename := v.path + video.Title
+
+	formats := video.Formats.WithAudioChannels() // only get videos with audio
+	stream, _, err := client.GetStream(video, &formats[0])
+	if err != nil {
+		v.MsgC <- "出现异常,请重试"
+		panic(err)
+	}
+	file, err := os.Create(filename + ".mp4")
+	if err != nil {
+		v.MsgC <- "出现异常,请重试"
+		panic(err)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, stream)
+	if err != nil {
+		v.MsgC <- "出现异常,请重试"
+		panic(err)
+	}
+
+	if len(startAndEnd) == 2 {
+		err = v.Cut(filename + ".mp4", startAndEnd[0], startAndEnd[1], filename + "_cut.mp4")
+		if err != nil {
+			v.MsgC <- "请检查是否安装ffmpeg"
+			panic(err)
+		}
+		v.C <- filename + "_cut.mp4"
+		return
+	}
+
+	v.C <- filename + ".mp4"
+}
