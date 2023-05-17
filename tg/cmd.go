@@ -160,7 +160,7 @@ func ytbDownload(args string) {
 		return
 	}
 
-	api.Video.YoutubeDownload(arg[0])
+	go api.Video.YoutubeDownload(arg[0])
 }
 
 func ytbAudioDownload(args string) {
@@ -170,7 +170,7 @@ func ytbAudioDownload(args string) {
 		return
 	}
 
-	api.Video.YoutubeDownload(arg[0])
+	go api.Video.YoutubeDownload(arg[0])
 }
 
 func ytbDownloadCut(args string) {
@@ -180,7 +180,7 @@ func ytbDownloadCut(args string) {
 		return
 	}
 
-	api.Video.YoutubeDownload(arg[0], arg[1], arg[2])
+	go api.Video.YoutubeDownload(arg[0], arg[1], arg[2])
 }
 
 func ytbAudioDownloadCut(args string) {
@@ -190,7 +190,7 @@ func ytbAudioDownloadCut(args string) {
 		return
 	}
 
-	api.Video.YoutubeDownload(arg[0], arg[1], arg[2])
+	go api.Video.YoutubeDownload(arg[0], arg[1], arg[2])
 }
 
 // Default
