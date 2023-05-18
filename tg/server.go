@@ -57,10 +57,10 @@ func Server() {
 			case "get_crypto_ufutures_price":
 				getUFuturesCryptoPrice(update.Message.Chat.ID, update.Message.Text)
 			// Vps
-			// case "vps_monitor_supported_list":
-			// 	vpsMonitorSupportedList(update.Message.Chat.ID)
-			// case "add_vps_monitor":
-			// 	addVpsMonitor(update.Message.Chat.ID, update.Message.Text)
+			case "vps_monitor_supported_list":
+				vpsMonitorSupportedList(update.Message.Chat.ID)
+			case "add_vps_monitor":
+				addVpsMonitor(update.Message.Chat.ID, update.Message.Text)
 			// ChatGPT
 			case "chatgpt":
 				if goconf.VarBoolOrDefault(false, "telegram", "chat") {
@@ -121,12 +121,11 @@ func Server() {
 			Cmd = "get_crypto_ufutures_price"
 			tips(update.Message.Chat.ID, "查询加密货币合约价格 例: \nBNBUSDT")
 		// Vps
-		// case "vps_monitor_supported_list":
-		// 	Cmd = "get_crypto_ufutures_price"
-		// 	vpsMonitorSupportedList(update.Message.Chat.ID)
-		// case "add_vps_monitor":
-		// 	addVpsMonitor(update.Message.Chat.ID, update.Message.Text)
-		// ChatGPT
+		case "vps_monitor_supported_list":
+			tips(update.Message.Chat.ID, "该功能已弃用")
+		case "add_vps_monitor":
+			tips(update.Message.Chat.ID, "该功能已弃用")
+		//ChatGPT
 		case "chatgpt":
 			Cmd = "chatgpt"
 			tips(update.Message.Chat.ID, "发送你的问题 例: \n今天的天气")
@@ -153,10 +152,10 @@ func Server() {
 			tips(update.Message.Chat.ID, "输入url或者vid 例: ISqZpXkgNNs")			
 		case "youtube_download_cut":
 			Cmd = "youtube_download_cut"
-			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 例: ISqZpXkgNNs 100 2000(s)")
+			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 \n例: ISqZpXkgNNs 100 2000(s)")
 		case "youtube_audio_download_cut":
 			Cmd = "youtube_download_cut"
-			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 例: ISqZpXkgNNs 0:12:22 0:33:22")
+			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 \n例: ISqZpXkgNNs 0:12:22 0:33:22")
 		// Sticker And Gif			
 		case "gif_download":
 			Cmd = "gif_download"
@@ -164,7 +163,6 @@ func Server() {
 		case "sticker_download":
 			Cmd = "sticker_download"
 			tips(update.Message.Chat.ID, "发送你的贴纸")
-		
 		}
 		
 	}

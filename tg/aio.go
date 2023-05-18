@@ -3,6 +3,7 @@ package tg
 import (
 	"log"
 	"strings"
+
 	"tg-aio-bot/chatgpt"
 	"tg-aio-bot/cron"
 	"tg-aio-bot/crypto"
@@ -50,6 +51,7 @@ func (t *Aio) SendFile(id int64, file string) {
 
 func (t *Aio) SendAudio(id int64, file string) {
 	mc := tgbotapi.NewAudio(id, tgbotapi.FilePath(file))
+	
 	t.bot.Send(mc)
 }
 
