@@ -24,6 +24,8 @@ type Aio struct {
 	CryptoV2Api *crypto.Probe
 	Cron *cron.Task
 	Video *video.VideoDownload
+	Gif *Gif
+	Sticker *Sticker
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -38,6 +40,11 @@ func (t *Aio) SendImg(id int64, img string) {
 
 func (t *Aio) SendVideo(id int64, video string) {
 	mc := tgbotapi.NewVideo(id, tgbotapi.FilePath(video))
+	t.bot.Send(mc)
+}
+
+func (t *Aio) SendFile(id int64, file string) {
+	mc := tgbotapi.NewDocument(id, tgbotapi.FilePath(file))
 	t.bot.Send(mc)
 }
 
@@ -57,6 +64,8 @@ func (t *Aio) NewBot(token string) {
 	t.CryptoV2Api = crypto.NewProbe()
 	t.Cron = cron.NewTask()
 	t.Video = video.NewVideoDownload()
+	t.Gif = NewGif()
+	t.Sticker = NewSticker()
 
 	go t.WaitToSend()
 }
@@ -111,6 +120,16 @@ func (t *Aio) WaitToSend() {
 			go t.SendVideo(ChatId, v)
 		// error msg
 		case v := <-t.Video.MsgC:
+			go t.SendMsg(ChatId, v)
+		// GIF
+		case v := <-t.Gif.C:
+			go t.SendFile(ChatId, v)
+		case v := <-t.Gif.MsgC:
+			go t.SendMsg(ChatId, v)
+		// Sticker
+		case v := <-t.Sticker.C:
+			go t.SendFile(ChatId, v)
+		case v := <-t.Sticker.MsgC:
 			go t.SendMsg(ChatId, v)
 		}
 
