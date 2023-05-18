@@ -84,7 +84,17 @@ func Server() {
 				ytbDownloadCut(update.Message.Text)
 			case "youtube_audio_download_cut":
 				ytbAudioDownloadCut(update.Message.Text)
+			// Sticker And Gif
+			case "sticker_download":
+				if update.Message.Sticker != nil {
+					stickerDownload(update.Message.Sticker.FileID)                          
+				}
+			case "gif_download":
+				if update.Message.Animation != nil {
+					gifDownload(update.Message.Animation.FileID)
+				}
 			}
+		
 			
 		}
 
@@ -146,7 +156,15 @@ func Server() {
 			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 例: ISqZpXkgNNs 100 2000(s)")
 		case "youtube_audio_download_cut":
 			Cmd = "youtube_download_cut"
-			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 例: ISqZpXkgNNs 0:12:22 0:33:22")			
+			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 例: ISqZpXkgNNs 0:12:22 0:33:22")
+		// Sticker And Gif			
+		case "gif_download":
+			Cmd = "gif_download"
+			tips(update.Message.Chat.ID, "发送需要转换的GIF图")
+		case "sticker_download":
+			Cmd = "sticker_download"
+			tips(update.Message.Chat.ID, "发送你的贴纸")
+		
 		}
 		
 	}

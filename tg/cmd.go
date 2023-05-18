@@ -14,7 +14,7 @@ func addKlineStrategyProbe(args string) {
 		fmt.Printf("addKlineStrategyProbe 参数有误: %s", args)
 		return
 	}
-	api.CryptoV2Api.AddKLineProbe(arg[0])
+	go api.CryptoV2Api.AddKLineProbe(arg[0])
 }
 
 func deleteKlineStrategyProbe(args string) {
@@ -23,7 +23,7 @@ func deleteKlineStrategyProbe(args string) {
 		fmt.Printf("deleteKlineStrategyProbe 参数有误: %s", args)
 		return
 	}
-	api.CryptoV2Api.StopKLineProbe(arg[0])
+	go api.CryptoV2Api.StopKLineProbe(arg[0])
 }
 
 func addCryptoGrowthMonitor(id int64, args string) {
@@ -33,7 +33,7 @@ func addCryptoGrowthMonitor(id int64, args string) {
 		return
 	}
 	
-	api.CryptoApi.AddHighMonitor(id, arg[0], arg[1])
+	go api.CryptoApi.AddHighMonitor(id, arg[0], arg[1])
 
 }
 
@@ -44,7 +44,7 @@ func addCryptoDeclineMonitor(id int64, args string) {
 		return
 	}
 	
-	api.CryptoApi.AddLowMonitor(id, arg[0], arg[1])
+	go api.CryptoApi.AddLowMonitor(id, arg[0], arg[1])
 }
 
 func getCryptoPrice(id int64, args string) {
@@ -61,7 +61,7 @@ func getCryptoPrice(id int64, args string) {
 		sb.WriteString(":")
 		sb.WriteString(v)
 	}
-	api.SendMsg(id, sb.String())	
+	go api.SendMsg(id, sb.String())	
 }
 
 func deleteCryptoMinitor(id int64, args string) {
@@ -69,7 +69,7 @@ func deleteCryptoMinitor(id int64, args string) {
 	if args == "" {
 		return
 	}
-	api.CryptoApi.DeleteMonitor(id, arg...)
+	go api.CryptoApi.DeleteMonitor(id, arg...)
 }
 
 func getUFuturesCryptoPrice(id int64, args string) {
@@ -81,7 +81,7 @@ func getUFuturesCryptoPrice(id int64, args string) {
 	sb.WriteString(args)
 	sb.WriteString(":")
 	sb.WriteString(ctp)
-	api.SendMsg(id, sb.String())	
+	go api.SendMsg(id, sb.String())	
 }
 
 // ChatGPT
@@ -90,7 +90,7 @@ func chatGPT(id int64, args string) {
 		return
 	}
 
-	api.ChatGPTApi.Ask(id, args)
+	go api.ChatGPTApi.Ask(id, args)
 }
 
 // Vps
@@ -104,7 +104,7 @@ func vpsMonitorSupportedList(id int64) {
 		sb.WriteString("] - ")
 		sb.WriteString(v.Url)
 	}
-	api.SendMsg(id, sb.String())
+	go api.SendMsg(id, sb.String())
 }
 
 func addVpsMonitor(id int64, args string) {
@@ -112,7 +112,7 @@ func addVpsMonitor(id int64, args string) {
 		return
 	}
 
-	api.VpsApi.AddMonitor(id, args)
+	go api.VpsApi.AddMonitor(id, args)
 }
 
 // Photo
@@ -125,12 +125,12 @@ func cutouts(id int64, photos []tgbotapi.PhotoSize) {
 		return
 	}
 	
-	api.PhotoApi.RemoveBackground(id, file)
+	go api.PhotoApi.RemoveBackground(id, file)
 }
 
 // Telegram
 func chatid(id int64) {
-	api.SendMsg(id, fmt.Sprintf("你的ChatId为 : %d", id))
+	go api.SendMsg(id, fmt.Sprintf("你的ChatId为 : %d", id))
 }
 
 // Cron
@@ -140,7 +140,7 @@ func addCron(args string) {
 		fmt.Printf("addCron 参数有误: %s", args)
 		return
 	}
-	api.Cron.AddTask(arg[0], arg[1])
+	go api.Cron.AddTask(arg[0], arg[1])
 }
 
 func deleteCron(args string) {
@@ -149,7 +149,7 @@ func deleteCron(args string) {
 		fmt.Printf("deleteCron 参数有误: %s", args)
 		return
 	}
-	api.Cron.CloseTask(arg[0])
+	go api.Cron.CloseTask(arg[0])
 }
 
 // Video
@@ -170,7 +170,7 @@ func ytbAudioDownload(args string) {
 		return
 	}
 
-	go api.Video.YoutubeDownload(arg[0])
+	go api.Video.YoutubeAudioDownload(arg[0])
 }
 
 func ytbDownloadCut(args string) {
@@ -190,7 +190,16 @@ func ytbAudioDownloadCut(args string) {
 		return
 	}
 
-	go api.Video.YoutubeDownload(arg[0], arg[1], arg[2])
+	go api.Video.YoutubeAudioDownload(arg[0], arg[1], arg[2])
+}
+
+// Sticker And Gif
+func stickerDownload(args string) {
+	go api.Sticker.StickerDownload(args)
+}
+
+func gifDownload(args string) {
+	go api.Gif.GifDownload(args)
 }
 
 // Default
@@ -199,9 +208,9 @@ func execute(id int64, args string) {
 		return
 	}
 
-	api.ChatGPTApi.Ask(id, args)
+	go api.ChatGPTApi.Ask(id, args)
 }
 
 func tips(id int64, msg string) {
-	api.SendMsg(id, msg)
+	go api.SendMsg(id, msg)
 }
