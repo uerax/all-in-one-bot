@@ -63,6 +63,14 @@ func (t *Gif) GifDownload(fileId string) {
 	fileExt := filepath.Ext(fileName)
 	newFileName := strings.TrimSuffix(fileName, fileExt)
 	filePath := filepath.Join(t.path, newFileName + ".mp4")
+	if _, err := os.Stat(t.path); os.IsNotExist(err) { // 检查目录是否存在
+		err := os.Mkdir(t.path, os.ModePerm) // 创建目录
+		if err != nil {
+			fmt.Println("创建本地临时文件夹失败")
+			t.MsgC <- "创建本地临时文件夹失败"
+			return
+		}
+	}
 	fileLocal, err := os.Create(filePath + ".mp4")
 	if err != nil {
 		fmt.Printf("无法创建本地文件：%s\n", err.Error())

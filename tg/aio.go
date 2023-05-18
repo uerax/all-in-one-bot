@@ -48,6 +48,11 @@ func (t *Aio) SendFile(id int64, file string) {
 	t.bot.Send(mc)
 }
 
+func (t *Aio) SendAudio(id int64, file string) {
+	mc := tgbotapi.NewAudio(id, tgbotapi.FilePath(file))
+	t.bot.Send(mc)
+}
+
 
 func (t *Aio) NewBot(token string) {
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -116,9 +121,11 @@ func (t *Aio) WaitToSend() {
 			go t.SendMsg(ChatId, v)
 		case v := <-t.Cron.C:
 			go t.SendMsg(ChatId, v)
+		// Youtube
 		case v := <-t.Video.C:
 			go t.SendVideo(ChatId, v)
-		// error msg
+		case v := <-t.Video.AudioC:
+			go t.SendAudio(ChatId, v)
 		case v := <-t.Video.MsgC:
 			go t.SendMsg(ChatId, v)
 		// GIF
