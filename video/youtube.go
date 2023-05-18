@@ -29,6 +29,15 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 		return
 	}
 
+
+	if _, err := os.Stat(v.path); os.IsNotExist(err) { // 检查目录是否存在
+		err := os.Mkdir(v.path, os.ModePerm) // 创建目录
+		if err != nil {
+			fmt.Println("创建本地临时文件夹失败")
+			v.MsgC <- "创建本地临时文件夹失败"
+			return
+		}
+	}
 	file, err := os.Create(filename + ".m4a")
 	if err != nil {
 		v.MsgC <- "出现异常,请重试"
@@ -56,7 +65,7 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 		return
 	}
 
-	v.C <- filename + ".m4a"
+	v.AudioC <- filename + ".m4a"
 
 }
 
@@ -79,6 +88,15 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 		v.MsgC <- "出现异常,请重试"
 		fmt.Println(err)
 		return
+	}
+
+	if _, err := os.Stat(v.path); os.IsNotExist(err) { // 检查目录是否存在
+		err := os.Mkdir(v.path, os.ModePerm) // 创建目录
+		if err != nil {
+			fmt.Println("创建本地临时文件夹失败")
+			v.MsgC <- "创建本地临时文件夹失败"
+			return
+		}
 	}
 	file, err := os.Create(filename + ".mp4")
 	if err != nil {
