@@ -12,6 +12,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 - [x] add_kline_strategy_probe 探测连续3根一直走势的k线 例: btcusdt
 - [x] delete_kline_strategy_probe 删除探测 例: btcusdt
+- [x] list_kline_strategy_probe 列出当前探测的加密货币
 - [x] add_crypto_growth_monitor 加密货币 提示价格 例: BNB 1110
 - [x] add_crypto_decline_monitor 加密货币 提示价格 例: BNB 1110
 - [x] get_crypto_price 加密货币[可选]
@@ -92,6 +93,7 @@ __通过 @BotFather /setcommands 添加__
 chatid - 查询chatid
 add_kline_strategy_probe - 探测连续3根一直走势的k线 例: btcusdt
 delete_kline_strategy_probe - 删除探测 例: btcusdt
+list_kline_strategy_probe - 列出当前探测的加密货币
 add_cron - 每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)
 delete_cron - 删除 例: 1
 add_crypto_growth_monitor - 添加加密货币高线监控 例: BNB 1.1 (单位USD)

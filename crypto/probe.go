@@ -3,6 +3,7 @@ package crypto
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/uerax/goconf"
@@ -35,6 +36,16 @@ func NewProbe() *Probe {
 		api:       NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"), goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
 		task:      make(map[string]context.CancelFunc),
 	}
+}
+
+func (t *Probe) ListKLineProbe() string {
+	b := strings.Builder{}
+	b.WriteString("当前正在探测的加密货币有:")
+	for k, _ := range t.task {
+		b.WriteString("\n")
+		b.WriteString(k)
+	}
+	return b.String()
 }
 
 func (t *Probe) AddKLineProbe(crypto string) {

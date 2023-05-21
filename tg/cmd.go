@@ -26,6 +26,16 @@ func deleteKlineStrategyProbe(args string) {
 	go api.CryptoV2Api.StopKLineProbe(arg[0])
 }
 
+func deleteKlineStrategyProbeTip() {
+	msg := api.CryptoV2Api.ListKLineProbe()
+	go api.SendMsg(ChatId, msg + "\n\n请输入要删除的u本位合约 例: btcusdt")
+}
+
+func listKlineStrategyProbe() {
+	msg := api.CryptoV2Api.ListKLineProbe()
+	go api.SendMsg(ChatId, msg)
+}
+
 func addCryptoGrowthMonitor(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {

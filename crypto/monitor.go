@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"tg-aio-bot/common"
 	"time"
@@ -57,6 +58,7 @@ func (t *CryptoMonitor) Context() {
 }
 
 func (t *CryptoMonitor) AddHighMonitor(id int64, crypto, price string) {
+	crypto = strings.ToUpper(crypto)
 	usr, _ := t.UTC.LoadOrStore(id, &user{
 		Id: id,
 		HighLine: make(map[string]string),
@@ -70,6 +72,7 @@ func (t *CryptoMonitor) AddHighMonitor(id int64, crypto, price string) {
 }
 
 func (t *CryptoMonitor) AddLowMonitor(id int64, crypto, price string) {
+	crypto = strings.ToUpper(crypto)
 	usr, _ := t.UTC.LoadOrStore(id, &user{
 		Id: id,
 		HighLine: make(map[string]string),
@@ -193,7 +196,7 @@ func (t *CryptoMonitor) probe(cryptos []string) {
 
 func (t *CryptoMonitor) GetPrice(id int64, crypto ...string) map[string]string {
 	for k := range crypto {
-		crypto[k] = crypto[k] + t.unit
+		crypto[k] = strings.ToUpper(crypto[k]) + t.unit
 	}
 	if crypto == nil {
 		if value, ok := t.UTC.Load(id); ok {
@@ -212,7 +215,7 @@ func (t *CryptoMonitor) GetPrice(id int64, crypto ...string) map[string]string {
 
 func (t *CryptoMonitor) DeleteMonitor(id int64, crypto ...string) {
 	for k := range crypto {
-		crypto[k] = crypto[k] + t.unit
+		crypto[k] = strings.ToUpper(crypto[k]) + t.unit
 	}
 	if crypto != nil {
 		value, ok := t.UTC.Load(id)
