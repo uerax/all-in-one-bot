@@ -104,7 +104,9 @@ func Server() {
 			tips(update.Message.Chat.ID, "输入要监控的u本位合约 例: \nbtcusdt")
 		case "delete_kline_strategy_probe":
 			Cmd = "delete_kline_strategy_probe"
-			tips(update.Message.Chat.ID, "输入要删除的u本位合约监控 例: \nbtcusdt")
+			deleteKlineStrategyProbeTip()
+		case "list_kline_strategy_probe":
+			listKlineStrategyProbe()
 		case "add_crypto_growth_monitor":
 			Cmd = "add_crypto_growth_monitor"
 			tips(update.Message.Chat.ID, "添加加密货币高线监控 例: \nBNB 1.1 (单位USDT)")
