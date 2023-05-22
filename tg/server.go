@@ -84,6 +84,8 @@ func Server() {
 				ytbDownloadCut(update.Message.Text)
 			case "youtube_audio_download_cut":
 				ytbAudioDownloadCut(update.Message.Text)
+			case "bilibili_download":
+				bilibiliDownload(update.Message.Text)
 			// Sticker And Gif
 			case "sticker_download":
 				if update.Message.Sticker != nil {
@@ -158,6 +160,9 @@ func Server() {
 		case "youtube_audio_download_cut":
 			Cmd = "youtube_download_cut"
 			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 \n例: ISqZpXkgNNs 0:12:22 0:33:22")
+		case "bilibili_download":
+			Cmd = "bilibili_download"
+			tips(update.Message.Chat.ID, "输入url 例: https://www.bilibili.com/video/BV1xP411d74V")
 		// Sticker And Gif			
 		case "gif_download":
 			Cmd = "gif_download"
