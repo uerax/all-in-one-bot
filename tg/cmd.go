@@ -176,7 +176,7 @@ func ytbDownload(args string) {
 func ytbAudioDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("ytbDownload 参数有误: %s", args)
+		fmt.Printf("ytbAudioDownload 参数有误: %s", args)
 		return
 	}
 
@@ -186,7 +186,7 @@ func ytbAudioDownload(args string) {
 func ytbDownloadCut(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 3 {
-		fmt.Printf("ytbDownload 参数有误: %s", args)
+		fmt.Printf("ytbDownloadCut 参数有误: %s", args)
 		return
 	}
 
@@ -201,6 +201,16 @@ func ytbAudioDownloadCut(args string) {
 	}
 
 	go api.Video.YoutubeAudioDownload(arg[0], arg[1], arg[2])
+}
+
+func bilibiliDownload(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("bilibiliDownload 参数有误: %s", args)
+		return
+	}
+
+	go api.Video.BilibiliDownload(arg[0])
 }
 
 // Sticker And Gif
