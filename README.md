@@ -50,7 +50,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] youtube_download_cut 下载ytb的视频并裁剪(需要安装ffmpeg)
 - [x] youtube_audio_download_cut 下载ytb音频并裁剪(需要安装ffmpeg)
 - [ ] twitter_download 下载twitter的视频
-- [ ] douyin_download 下载douyin的视频
+- [x] douyin_download 下载douyin的视频
 
 ### 8. 贴纸和GIF下载
 
@@ -110,6 +110,7 @@ youtube_audio_download - 下载ytb音频
 youtube_download_cut - 下载youtube的视频并裁剪
 youtube_audio_download_cut - 下载ytb音频并裁剪
 bilibili_download - 下载bilibili的视频
+douyin_download - 下载douyin的视频
 sticker_download - 下载贴纸表情
 gif_download - 下载GIF
 ```
@@ -118,7 +119,7 @@ __待实现__
 
 ```
 twitter_download - 下载twitter的视频
-douyin_download - 下载douyin的视频
+
 ```
 
 __弃用__

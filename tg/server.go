@@ -86,6 +86,10 @@ func Server() {
 				ytbAudioDownloadCut(update.Message.Text)
 			case "bilibili_download":
 				bilibiliDownload(update.Message.Text)
+			case "douyin_download":
+				douyinDownload(update.Message.Text)
+			case "twitter_download":
+				twitterDownload(update.Message.Text)
 			// Sticker And Gif
 			case "sticker_download":
 				if update.Message.Sticker != nil {
@@ -163,6 +167,12 @@ func Server() {
 		case "bilibili_download":
 			Cmd = "bilibili_download"
 			tips(update.Message.Chat.ID, "输入url 例: https://www.bilibili.com/video/BV1xP411d74V")
+		case "douyin_download":
+			Cmd = "douyin_download"
+			tips(update.Message.Chat.ID, "输入url 例: https://v.douyin.com/UBt7heL/")
+		case "twitter_download":
+			Cmd = "twitter_download"
+			tips(update.Message.Chat.ID, "输入url 例: https://twitter.com/SpaceX/status/1660401510969212929?s=20")
 		// Sticker And Gif			
 		case "gif_download":
 			Cmd = "gif_download"
