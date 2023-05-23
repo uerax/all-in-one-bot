@@ -1,6 +1,8 @@
 package video
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestVideoDownload_TwitterDownload(t *testing.T) {
 	vd := NewVideoDownload()
