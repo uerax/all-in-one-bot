@@ -213,6 +213,26 @@ func bilibiliDownload(args string) {
 	go api.Video.BilibiliDownload(arg[0])
 }
 
+func douyinDownload(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("douyinDownload 参数有误: %s", args)
+		return
+	}
+
+	go api.Video.DouyinDownload(arg[0])
+}
+
+func twitterDownload(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 1 {
+		fmt.Printf("twitterDownload 参数有误: %s", args)
+		return
+	}
+
+	go api.Video.TwitterDownload(arg[0])
+}
+
 // Sticker And Gif
 func stickerDownload(args string) {
 	go api.Sticker.StickerDownload(args)
