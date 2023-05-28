@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"tg-aio-bot/common"
 
 	"github.com/kkdai/youtube/v2"
 )
@@ -62,10 +63,12 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 		}
 		
 		v.C <- filename + "_cut.m4a"
+		go common.DeleteFileAfterTime(filename + "_cut.m4a", 5)
 		return
 	}
 
 	v.AudioC <- filename + ".m4a"
+	go common.DeleteFileAfterTime(filename + ".m4a", 5)
 
 }
 
@@ -122,8 +125,10 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 		}
 
 		v.C <- filename + "_cut.mp4"
+		go common.DeleteFileAfterTime(filename + "_cut.mp4", 5)
 		return
 	}
 
 	v.C <- filename + ".mp4"
+	go common.DeleteFileAfterTime(filename + ".mp4", 5)
 }

@@ -2,6 +2,7 @@ package video
 
 import (
 	"fmt"
+	"tg-aio-bot/common"
 
 	"github.com/iawia002/lux/downloader"
 	"github.com/iawia002/lux/extractors"
@@ -24,5 +25,6 @@ func (v *VideoDownload) DouyinDownload(url string) {
 		}
 		filename := v.path + d[0].Title + ".mp4"
 		v.C <- filename
+		go common.DeleteFileAfterTime(v.path + d[0].Title + ".mp4", 5)
 	}
 }

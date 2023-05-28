@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"time"
 )
 
 func InSlice(slice, val any) bool {
@@ -56,4 +57,9 @@ func Zip(gifFile, outFile string) error {
 	}
 
 	return nil
+}
+
+func DeleteFileAfterTime(path string, m int) {
+	time.Sleep(time.Minute * time.Duration(m))
+	os.Remove(path)
 }
