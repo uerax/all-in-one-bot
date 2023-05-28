@@ -126,4 +126,5 @@ func (t *Sticker) StickerDownload(fileId string) {
 	}
 
 	t.C <- filePath
+	go common.DeleteFileAfterTime(filePath, 5)
 }

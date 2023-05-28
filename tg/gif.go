@@ -104,4 +104,5 @@ func (t *Gif) GifDownload(fileId string) {
 	}
 
 	t.C <- filePath + ".zip"
+	go common.DeleteFileAfterTime(filePath + ".zip", 5)
 }

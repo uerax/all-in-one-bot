@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"tg-aio-bot/common"
 
 	"github.com/uerax/goconf"
 )
@@ -159,4 +160,5 @@ func (t *Cutouts) removebg(id int64, uri string) {
 	t.C <- map[int64]string{
 		id:filename,
 	}
+	go common.DeleteFileAfterTime(filename, 5)
 }
