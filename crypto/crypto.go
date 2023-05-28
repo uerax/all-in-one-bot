@@ -100,16 +100,16 @@ func (t *Crypto) FuturesPrice(name string) (prices string) {
 }
 
 // 前3根k线的涨跌结果,1 涨 -1 跌
-func (t *Crypto) UFutureKline(interval string, limit int, symbol string) int {
+func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 	url := fmt.Sprintf("https://fapi.binance.com/fapi/v1/klines?symbol=%s&interval=%s&limit=%d", symbol, interval, limit)
 
-	res := 0
+	res := make([]int, 0, 5)
 
 	// 发送HTTP请求
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("请求失败：", err)
-		return res
+		return nil
 	}
 	defer resp.Body.Close()
 
@@ -125,9 +125,9 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) int {
 		end, _ := strconv.ParseFloat(kline[4].(string), 64)
 		start, _ := strconv.ParseFloat(kline[1].(string), 64)
 		if end - start >= 0 {
-			res += 1
+			res = append(res, 1)
 		} else {
-			res += -1
+			res = append(res, -1)
 		}
 		
 	}
