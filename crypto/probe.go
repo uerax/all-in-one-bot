@@ -72,10 +72,12 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 	time.Sleep(time.Duration(instance) * time.Second)
 
 	do := func() {
-		kline := t.api.UFutureKline("15m", 3, crypto)
-		if kline == 3 || kline == -3 {
+		kline := t.api.UFutureKline("15m", 5, crypto)
+
+		if len(kline) == 5 && ((kline[4] + kline[3] + kline[2] == -3 && kline[0] + kline[1] != -2) || (kline[4] + kline[3] + kline[2] == 3 && kline[0] + kline[1] != 2)) {
 			t.Kline <- fmt.Sprintf("永续合约: %s 连续三根15m的K线走势一致", crypto)
 		}
+		
 	}
 	do()
 
