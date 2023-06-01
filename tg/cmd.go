@@ -12,6 +12,7 @@ func addKlineStrategyProbe(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("addKlineStrategyProbe 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 	go api.CryptoV2Api.AddKLineProbe(arg[0])
@@ -21,6 +22,7 @@ func deleteKlineStrategyProbe(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("deleteKlineStrategyProbe 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 	go api.CryptoV2Api.StopKLineProbe(arg[0])
@@ -40,6 +42,7 @@ func addCryptoGrowthMonitor(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
 		fmt.Printf("addCryptoGrowthMonitor 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 	
@@ -51,6 +54,7 @@ func addCryptoDeclineMonitor(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
 		fmt.Printf("addCryptoDeclineMonitor 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 	
@@ -60,6 +64,7 @@ func addCryptoDeclineMonitor(id int64, args string) {
 func getCryptoPrice(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if args == "" {
+		go api.SendMessage("参数有误")
 		arg = nil
 	}
 	ctp := api.CryptoApi.GetPrice(id, arg...)
@@ -77,6 +82,7 @@ func getCryptoPrice(id int64, args string) {
 func deleteCryptoMinitor(id int64, args string) {
 	arg := strings.Split(args, ",")
 	if args == "" {
+		go api.SendMessage("参数有误")
 		return
 	}
 	go api.CryptoApi.DeleteMonitor(id, arg...)
@@ -94,9 +100,54 @@ func getUFuturesCryptoPrice(id int64, args string) {
 	go api.SendMsg(id, sb.String())	
 }
 
+func addMemeGrowthMonitor(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 3 {
+		fmt.Printf("addMemeGrowthMonitor 参数有误: %s", args)
+		go api.SendMessage("参数有误")
+		return
+	}
+
+	go api.CryptoV2Api.MemeGrowthMonitor(arg[0], arg[1], arg[2])
+}
+
+func addMemeDeclineMonitor(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 3 {
+		fmt.Printf("addMemeDeclineMonitor 参数有误: %s", args)
+		go api.SendMessage("参数有误")
+		return
+	}
+
+	go api.CryptoV2Api.MemeDeclineMonitor(arg[0], arg[1], arg[2])
+}
+
+func deleteMemeMonitor(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 2 {
+		fmt.Printf("deleteMemeMonitor 参数有误: %s", args)
+		go api.SendMessage("参数有误")
+		return
+	}
+
+	go api.CryptoV2Api.CloseMemeMonitor(arg[0], arg[1])
+}
+
+func getMeme(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 2 {
+		fmt.Printf("getMeme 参数有误: %s", args)
+		go api.SendMessage("参数有误")
+		return
+	}
+
+	go api.CryptoV2Api.MemePrice(arg[0], arg[1])
+}
+
 // ChatGPT
 func chatGPT(id int64, args string) {
 	if args == "" {
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -119,6 +170,7 @@ func vpsMonitorSupportedList(id int64) {
 
 func addVpsMonitor(id int64, args string) {
 	if args == "" {
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -132,6 +184,7 @@ func cutouts(id int64, photos []tgbotapi.PhotoSize) {
 	file, err := api.bot.GetFileDirectURL(fileID)
 	if err != nil {
 		fmt.Println(err)
+		go api.SendMessage("图片读取失败,请重新发送")
 		return
 	}
 	
@@ -148,6 +201,7 @@ func addCron(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
 		fmt.Printf("addCron 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 	go api.Cron.AddTask(arg[0], arg[1])
@@ -157,6 +211,7 @@ func deleteCron(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("deleteCron 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 	go api.Cron.CloseTask(arg[0])
@@ -167,6 +222,7 @@ func ytbDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("ytbDownload 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -177,6 +233,7 @@ func ytbAudioDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("ytbAudioDownload 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -187,6 +244,7 @@ func ytbDownloadCut(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 3 {
 		fmt.Printf("ytbDownloadCut 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -197,6 +255,7 @@ func ytbAudioDownloadCut(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 3 {
 		fmt.Printf("ytbAudioDownloadCut 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -207,6 +266,7 @@ func bilibiliDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("bilibiliDownload 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -217,6 +277,7 @@ func douyinDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("douyinDownload 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 
@@ -227,6 +288,7 @@ func twitterDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
 		fmt.Printf("twitterDownload 参数有误: %s", args)
+		go api.SendMessage("参数有误")
 		return
 	}
 

@@ -56,6 +56,14 @@ func Server() {
 				deleteCryptoMinitor(update.Message.Chat.ID, update.Message.Text)
 			case "get_crypto_ufutures_price":
 				getUFuturesCryptoPrice(update.Message.Chat.ID, update.Message.Text)
+			case "add_meme_growth_monitor":
+				addMemeGrowthMonitor(update.Message.Text)
+			case "add_meme_decline_monitor":
+				addMemeDeclineMonitor(update.Message.Text)
+			case "delete_meme_monitor":
+				deleteMemeMonitor(update.Message.Text)
+			case "get_meme":
+				getMeme(update.Message.Text)
 			// Vps
 			case "vps_monitor_supported_list":
 				vpsMonitorSupportedList(update.Message.Chat.ID)
@@ -101,7 +109,6 @@ func Server() {
 				}
 			}
 		
-			
 		}
 
 		switch update.Message.Command() {
@@ -115,10 +122,10 @@ func Server() {
 			listKlineStrategyProbe()
 		case "add_crypto_growth_monitor":
 			Cmd = "add_crypto_growth_monitor"
-			tips(update.Message.Chat.ID, "添加加密货币高线监控 例: \nBNB 1.1 (单位USDT)")
+			tips(update.Message.Chat.ID, "添加加密货币高线监控 例: \nBNB 1.1")
 		case "add_crypto_decline_monitor":
 			Cmd = "add_crypto_decline_monitor"
-			tips(update.Message.Chat.ID, "添加加密货币低线监控 例: \nBNB 1.1 (单位USDT)")
+			tips(update.Message.Chat.ID, "添加加密货币低线监控 例: \nBNB 1.1")
 		case "get_crypto_price":
 			Cmd = "get_crypto_price"
 			tips(update.Message.Chat.ID, "查询加密货币价格 例: \nBNB")
@@ -128,6 +135,18 @@ func Server() {
 		case "get_crypto_ufutures_price":
 			Cmd = "get_crypto_ufutures_price"
 			tips(update.Message.Chat.ID, "查询加密货币合约价格 例: \nBNBUSDT")
+		case "add_meme_growth_monitor":
+			Cmd = "add_meme_growth_monitor"
+			tips(update.Message.Chat.ID, "添加加meme币高线监控 token chain price 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth 0.00000123")
+		case "add_meme_decline_monitor":
+			Cmd = "add_meme_decline_monitor"
+			tips(update.Message.Chat.ID, "添加加meme币低线监控 token chain price 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth 0.00000123")
+		case "delete_meme_monitor":
+			Cmd = "delete_meme_monitor"
+			tips(update.Message.Chat.ID, "删除meme币监控 token chain 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth")
+		case "get_meme":
+			Cmd = "get_meme"
+			tips(update.Message.Chat.ID, "获取meme币信息 token chain 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth")
 		// Vps
 		case "vps_monitor_supported_list":
 			tips(update.Message.Chat.ID, "该功能已弃用")

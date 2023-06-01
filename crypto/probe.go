@@ -3,6 +3,7 @@ package crypto
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,9 +22,12 @@ type Probe struct {
 	LowLine   map[string]*line
 	C         chan map[string]string
 	Kline     chan string
+	Meme     chan string
 	frequency int64
 	api       *Crypto
 	task      map[string]context.CancelFunc
+	memeHighTask  map[string]context.CancelFunc
+	memeLowTask  map[string]context.CancelFunc
 }
 
 func NewProbe() *Probe {
@@ -32,9 +36,12 @@ func NewProbe() *Probe {
 		LowLine:   make(map[string]*line),
 		C:         make(chan map[string]string),
 		Kline:     make(chan string, 5),
+		Meme:     make(chan string, 5),
 		frequency: goconf.VarInt64OrDefault(600, "crypto", "monitor", "frequency"),
 		api:       NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"), goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
 		task:      make(map[string]context.CancelFunc),
+		memeLowTask:  make(map[string]context.CancelFunc),
+		memeHighTask:  make(map[string]context.CancelFunc),
 	}
 }
 
@@ -90,6 +97,95 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 			return
 		case <-ticker.C:
 			do()
+		}
+	}
+}
+
+func (p *Probe) MemePrice(query string, chain string) {
+	pair := p.api.MemePrice(query, chain)
+	s := fmt.Sprintf("__%s:$%s__\nNet️work: %s\nPrice: %s\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr)
+	p.Meme <- s
+}
+
+func (p *Probe) CloseMemeMonitor(query string, chain string) {
+	if _, ok := p.memeHighTask[query+chain]; ok {
+		delete(p.memeHighTask, query+chain)
+		p.Meme <- query + ": 上涨监控已关闭"
+	}
+	if _, ok := p.memeLowTask[query+chain]; ok {
+		delete(p.memeLowTask, query+chain)
+		p.Meme <- query + ": 下跌监控已关闭"
+	}
+}
+
+func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
+	t := time.NewTicker(time.Minute)
+	ctx, cf := context.WithCancel(context.Background())
+	p.memeHighTask[query+chain] = cf
+	p.Meme <- "开始监控: " + query
+	for {
+		select {
+		case <- t.C:
+			line, err := strconv.ParseFloat(price, 64)
+			if err != nil {
+				p.Meme <- "输入的价格有误,无法识别"
+				fmt.Println("价格转换异常：", err)
+				delete(p.memeHighTask, query+chain)
+				return
+			}
+			pair := p.api.MemePrice(query, chain)
+			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
+			if err != nil {
+				p.Meme <- "价格转换异常,请检查日志"
+				fmt.Println("价格转换异常：", err)
+				delete(p.memeHighTask, query+chain)
+				return
+			}
+			if line <= now {
+				s := fmt.Sprintf("__价格已上涨到监控位置: %s__\n__%s:$%s__\nNet️work: %s\nPrice: %s\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)",pair.PriceUsd, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr)
+				p.Meme <- s
+				delete(p.memeHighTask, query+chain)
+				return
+			}
+		case <-ctx.Done():
+			p.Meme <- query+"价格监控已关闭"
+			return
+		}
+	}
+}
+
+func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
+	t := time.NewTicker(time.Minute)
+	ctx, cf := context.WithCancel(context.Background())
+	p.memeLowTask[query+chain] = cf
+	p.Meme <- "开始监控: " + query
+	for {
+		select {
+		case <- t.C:
+			line, err := strconv.ParseFloat(price, 64)
+			if err != nil {
+				p.Meme <- "输入的价格有误,无法识别"
+				fmt.Println("价格转换异常：", err)
+				delete(p.memeLowTask, query+chain)
+				return
+			}
+			pair := p.api.MemePrice(query, chain)
+			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
+			if err != nil {
+				p.Meme <- "价格转换异常,请检查日志"
+				fmt.Println("价格转换异常：", err)
+				delete(p.memeLowTask, query+chain)
+				return
+			}
+			if line >= now {
+				s := fmt.Sprintf("__价格下跌到监控位置: %s__\n__%s:$%s__\nNet️work: %s\nPrice: %s\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)",pair.PriceUsd, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr)
+				p.Meme <- s
+				delete(p.memeLowTask, query+chain)
+				return
+			}
+		case <-ctx.Done():
+			p.Meme <- query+"价格监控已关闭"
+			return
 		}
 	}
 }

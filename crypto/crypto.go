@@ -3,6 +3,7 @@ package crypto
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -13,6 +14,7 @@ var (
 	apiUrl  = "https://api.binance.com"
 	dataUrl = "https://data.binance.com"
 	fapiUrl = "https://fapi.binance.com"
+	memeUrl = "https://api.dexscreener.com/latest/dex/search/?q="
 )
 
 type Crypto struct {
@@ -76,22 +78,26 @@ func (t *Crypto) FuturesPrice(name string) (prices string) {
 	symbols := fmt.Sprintf(`/fapi/v1/ticker/price?symbol=%s`, name)
 	res, err := http.NewRequest(http.MethodGet, fapiUrl+symbols, nil)
 	if err != nil {
+		fmt.Println("请求失败：", err)
 		return 
 	}
 
 	resp, err := http.DefaultClient.Do(res)
 	if err != nil {
+		fmt.Println("请求失败：", err)
 		return
 	}
 
 	resBody, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
+		fmt.Println("body读取失败：", err)
 		return
 	}
 	
 	price := priceResp{}
 	if err = json.Unmarshal(resBody, &price); err != nil {
+		fmt.Println("body转换为结构体失败", err)
 		return
 	}
 	
@@ -135,4 +141,40 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 	return res
 }
 
+func (t *Crypto) MemePrice(query string, chain string) *Pair {
+	c := strings.ToLower(chain)
+	if c == "eth" {
+		c = "ethereum"
+	}
+
+	meme := new(Meme)
+
+	r, err := http.Get(memeUrl + query)
+	if err != nil {
+		fmt.Println("请求失败：", err)
+		return nil
+	}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Println("body读取失败：", err)
+		return nil
+	}
+
+	err = json.Unmarshal(b, &meme)
+	if err != nil {
+		fmt.Println("json转换失败: ", err)
+		return nil
+	}
+
+	for _, v := range meme.Pairs {
+		if v.ChainId == c {
+			return v
+		}
+	}
+
+	return nil
+
+}
 
