@@ -34,6 +34,17 @@ func (t *Aio) SendMsg(id int64, msg string) {
 	t.bot.Send(mc)
 }
 
+func (t *Aio) SendMessage(msg string) {
+	mc := tgbotapi.NewMessage(ChatId, msg)
+	t.bot.Send(mc)
+}
+
+func (t *Aio) SendMarkdown(id int64, msg string) {
+	mc := tgbotapi.NewMessage(id, msg)
+	mc.ParseMode = "Markdown"
+	t.bot.Send(mc)
+}
+
 func (t *Aio) SendImg(id int64, img string) {
 	mc := tgbotapi.NewPhoto(id, tgbotapi.FilePath(img))
 	t.bot.Send(mc)
@@ -109,7 +120,6 @@ func (t *Aio) WaitToSend() {
 					go t.SendMsg(id, msg)
 				}
 			}
-
 		case v := <-t.VpsApi.C:
 			for k, v := range v {
 				go t.SendMsg(k, v)
@@ -121,6 +131,8 @@ func (t *Aio) WaitToSend() {
 			}
 		case v := <-t.CryptoV2Api.Kline:
 			go t.SendMsg(ChatId, v)
+		case v := <-t.CryptoV2Api.Meme:
+			go t.SendMarkdown(ChatId, v)
 		case v := <-t.Cron.C:
 			go t.SendMsg(ChatId, v)
 		// Youtube
