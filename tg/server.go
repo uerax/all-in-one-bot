@@ -146,7 +146,7 @@ func Server() {
 			tips(update.Message.Chat.ID, "删除meme币监控 token chain 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth")
 		case "get_meme":
 			Cmd = "get_meme"
-			tips(update.Message.Chat.ID, "获取meme币信息 token chain 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth")
+			tips(update.Message.Chat.ID, "获取meme币信息 token chain(可选,默认eth) 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth")
 		// Vps
 		case "vps_monitor_supported_list":
 			tips(update.Message.Chat.ID, "该功能已弃用")
