@@ -149,6 +149,11 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 				return
 			}
 			pair := p.api.MemePrice(query, chain)
+			if pair == nil {
+				p.Meme <- "查询失败,请检查token是否有误"
+				delete(p.memeHighTask, query+" "+chain)
+				return
+			}
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
 				p.Meme <- "价格转换异常,请检查日志"
@@ -184,6 +189,11 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 				return
 			}
 			pair := p.api.MemePrice(query, chain)
+			if pair == nil {
+				p.Meme <- "查询失败,请检查token是否有误"
+				delete(p.memeHighTask, query+" "+chain)
+				return
+			}
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
 				p.Meme <- "价格转换异常,请检查日志"
