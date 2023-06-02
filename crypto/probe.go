@@ -49,8 +49,9 @@ func (t *Probe) ListKLineProbe() string {
 	b := strings.Builder{}
 	b.WriteString("当前正在探测的加密货币有:")
 	for k, _ := range t.task {
-		b.WriteString("\n")
+		b.WriteString("\n`")
 		b.WriteString(k)
+		b.WriteString("`")
 	}
 	return b.String()
 }
@@ -68,6 +69,7 @@ func (t *Probe) StopKLineProbe(crypto string) {
 	if v, ok := t.task[crypto]; ok {
 		v()
 		delete(t.task, crypto)
+		t.Kline <- fmt.Sprintf("永续合约: %s 监控已关闭", crypto)
 	}
 }
 
@@ -103,26 +105,39 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 
 func (p *Probe) MemePrice(query string, chain string) {
 	pair := p.api.MemePrice(query, chain)
-	s := fmt.Sprintf("__%s:$%s__\nNet️work: %s\nPrice: %s\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr)
+	s := fmt.Sprintf("*%s:$%s* %s %s\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
 	p.Meme <- s
 }
 
-func (p *Probe) CloseMemeMonitor(query string, chain string) {
-	if _, ok := p.memeHighTask[query+chain]; ok {
-		delete(p.memeHighTask, query+chain)
-		p.Meme <- query + ": 上涨监控已关闭"
+func (p *Probe) MemeMonitorList() {
+	b := strings.Builder{}
+	b.WriteString("当前正在监控的meme币有:")
+	for k := range p.memeHighTask {
+		b.WriteString("\n`")
+		b.WriteString(k)
+		b.WriteString("`")
 	}
-	if _, ok := p.memeLowTask[query+chain]; ok {
-		delete(p.memeLowTask, query+chain)
-		p.Meme <- query + ": 下跌监控已关闭"
+	p.Meme <- b.String()
+}
+
+func (p *Probe) CloseMemeMonitor(query string, chain string) {
+	if _, ok := p.memeHighTask[query+" "+chain]; ok {
+		p.memeHighTask[query+" "+chain]()
+		delete(p.memeHighTask, query+" "+chain)
+		p.Meme <- query+" "+chain + "\n上涨监控已关闭"
+	}
+	if _, ok := p.memeLowTask[query+" "+chain]; ok {
+		p.memeHighTask[query+" "+chain]()
+		delete(p.memeLowTask, query+" "+chain)
+		p.Meme <- query+" "+chain + "\n下跌监控已关闭"
 	}
 }
 
 func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 	t := time.NewTicker(time.Minute)
 	ctx, cf := context.WithCancel(context.Background())
-	p.memeHighTask[query+chain] = cf
-	p.Meme <- "开始监控: " + query
+	p.memeHighTask[query+" "+chain] = cf
+	p.Meme <- "开始上涨监控: \n" + query+" "+chain
 	for {
 		select {
 		case <- t.C:
@@ -130,7 +145,7 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 			if err != nil {
 				p.Meme <- "输入的价格有误,无法识别"
 				fmt.Println("价格转换异常：", err)
-				delete(p.memeHighTask, query+chain)
+				delete(p.memeHighTask, query+" "+chain)
 				return
 			}
 			pair := p.api.MemePrice(query, chain)
@@ -138,17 +153,16 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 			if err != nil {
 				p.Meme <- "价格转换异常,请检查日志"
 				fmt.Println("价格转换异常：", err)
-				delete(p.memeHighTask, query+chain)
+				delete(p.memeHighTask, query+" "+chain)
 				return
 			}
 			if line <= now {
-				s := fmt.Sprintf("__价格已上涨到监控位置: %s__\n__%s:$%s__\nNet️work: %s\nPrice: %s\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)",pair.PriceUsd, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr)
+				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* %s %s\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
 				p.Meme <- s
-				delete(p.memeHighTask, query+chain)
+				delete(p.memeHighTask, query+" "+chain)
 				return
 			}
 		case <-ctx.Done():
-			p.Meme <- query+"价格监控已关闭"
 			return
 		}
 	}
@@ -157,8 +171,8 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 	t := time.NewTicker(time.Minute)
 	ctx, cf := context.WithCancel(context.Background())
-	p.memeLowTask[query+chain] = cf
-	p.Meme <- "开始监控: " + query
+	p.memeLowTask[query+" "+chain] = cf
+	p.Meme <- "开始下跌监控: \n" + query+" "+chain
 	for {
 		select {
 		case <- t.C:
@@ -166,7 +180,7 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 			if err != nil {
 				p.Meme <- "输入的价格有误,无法识别"
 				fmt.Println("价格转换异常：", err)
-				delete(p.memeLowTask, query+chain)
+				delete(p.memeLowTask, query+" "+chain)
 				return
 			}
 			pair := p.api.MemePrice(query, chain)
@@ -174,17 +188,16 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 			if err != nil {
 				p.Meme <- "价格转换异常,请检查日志"
 				fmt.Println("价格转换异常：", err)
-				delete(p.memeLowTask, query+chain)
+				delete(p.memeLowTask, query+" "+chain)
 				return
 			}
 			if line >= now {
-				s := fmt.Sprintf("__价格下跌到监控位置: %s__\n__%s:$%s__\nNet️work: %s\nPrice: %s\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)",pair.PriceUsd, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr)
+				s := fmt.Sprintf("*价格已下跌到监控位置: %s*\n\n*%s:$%s* %s %s\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
 				p.Meme <- s
-				delete(p.memeLowTask, query+chain)
+				delete(p.memeLowTask, query+" "+chain)
 				return
 			}
 		case <-ctx.Done():
-			p.Meme <- query+"价格监控已关闭"
 			return
 		}
 	}
