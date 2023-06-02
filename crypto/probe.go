@@ -134,6 +134,11 @@ func (p *Probe) CloseMemeMonitor(query string, chain string) {
 }
 
 func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
+	test := p.api.MemePrice(query, chain)
+	if test == nil {
+		p.Meme <- "token查询失败,请检查token是否有误"
+		return
+	}
 	t := time.NewTicker(time.Minute)
 	ctx, cf := context.WithCancel(context.Background())
 	p.memeHighTask[query+" "+chain] = cf
@@ -150,9 +155,7 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 			}
 			pair := p.api.MemePrice(query, chain)
 			if pair == nil {
-				p.Meme <- "查询失败,请检查token是否有误"
-				delete(p.memeHighTask, query+" "+chain)
-				return
+				continue
 			}
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
@@ -174,6 +177,11 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 }
 
 func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
+	test := p.api.MemePrice(query, chain)
+	if test == nil {
+		p.Meme <- "token查询失败,请检查token是否有误"
+		return
+	}
 	t := time.NewTicker(time.Minute)
 	ctx, cf := context.WithCancel(context.Background())
 	p.memeLowTask[query+" "+chain] = cf
@@ -190,9 +198,7 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 			}
 			pair := p.api.MemePrice(query, chain)
 			if pair == nil {
-				p.Meme <- "查询失败,请检查token是否有误"
-				delete(p.memeHighTask, query+" "+chain)
-				return
+				continue
 			}
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
