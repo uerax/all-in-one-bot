@@ -15,6 +15,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] get_meme 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 bsc(可选,默认eth)
 - [x] add_meme_growth_monitor 添加加meme币高线监控 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 0.00000123 (单位USD)
 - [x] add_meme_decline_monitor 添加加meme币低线监控 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 0.0000012 (单位USD)
+- [x] meme_monitor_list 列出当前探测的meme币
 - [x] delete_meme_monitor 删除meme币监控 例子: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth
 - [x] list_kline_strategy_probe 列出当前探测的加密货币
 - [x] add_crypto_growth_monitor 加密货币 提示价格 例: BNB 1110
@@ -102,6 +103,7 @@ delete_kline_strategy_probe - 删除探测 例: btcusdt
 get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选,默认eth)
 add_meme_growth_monitor - 添加加meme币高线监控 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth 0.00000123 (单位USD)
 add_meme_decline_monitor - 添加加meme币低线监控 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 bsc 0.0000012 (单位USD)
+meme_monitor_list - 列出当前探测的meme币
 delete_meme_monitor - 删除meme币监控 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth
 list_kline_strategy_probe - 列出当前探测的加密货币
 add_crypto_growth_monitor - 添加加密货币高线监控 例: BNB 1.1 (单位USD)
