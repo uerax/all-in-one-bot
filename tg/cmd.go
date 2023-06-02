@@ -30,12 +30,12 @@ func deleteKlineStrategyProbe(args string) {
 
 func deleteKlineStrategyProbeTip() {
 	msg := api.CryptoV2Api.ListKLineProbe()
-	go api.SendMsg(ChatId, msg + "\n\n请输入要删除的u本位合约 例: btcusdt")
+	go api.SendMarkdown(ChatId, msg + "\n\n请输入要删除的u本位合约 例: `btcusdt`")
 }
 
 func listKlineStrategyProbe() {
 	msg := api.CryptoV2Api.ListKLineProbe()
-	go api.SendMsg(ChatId, msg)
+	go api.SendMarkdown(ChatId, msg)
 }
 
 func addCryptoGrowthMonitor(id int64, args string) {
@@ -142,6 +142,10 @@ func getMeme(args string) {
 	go api.CryptoV2Api.MemePrice(arg[0], arg[1])
 }
 
+func memeMonitorList() {
+	go api.CryptoV2Api.MemeMonitorList()
+}
+
 // ChatGPT
 func chatGPT(id int64, args string) {
 	if args == "" {
@@ -191,7 +195,7 @@ func cutouts(id int64, photos []tgbotapi.PhotoSize) {
 
 // Telegram
 func chatid(id int64) {
-	go api.SendMsg(id, fmt.Sprintf("你的ChatId为 : %d", id))
+	go api.SendMarkdown(id, fmt.Sprintf("你的ChatId为 : `%d`", id))
 }
 
 // Cron
@@ -312,5 +316,5 @@ func execute(id int64, args string) {
 }
 
 func tips(id int64, msg string) {
-	go api.SendMsg(id, msg)
+	go api.SendMarkdown(id, msg)
 }

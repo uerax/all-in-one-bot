@@ -114,39 +114,41 @@ func Server() {
 		switch update.Message.Command() {
 		case "add_kline_strategy_probe":
 			Cmd = "add_kline_strategy_probe"
-			tips(update.Message.Chat.ID, "输入要监控的u本位合约 例: \nbtcusdt")
+			tips(update.Message.Chat.ID, "输入要监控的u本位合约 例: \n`btcusdt`")
 		case "delete_kline_strategy_probe":
 			Cmd = "delete_kline_strategy_probe"
 			deleteKlineStrategyProbeTip()
 		case "list_kline_strategy_probe":
 			listKlineStrategyProbe()
+		case "meme_monitor_list":
+			memeMonitorList()
 		case "add_crypto_growth_monitor":
 			Cmd = "add_crypto_growth_monitor"
-			tips(update.Message.Chat.ID, "添加加密货币高线监控 例: \nBNB 1.1")
+			tips(update.Message.Chat.ID, "添加加密货币高线监控 例: \n`BNB 1.1`")
 		case "add_crypto_decline_monitor":
 			Cmd = "add_crypto_decline_monitor"
-			tips(update.Message.Chat.ID, "添加加密货币低线监控 例: \nBNB 1.1")
+			tips(update.Message.Chat.ID, "添加加密货币低线监控 例: \n`BNB 1.1`")
 		case "get_crypto_price":
 			Cmd = "get_crypto_price"
-			tips(update.Message.Chat.ID, "查询加密货币价格 例: \nBNB")
+			tips(update.Message.Chat.ID, "查询加密货币价格 例: \n`BNB`")
 		case "delete_crypto_minitor":
 			Cmd = "delete_crypto_minitor"
-			tips(update.Message.Chat.ID, "删除加密货币监控线 例: \nBNB")
+			tips(update.Message.Chat.ID, "删除加密货币监控线 例: \n`BNB`")
 		case "get_crypto_ufutures_price":
 			Cmd = "get_crypto_ufutures_price"
-			tips(update.Message.Chat.ID, "查询加密货币合约价格 例: \nBNBUSDT")
+			tips(update.Message.Chat.ID, "查询加密货币合约价格 例: \n`BNBUSDT`")
 		case "add_meme_growth_monitor":
 			Cmd = "add_meme_growth_monitor"
-			tips(update.Message.Chat.ID, "添加加meme币高线监控 token chain price 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth 0.00000123")
+			tips(update.Message.Chat.ID, "添加加meme币高线监控 token chain price 例: \n`0x6982508145454ce325ddbe47a25d4ec3d2311933 eth 0.00000123`")
 		case "add_meme_decline_monitor":
 			Cmd = "add_meme_decline_monitor"
-			tips(update.Message.Chat.ID, "添加加meme币低线监控 token chain price 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth 0.00000123")
+			tips(update.Message.Chat.ID, "添加加meme币低线监控 token chain price 例: \n`0x6982508145454ce325ddbe47a25d4ec3d2311933 eth 0.00000123`")
 		case "delete_meme_monitor":
 			Cmd = "delete_meme_monitor"
-			tips(update.Message.Chat.ID, "删除meme币监控 token chain 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth")
+			tips(update.Message.Chat.ID, "删除meme币监控 token chain 例: \n`0x6982508145454ce325ddbe47a25d4ec3d2311933 eth`")
 		case "get_meme":
 			Cmd = "get_meme"
-			tips(update.Message.Chat.ID, "获取meme币信息 token chain(可选,默认eth) 例: \n0x6982508145454ce325ddbe47a25d4ec3d2311933 eth")
+			tips(update.Message.Chat.ID, "获取meme币信息 token chain(可选,默认eth) 例: \n`0x6982508145454ce325ddbe47a25d4ec3d2311933 eth`")
 		// Vps
 		case "vps_monitor_supported_list":
 			tips(update.Message.Chat.ID, "该功能已弃用")
@@ -155,7 +157,7 @@ func Server() {
 		//ChatGPT
 		case "chatgpt":
 			Cmd = "chatgpt"
-			tips(update.Message.Chat.ID, "发送你的问题 例: \n今天的天气")
+			tips(update.Message.Chat.ID, "发送你的问题 例: \n`今天的天气`")
 		// Cutout
 		case "cutout":
 			Cmd = "cutout"
@@ -166,32 +168,32 @@ func Server() {
 		// Cron
 		case "add_cron":
 			Cmd = "add_cron"
-			tips(update.Message.Chat.ID, "每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)")
+			tips(update.Message.Chat.ID, "每隔多久一次提醒,单位/秒 例: `15 提醒内容(必填)`")
 		case "delete_cron":
 			Cmd = "delete_cron"
-			tips(update.Message.Chat.ID, "输入id(每次触发通知发送的消息带有) 例: 1")
+			tips(update.Message.Chat.ID, "输入id(每次触发通知发送的消息带有) 例: `1`")
 		// Video
 		case "youtube_download":
 			Cmd = "youtube_download"
-			tips(update.Message.Chat.ID, "输入url或者vid 例: ISqZpXkgNNs")			
+			tips(update.Message.Chat.ID, "输入url或者vid 例: `ISqZpXkgNNs`")			
 		case "youtube_audio_download":
 			Cmd = "youtube_audio_download"
-			tips(update.Message.Chat.ID, "输入url或者vid 例: ISqZpXkgNNs")			
+			tips(update.Message.Chat.ID, "输入url或者vid 例: `ISqZpXkgNNs`")			
 		case "youtube_download_cut":
 			Cmd = "youtube_download_cut"
-			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 \n例: ISqZpXkgNNs 100 2000(s)")
+			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间(s) \n例: `ISqZpXkgNNs 100 2000`")
 		case "youtube_audio_download_cut":
 			Cmd = "youtube_download_cut"
-			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间 \n例: ISqZpXkgNNs 0:12:22 0:33:22")
+			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间(s) \n例: `ISqZpXkgNNs 0:12:22 0:33:22`")
 		case "bilibili_download":
 			Cmd = "bilibili_download"
-			tips(update.Message.Chat.ID, "输入url 例: https://www.bilibili.com/video/BV1xP411d74V")
+			tips(update.Message.Chat.ID, "输入url 例: `https://www.bilibili.com/video/BV1xP411d74V`")
 		case "douyin_download":
 			Cmd = "douyin_download"
-			tips(update.Message.Chat.ID, "输入url 例: https://v.douyin.com/UBt7heL/")
+			tips(update.Message.Chat.ID, "输入url 例: `https://v.douyin.com/UBt7heL/`")
 		case "twitter_download":
 			Cmd = "twitter_download"
-			tips(update.Message.Chat.ID, "输入url 例: https://twitter.com/SpaceX/status/1660401510969212929?s=20")
+			tips(update.Message.Chat.ID, "输入url 例: `https://twitter.com/SpaceX/status/1660401510969212929?s=20`")
 		// Sticker And Gif			
 		case "gif_download":
 			Cmd = "gif_download"
