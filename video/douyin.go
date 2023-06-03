@@ -10,8 +10,8 @@ import (
 )
 
 func (v *VideoDownload) DouyinDownload(url string) {
-	d, _ := douyin.New().Extract(url, extractors.Options{Playlist: false})
-	if len(d) == 0 {
+	d, err := douyin.New().Extract(url, extractors.Options{Playlist: false})
+	if err != nil || len(d) == 0 {
 		v.MsgC <- "链接无效,解析视频为空"
 		fmt.Println("链接无效,解析视频为空")
 		return

@@ -38,6 +38,7 @@ func (t *Crypto) Ping() bool {
 }
 
 func (t *Crypto) Price(name ...string) (prices map[string]string) {
+	prices = make(map[string]string)
 	if len(name) == 0 {
 		return 
 	}
@@ -63,7 +64,6 @@ func (t *Crypto) Price(name ...string) (prices map[string]string) {
 		return
 	}
 
-	prices = make(map[string]string)
 	for _, v := range price {
 		prices[v.Symbol] = v.Price
 	}

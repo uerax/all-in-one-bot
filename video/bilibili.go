@@ -11,8 +11,8 @@ import (
 
 
 func (v *VideoDownload) BilibiliDownload(url string) {
-	d, _ := bilibili.New().Extract(url, extractors.Options{Playlist: false})
-	if len(d) == 0 {
+	d, err := bilibili.New().Extract(url, extractors.Options{Playlist: false})
+	if err != nil || len(d) == 0 {
 		v.MsgC <- "链接无效,解析视频为空"
 		fmt.Println("链接无效,解析视频为空")
 		return
