@@ -105,6 +105,10 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 
 func (p *Probe) MemePrice(query string, chain string) {
 	pair := p.api.MemePrice(query, chain)
+	if pair == nil {
+		p.Meme <- "查询失败,请检查参数"
+		return
+	}
 	s := fmt.Sprintf("*%s:$%s* %s %s\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
 	p.Meme <- s
 }
