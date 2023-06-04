@@ -10,6 +10,10 @@ import (
 	"github.com/uerax/goconf"
 )
 
+const (
+
+)
+
 type line struct {
 	LowPrice   string
 	HighPrice  string
@@ -42,6 +46,7 @@ func NewProbe() *Probe {
 		task:      make(map[string]context.CancelFunc),
 		memeLowTask:  make(map[string]context.CancelFunc),
 		memeHighTask:  make(map[string]context.CancelFunc),
+		
 	}
 }
 
@@ -109,7 +114,21 @@ func (p *Probe) MemePrice(query string, chain string) {
 		p.Meme <- "查询失败,请检查参数"
 		return
 	}
-	s := fmt.Sprintf("*%s:$%s* %s %s\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
+	s := fmt.Sprintf("*%s:$%s* *%s* *%s*\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24)
+
+	check := p.api.MemeCheck(query, chain)
+	if check != nil {
+		if strings.Contains(check.TotalSupply, ".") {
+			check.TotalSupply = check.TotalSupply[:strings.Index(check.TotalSupply, ".")]
+		}
+		if strings.Contains(check.LpTotalSupply, ".") {
+			check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
+		}
+		s += fmt.Sprintf("Buy Tax: %s%% | Sell Tax: %s%%\nTotal Supply: %s\nLP Supply: %s\nHolder: %s\nOwner: `%s`\n", check.BuyTax, check.SellTax, check.TotalSupply, check.LpTotalSupply, check.HolderCount, check.OwnerAddress)
+	}
+
+	s += fmt.Sprintf("Trade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)", pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
+
 	p.Meme <- s
 }
 

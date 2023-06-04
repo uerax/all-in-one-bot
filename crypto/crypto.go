@@ -15,17 +15,20 @@ var (
 	dataUrl = "https://data.binance.com"
 	fapiUrl = "https://fapi.binance.com"
 	memeUrl = "https://api.dexscreener.com/latest/dex/search/?q="
+	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
 )
 
 type Crypto struct {
 	apiKey    string
 	secretKey string
+	chainMap  map[string]string
 }
 
 func NewCrypto(api, secret string) *Crypto {
 	return &Crypto{
 		apiKey: api,
 		secretKey: secret,
+		chainMap: map[string]string{"ethereum":"1","optimism":"10","cronos":"25","bsc":"56","okc":"66","gnosis":"100","heco":"128","polygon":"137","fantom":"250","kcc":"321","zksync":"324","ethw":"10001","fon":"201022","arbitrum":"42161","avalanche":"43114","linea":"59140","harmony":"1666600000","tron":"tron"},
 	}
 }
 
@@ -178,3 +181,38 @@ func (t *Crypto) MemePrice(query string, chain string) *Pair {
 
 }
 
+func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
+	c := strings.ToLower(chain)
+	if c == "eth" {
+		c = "ethereum"
+	}
+
+	url := fmt.Sprintf(memeCheckUrl, t.chainMap[c], query)
+
+	r, err := http.Get(url)
+	if err != nil {
+		fmt.Println("请求失败：", err)
+		return nil
+	}
+
+	meme := &MemeCheckerResp{}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Println("Body读取失败", err)
+		return nil 
+	}
+
+	err = json.Unmarshal(b, &meme)
+	if err != nil {
+		fmt.Println("json转换失败", err)
+		return nil 
+	}
+
+	for _, v := range meme.MemeCheckers {
+		return v
+	}
+
+	return nil
+}
