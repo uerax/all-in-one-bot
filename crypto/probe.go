@@ -124,7 +124,7 @@ func (p *Probe) MemePrice(query string, chain string) {
 		if strings.Contains(check.LpTotalSupply, ".") {
 			check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
 		}
-		s += fmt.Sprintf("*Buy Tax:* %s%% | *Sell Tax:* %s%%\n*Total Supply:* %s\n*LP Supply:* %s\n*Holder:* %s\n*Owner:* `%s`\n", check.BuyTax, check.SellTax, check.TotalSupply, check.LpTotalSupply, check.HolderCount, check.OwnerAddress)
+		s += fmt.Sprintf("*Buy Tax:* %s | *Sell Tax:* %s\n*Total Supply:* %s\n*LP Supply:* %s\n*Holder:* %s\n*Owner:* `%s`\n", check.BuyTax, check.SellTax, check.TotalSupply, check.LpTotalSupply, check.HolderCount, check.OwnerAddress)
 	}
 
 	chainScan := ""
