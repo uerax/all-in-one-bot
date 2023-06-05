@@ -114,7 +114,7 @@ func (p *Probe) MemePrice(query string, chain string) {
 		p.Meme <- "查询失败,请检查参数"
 		return
 	}
-	s := fmt.Sprintf("*%s:$%s* *%s* *%s*\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24)
+	s := fmt.Sprintf("*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24)
 
 	check := p.api.MemeCheck(query, chain)
 	if check != nil {
@@ -124,10 +124,22 @@ func (p *Probe) MemePrice(query string, chain string) {
 		if strings.Contains(check.LpTotalSupply, ".") {
 			check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
 		}
-		s += fmt.Sprintf("Buy Tax: %s%% | Sell Tax: %s%%\nTotal Supply: %s\nLP Supply: %s\nHolder: %s\nOwner: `%s`\n", check.BuyTax, check.SellTax, check.TotalSupply, check.LpTotalSupply, check.HolderCount, check.OwnerAddress)
+		s += fmt.Sprintf("*Buy Tax:* %s%% | *Sell Tax:* %s%%\n*Total Supply:* %s\n*LP Supply:* %s\n*Holder:* %s\n*Owner:* `%s`\n", check.BuyTax, check.SellTax, check.TotalSupply, check.LpTotalSupply, check.HolderCount, check.OwnerAddress)
 	}
 
-	s += fmt.Sprintf("Trade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)", pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
+	chainScan := ""
+	honeypot := ""
+	moonarch := ""
+	if chain == "bsc" {
+		chainScan = "https://bscscan.com/address/"
+		honeypot = "https://honeypot.is/?address="
+	} else if chain == "eth" {
+		chainScan = "https://etherscan.io/address/"
+		honeypot = "https://honeypot.is/ethereum?address="
+		moonarch = "eth."
+	}
+
+	s += fmt.Sprintf("*Trade:* [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)", pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 
 	p.Meme <- s
 }
@@ -188,7 +200,18 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 				return
 			}
 			if line <= now {
-				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* %s %s\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
+				chainScan := ""
+				honeypot := ""
+				moonarch := ""
+				if chain == "bsc" {
+					chainScan = "https://bscscan.com/address/"
+					honeypot = "https://honeypot.is/?address="
+				} else if chain == "eth" {
+					chainScan = "https://etherscan.io/address/"
+					honeypot = "https://honeypot.is/ethereum?address="
+					moonarch = "eth."
+				}
+				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 				p.Meme <- s
 				delete(p.memeHighTask, query+" "+chain)
 				return
@@ -231,7 +254,18 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 				return
 			}
 			if line >= now {
-				s := fmt.Sprintf("*价格已下跌到监控位置: %s*\n\n*%s:$%s* %s %s\n\n*Itv*      *Price*\n5M:     %f\n1H:     %f\n6H:     %f\n1D:     %f\n\nTrade: [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n[Holders](https://etherscan.io/token/%s) | [Moonarch](https://eth.moonarch.app/token/%s) | [hp.is](https://honeypot.is/ethereum?address=%s) | [Dev](https://etherscan.io/address/%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.PriceChange.H1, pair.PriceChange.H6, pair.PriceChange.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr, pair.BaseToken.Addr)
+				chainScan := ""
+				honeypot := ""
+				moonarch := ""
+				if chain == "bsc" {
+					chainScan = "https://bscscan.com/address/"
+					honeypot = "https://honeypot.is/?address="
+				} else if chain == "eth" {
+					chainScan = "https://etherscan.io/address/"
+					honeypot = "https://honeypot.is/ethereum?address="
+					moonarch = "eth."
+				}
+				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 				p.Meme <- s
 				delete(p.memeLowTask, query+" "+chain)
 				return
