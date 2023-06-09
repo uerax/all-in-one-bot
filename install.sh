@@ -21,7 +21,6 @@ cfg_url="/usr/local/etc"
 log_url="/var/log/"
 
 env() {
-    apt update
     apt install -y curl
     apt install -y wget
 }
@@ -49,9 +48,9 @@ install() {
     mkdir -p "$cfg_url/$prj_name"
 
     curl -L "$download_url" -o "$project_dir/$prj_name"
-    wget --no-check-certificate "$cfg_url" -O "$cfg_url/$prj_name/all-in-one-bot.yml"
+    wget --no-check-certificate ${cfg_url} -O ${cfg_url}/${prj_name}/all-in-one-bot.yml
 
-    chmod +x $project_dir/$prj_name/$prj_name
+    chmod +x ${project_dir}/${prj_name}/${prj_name}
 
 }
 
