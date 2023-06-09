@@ -1,15 +1,28 @@
 ## 一. Usage
 
-`安装`
+`脚本安装`
 
 ```
-wget -N --no-check-certificate -q -O aio-install.sh "https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh" && chmod +x aio-install.sh && bash aio-install.sh
+bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @
 ```
 
 * 在 all-in-one-bot.yml 添加你的 telegram token
 `telegram 搜索用户 @BotFather 发送 /newbot 获取`
 * 在 all-in-one-bot.yml 添加你的 telegram chatId
 `添加token后启动应用,去你的bot发送 /chatid 即可获取`
+
+`操作`
+
+```
+// 启动
+systemctl start aio
+// 关闭
+systemctl stop aio
+// 自动启动
+systemctl enable aio
+// 状态
+systemctl status aio
+```
 
 ## 二. Command List
 ### 1. 加密货币监控功能清单
