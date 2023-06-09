@@ -18,6 +18,7 @@ type Pair struct {
 	BaseToken   *BaseToken   `json:"baseToken"`
 	PriceChange *PriceChange `json:"priceChange"`
 	Volume      *Volume      `json:"volume"`
+	Txns		*Txn		 `json:"txns"`
 }
 
 type Volume struct {
@@ -25,6 +26,18 @@ type Volume struct {
 	H1  float64 `json:"h1"`
 	H6  float64 `json:"h6"`
 	H24 float64 `json:"h24"`
+}
+
+type Txn struct {
+	M5  *BS `json:"m5"`
+	H1  *BS `json:"h1"`
+	H6  *BS `json:"h6"`
+	H24 *BS `json:"h24"`
+}
+
+type BS struct {
+	B int `json:"buys"`
+	S int `json:"sells"`
 }
 
 type BaseToken struct {
