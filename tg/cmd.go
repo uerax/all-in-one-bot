@@ -307,14 +307,6 @@ func gifDownload(args string) {
 }
 
 // Default
-func execute(id int64, args string) {
-	if args == "" {
-		return
-	}
-
-	go api.ChatGPTApi.Ask(id, args)
-}
-
 func tips(id int64, msg string) {
 	go api.SendMarkdown(id, msg)
 }

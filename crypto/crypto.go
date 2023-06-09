@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
 var (
-	apiUrl  = "https://api.binance.com"
+	// apiUrl  = "https://api.binance.com"
 	dataUrl = "https://data.binance.com"
 	fapiUrl = "https://fapi.binance.com"
 	memeUrl = "https://api.dexscreener.com/latest/dex/search/?q="
@@ -56,7 +55,7 @@ func (t *Crypto) Price(name ...string) (prices map[string]string) {
 		return
 	}
 
-	resBody, err := ioutil.ReadAll(resp.Body)
+	resBody, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
 		return
@@ -91,7 +90,7 @@ func (t *Crypto) FuturesPrice(name string) (prices string) {
 		return
 	}
 
-	resBody, err := ioutil.ReadAll(resp.Body)
+	resBody, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
 		fmt.Println("body读取失败：", err)
@@ -124,7 +123,7 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 
 	// 解析JSON数据
 	
-	b, _ := ioutil.ReadAll(resp.Body)
+	b, _ := io.ReadAll(resp.Body)
 
 	var result [][]interface{}
 	json.Unmarshal(b, &result)
