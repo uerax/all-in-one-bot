@@ -134,6 +134,7 @@ menu() {
     echo -e "${Blue}4)   关闭服务${Font}"
     echo -e "${Blue}5)   查看error日志(默认)${Font}"
     echo -e "${Blue}6)   查看output日志${Font}"
+    echo -e "${Blue}7)   完全卸载${Font}"
     echo -e "${Red}q)   退出${Font}"
     echo -e "${Cyan}————————————————————————————————————————${Font}\n"
 
@@ -157,6 +158,9 @@ menu() {
     ;;
     6)
     olog
+    ;;
+    7)
+    uninstall
     ;;
     q)
     ;;
