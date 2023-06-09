@@ -1,5 +1,11 @@
 ## 一. Usage
 
+`安装`
+
+```
+wget -N --no-check-certificate -q -O aio-install.sh "https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh" && chmod +x aio-install.sh && bash aio-install.sh
+```
+
 * 在 all-in-one-bot.yml 添加你的 telegram token
 `telegram 搜索用户 @BotFather 发送 /newbot 获取`
 * 在 all-in-one-bot.yml 添加你的 telegram chatId
