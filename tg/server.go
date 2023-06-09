@@ -71,12 +71,10 @@ func Server() {
 				addVpsMonitor(update.Message.Chat.ID, update.Message.Text)
 			// ChatGPT
 			case "chatgpt":
-				if goconf.VarBoolOrDefault(false, "telegram", "chat") {
-					execute(update.Message.Chat.ID, update.Message.Text)
-				}
+				chatGPT(update.Message.Chat.ID, update.Message.Text)
 			// Cutout
 			case "cutout":
-				if goconf.VarBoolOrDefault(false, "photo", "enable") && update.Message.Photo != nil {
+				if update.Message.Photo != nil {
 					cutouts(update.Message.Chat.ID, update.Message.Photo)
 				}
 			case "delete_cron":

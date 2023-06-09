@@ -36,7 +36,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 ### 4. 抠图功能
 
-- [x] cutout (需要在配置文件将 photo -> enable 设为true并添加apikey)
+- [x] cutout (需要在配置文件添加apikey)
 
 ### 5. Telegram 信息获取
 
