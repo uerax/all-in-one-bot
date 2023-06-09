@@ -13,7 +13,7 @@ GreenBG="\033[42;37m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
-version=v0.0.3
+version=v0.0.4
 prj_name="aio-bot"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
@@ -110,7 +110,6 @@ ln -s /etc/systemd/system/aio.service /etc/systemd/system/multi-user.target.want
 uninstall() {
     systemctl stop aio
     systemctl disable aio
-    unlink /etc/systemd/system/multi-user.target.wants/aio.service
     rm /etc/systemd/system/aio.service
     systemctl daemon-reload
 
