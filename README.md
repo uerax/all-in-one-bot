@@ -4,7 +4,7 @@
 `telegram 搜索用户 @BotFather 发送 /newbot 获取`
 * 在 all-in-one-bot.yml 添加你的 telegram chatId
 `添加token后启动应用,去你的bot发送 /chatid 即可获取`
-    
+
 ## 二. Command List
 ### 1. 加密货币监控功能清单
 
@@ -60,7 +60,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 ### 8. 贴纸和GIF下载
 
 - [x] sticker_download 下载贴纸表情
-- [x] gif_download 下载GIF
+- [x] gif_download 下载GIF(非贴纸)
 
 
 ## 三. 环境安装(可选)
@@ -122,7 +122,7 @@ youtube_audio_download_cut - 下载ytb音频并裁剪
 bilibili_download - 下载bilibili的视频
 douyin_download - 下载douyin的视频
 sticker_download - 下载贴纸表情
-gif_download - 下载GIF
+gif_download - 下载GIF(非贴纸)
 ```
 
 __待实现__
