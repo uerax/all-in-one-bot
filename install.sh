@@ -30,8 +30,7 @@ install() {
 
     # 下载链接
     download_url=$(curl -sL $prj_url | grep "browser_download_url" | cut -d '"' -f 4)
-    v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
-    cfg_url="https://raw.githubusercontent.com/uerax/all-in-one-bot/$v/all-in-one-bot.yml"
+    cfg_url="https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml"
 
     # 创建项目目录
     mkdir -p "$project_dir/$prj_name/log"
