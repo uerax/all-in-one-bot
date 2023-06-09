@@ -26,6 +26,17 @@ env() {
     apt install -y tail
 }
 
+is_root() {
+    if [ $(id -u) == 0 ]; then
+        echo -e "进入安装流程"
+        sleep 3
+    else
+        echo -e "请切使用root用户执行脚本"
+        echo -e "切换root用户命令: sudo su"
+        exit 1
+    fi
+}
+
 install() {
 
     # 下载链接
@@ -33,11 +44,11 @@ install() {
     cfg_url="https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml"
 
     # 创建项目目录
-    mkdir -p "$project_dir/$prj_name"
+    mkdir -p "$project_dir"
     mkdir -p "$log_url/$prj_name"
     mkdir -p "$cfg_url/$prj_name"
 
-    curl -L "$download_url" -o "$project_dir/$prj_name/$prj_name"
+    curl -L "$download_url" -o "$project_dir/$prj_name"
     curl -L "$cfg_url" -o "$cfg_url/$prj_name/all-in-one-bot.yml"
 
     chmod +x $project_dir/$prj_name/$prj_name
@@ -66,6 +77,8 @@ write() {
 }
 
 systemctl() {
+    is_root
+    env
     install
 
 cat > /etc/systemd/system/aio.service << EOF
@@ -79,7 +92,7 @@ User=root
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/aio-bot/aio-bot -c /usr/local/bin/aio-bot/all-in-one-bot.yml
+ExecStart=/usr/local/bin/aio-bot -c /usr/local/bin/aio-bot/all-in-one-bot.yml
 StandardOutput=file:/var/log/aio-bot/access.log
 StandardError=file:/var/log/aio-bot/error.log
 Restart=on-failure
@@ -93,6 +106,19 @@ EOF
 
 ln -s /etc/systemd/system/aio.service /etc/systemd/system/multi-user.target.wants/aio.service
 
+}
+
+uninstall() {
+    systemctl stop aio
+    systemctl disable aio
+    unlink /etc/systemd/system/multi-user.target.wants/aio.service
+    rm /etc/systemd/system/aio.service
+    systemctl daemon-reload
+
+    rm -f $project_dir/$prj_name
+    rm -f $cfg_url/$prj_name/all-in-one-bot.yml
+    rm -rf $log_url/$prj_name
+    
 }
 
 menu() {
