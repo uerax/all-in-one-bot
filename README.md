@@ -1,9 +1,15 @@
 ## 一. Usage
 
-`脚本安装`
+`安装`
 
 ```
-bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @
+bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ install
+```
+
+`卸载`
+
+```
+bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ uninstall
 ```
 
 * 在 all-in-one-bot.yml 添加你的 telegram token

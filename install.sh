@@ -91,7 +91,7 @@ User=root
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/aio-bot -c /usr/local/bin/aio-bot/all-in-one-bot.yml
+ExecStart=/usr/local/bin/aio-bot -c /usr/local/etc/aio-bot/all-in-one-bot.yml
 StandardOutput=file:/var/log/aio-bot/access.log
 StandardError=file:/var/log/aio-bot/error.log
 Restart=on-failure
@@ -168,5 +168,14 @@ menu() {
     esac
 }
 
-
-menu
+case $1 in
+    install)
+        add_service
+        ;;
+    uninstall)
+        uninstall
+        ;;
+    *)
+        menu
+        ;;
+esac
