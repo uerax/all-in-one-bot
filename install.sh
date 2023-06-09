@@ -17,7 +17,7 @@ version=v0.0.3
 prj_name="aio-bot"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
-cfg_url="/usr/local/etc"
+cfg_path="/usr/local/etc"
 log_url="/var/log/"
 
 env() {
@@ -45,10 +45,10 @@ install() {
     # 创建项目目录
     mkdir -p "$project_dir"
     mkdir -p "$log_url/$prj_name"
-    mkdir -p "$cfg_url/$prj_name"
+    mkdir -p "$cfg_path/$prj_name"
 
     curl -L "$download_url" -o "$project_dir/$prj_name"
-    wget --no-check-certificate ${cfg_url} -O ${cfg_url}/${prj_name}/all-in-one-bot.yml
+    wget --no-check-certificate ${cfg_url} -O ${cfg_path}/${prj_name}/all-in-one-bot.yml
 
     chmod +x ${project_dir}/${prj_name}
 
@@ -72,7 +72,7 @@ olog() {
 }
 
 write() {
-    vim $cfg_url/$prj_name/all-in-one-bot.yml
+    vim $cfg_path/$prj_name/all-in-one-bot.yml
 }
 
 add_service() {
@@ -115,7 +115,7 @@ uninstall() {
     systemctl daemon-reload
 
     rm -f $project_dir/$prj_name
-    rm -f $cfg_url/$prj_name/all-in-one-bot.yml
+    rm -f $cfg_path/$prj_name/all-in-one-bot.yml
     rm -rf $log_url/$prj_name
     
 }
