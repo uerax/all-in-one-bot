@@ -15,6 +15,7 @@ func Server() {
 	// Create a new bot instance
 	token, err := goconf.VarString("telegram", "token")
 	if err != nil {
+		fmt.Println("启动失败: 没有填写bot的token")
 		panic(err)
 	}
 	id := goconf.VarIntOrDefault(0, "telegram", "chatId")
