@@ -50,7 +50,7 @@ install() {
     curl -L "$download_url" -o "$project_dir/$prj_name"
     wget --no-check-certificate ${cfg_url} -O ${cfg_url}/${prj_name}/all-in-one-bot.yml
 
-    chmod +x ${project_dir}/${prj_name}/${prj_name}
+    chmod +x ${project_dir}/${prj_name}
 
 }
 
@@ -75,7 +75,7 @@ write() {
     vim $cfg_url/$prj_name/all-in-one-bot.yml
 }
 
-systemctl() {
+add_service() {
     is_root
     env
     install
@@ -141,7 +141,7 @@ menu() {
     echo -e ""
     case $menu_num in
     1)
-    systemctl
+    add_service
     ;;
     2)
     write
