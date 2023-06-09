@@ -53,7 +53,7 @@ func NewProbe() *Probe {
 func (t *Probe) ListKLineProbe() string {
 	b := strings.Builder{}
 	b.WriteString("当前正在探测的加密货币有:")
-	for k, _ := range t.task {
+	for k := range t.task {
 		b.WriteString("\n`")
 		b.WriteString(k)
 		b.WriteString("`")
@@ -130,16 +130,19 @@ func (p *Probe) MemePrice(query string, chain string) {
 	chainScan := ""
 	honeypot := ""
 	moonarch := ""
+	dextools := ""
 	if chain == "bsc" {
 		chainScan = "https://bscscan.com/address/"
 		honeypot = "https://honeypot.is/?address="
+		dextools = "https://www.dextools.io/app/cn/bnb/pair-explorer/"
 	} else if chain == "eth" {
 		chainScan = "https://etherscan.io/address/"
 		honeypot = "https://honeypot.is/ethereum?address="
 		moonarch = "eth."
+		dextools = "https://www.dextools.io/app/cn/ether/pair-explorer/"
 	}
 
-	s += fmt.Sprintf("*Trade:* [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)", pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
+	s += fmt.Sprintf("*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)",dextools,pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 
 	p.Meme <- s
 }
@@ -203,15 +206,18 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 				chainScan := ""
 				honeypot := ""
 				moonarch := ""
+				dextools := ""
 				if chain == "bsc" {
 					chainScan = "https://bscscan.com/address/"
 					honeypot = "https://honeypot.is/?address="
+					dextools = "https://www.dextools.io/app/cn/bnb/pair-explorer/"
 				} else if chain == "eth" {
 					chainScan = "https://etherscan.io/address/"
 					honeypot = "https://honeypot.is/ethereum?address="
 					moonarch = "eth."
+					dextools = "https://www.dextools.io/app/cn/ether/pair-explorer/"
 				}
-				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
+				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24,dextools, pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 				p.Meme <- s
 				delete(p.memeHighTask, query+" "+chain)
 				return
@@ -257,15 +263,18 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 				chainScan := ""
 				honeypot := ""
 				moonarch := ""
+				dextools := ""
 				if chain == "bsc" {
 					chainScan = "https://bscscan.com/address/"
 					honeypot = "https://honeypot.is/?address="
+					dextools = "https://www.dextools.io/app/cn/bnb/pair-explorer/"
 				} else if chain == "eth" {
 					chainScan = "https://etherscan.io/address/"
 					honeypot = "https://honeypot.is/ethereum?address="
 					moonarch = "eth."
+					dextools = "https://www.dextools.io/app/cn/ether/pair-explorer/"
 				}
-				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
+				s := fmt.Sprintf("*价格已下跌到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [honeypot](%s%s)",price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24,dextools, pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 				p.Meme <- s
 				delete(p.memeLowTask, query+" "+chain)
 				return
