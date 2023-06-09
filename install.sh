@@ -13,7 +13,7 @@ GreenBG="\033[42;37m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
-version=v0.0.2
+version=v0.0.3
 prj_name="aio-bot"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
@@ -23,7 +23,7 @@ log_url="/var/log/"
 env() {
     apt update
     apt install -y curl
-    apt install -y tail
+    apt install -y wget
 }
 
 is_root() {
@@ -49,7 +49,7 @@ install() {
     mkdir -p "$cfg_url/$prj_name"
 
     curl -L "$download_url" -o "$project_dir/$prj_name"
-    curl -L "$cfg_url" -o "$cfg_url/$prj_name/all-in-one-bot.yml"
+    wget --no-check-certificate "$cfg_url" -O "$cfg_url/$prj_name/all-in-one-bot.yml"
 
     chmod +x $project_dir/$prj_name/$prj_name
 
@@ -123,7 +123,7 @@ uninstall() {
 
 menu() {
     echo -e "${Cyan}——————————————— 脚本信息 ———————————————${Font}"
-    echo -e "\t\t${Yellow}aio-bot 操作脚本${Font}"
+    echo -e "\t${Yellow}aio-bot 操作脚本${Font}"
     echo -e "\t${Yellow}---authored by uerax---${Font}"
     echo -e "\t${Yellow}https://github.com/uerax${Font}"
     echo -e "\t\t${Yellow}版本号：${version}${Font}"
