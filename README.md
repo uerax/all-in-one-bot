@@ -87,6 +87,11 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] sticker_download 下载贴纸表情
 - [x] gif_download 下载GIF(非贴纸)
 
+### 9. 其他工具
+
+- [ ] base64_encode 进行base64加密
+- [ ] base64_decode 进行base64解密
+- [ ] timestamp_convert 时间戳转换
 
 ## 三. 环境安装(可选)
 
@@ -154,7 +159,9 @@ __待实现__
 
 ```
 twitter_download - 下载twitter的视频
-
+base64_encode - 进行base64加密
+base64_decode - 进行base64解密
+timestamp_convert - 时间戳转换
 ```
 
 __弃用__
