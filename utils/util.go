@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -60,4 +62,16 @@ func (t *Utils) TimeConvert(date string) {
 
 	t.MsgC <- fmt.Sprintf("`%d`", ts.Unix())
 	
+}
+
+
+func (t *Utils) JsonFormat(str string) {
+	var out bytes.Buffer
+	err := json.Indent(&out, []byte(str), "", "    ")
+	if err != nil {
+		fmt.Println(err)
+		t.ErrC <- "格式化失败"
+		return
+	}
+	t.MsgC <- fmt.Sprintf("`%s`", out.String())
 }

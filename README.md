@@ -99,6 +99,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] base64_decode 进行base64解密
 - [x] timestamp_convert 时间戳转换为时间"2006-01-02 15:04:05"
 - [x] time_convert 时间转换为时间戳"2006-01-02 15:04:05"
+- [x] json_format 格式化json
 
 ## 三. 环境安装(可选)
 
@@ -156,6 +157,7 @@ base64_encode - 进行base64加密
 base64_decode - 进行base64解密
 timestamp_convert - 时间戳转换为时间"2006-01-02 15:04:05"
 time_convert - 时间转换为时间戳"2006-01-02 15:04:05"
+json_format - 格式化json
 youtube_download - 下载youtube的视频
 youtube_audio_download - 下载ytb音频
 youtube_download_cut - 下载youtube的视频并裁剪
