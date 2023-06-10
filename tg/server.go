@@ -115,7 +115,8 @@ func Server() {
 				timestampConvert(update.Message.Text)
 			case "time_convert":
 				timeConvert(update.Message.Text)
-			
+			case "json_format":
+				jsonFormat(update.Message.Text)
 			}
 		
 		}
@@ -223,6 +224,9 @@ func Server() {
 		case "time_convert":
 			Cmd = "time_convert"
 			tips(update.Message.Chat.ID, "发送你的时间 格式为: 2023-06-10 16:00:50")
+		case "json_format":
+			Cmd = "json_format"
+			tips(update.Message.Chat.ID, "发送json内容")
 		}
 		
 	}

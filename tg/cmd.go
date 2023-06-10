@@ -323,6 +323,11 @@ func timeConvert(args string) {
 	go api.Utils.TimeConvert(args)
 }
 
+func jsonFormat(args string) {
+	go api.Utils.JsonFormat(args)
+}
+
+
 // Default
 func tips(id int64, msg string) {
 	go api.SendMarkdown(id, msg)

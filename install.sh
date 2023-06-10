@@ -105,6 +105,8 @@ EOF
 
 ln -s /etc/systemd/system/aio.service /etc/systemd/system/multi-user.target.wants/aio.service
 
+echo -e "手动前往配置文件(/usr/local/etc/aio-bot/all-in-one-bot.yml)添加bot的token和chatid"
+echo -e "修改完成后执行: systemctl start aio 启动服务"
 }
 
 update_aio() {
