@@ -107,6 +107,13 @@ ln -s /etc/systemd/system/aio.service /etc/systemd/system/multi-user.target.want
 
 }
 
+update_aio() {
+    systemctl stop aio
+    download_url=$(curl -sL $prj_url | grep "browser_download_url" | cut -d '"' -f 4)
+    curl -L "$download_url" -o "$project_dir/$prj_name"
+    systemctl start aio
+}
+
 uninstall() {
     systemctl stop aio
     systemctl disable aio
@@ -132,7 +139,8 @@ menu() {
     echo -e "${Blue}4)   关闭服务${Font}"
     echo -e "${Blue}5)   查看error日志(默认)${Font}"
     echo -e "${Blue}6)   查看output日志${Font}"
-    echo -e "${Blue}7)   完全卸载${Font}"
+    echo -e "${Blue}7)   更新AIO${Font}"
+    echo -e "${Blue}10)   完全卸载${Font}"
     echo -e "${Red}q)   退出${Font}"
     echo -e "${Cyan}————————————————————————————————————————${Font}\n"
 
@@ -158,6 +166,9 @@ menu() {
     olog
     ;;
     7)
+    update_aio
+    ;;
+    10)
     uninstall
     ;;
     q)
