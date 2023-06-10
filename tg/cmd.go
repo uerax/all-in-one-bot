@@ -306,6 +306,23 @@ func gifDownload(args string) {
 	go api.Gif.GifDownload(args)
 }
 
+// Utils
+func base64Encode(args string) {
+	go api.Utils.Base64Encode(args)
+}
+
+func base64Decode(args string) {
+	go api.Utils.Base64Decode(args)
+}
+
+func timestampConvert(args string) {
+	go api.Utils.TimestampConvert(args)
+}
+
+func timeConvert(args string) {
+	go api.Utils.TimeConvert(args)
+}
+
 // Default
 func tips(id int64, msg string) {
 	go api.SendMarkdown(id, msg)

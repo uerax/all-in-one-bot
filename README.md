@@ -87,11 +87,12 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] sticker_download 下载贴纸表情
 - [x] gif_download 下载GIF(非贴纸)
 
-### 9. 其他工具
+### 9. 工具箱
 
-- [ ] base64_encode 进行base64加密
-- [ ] base64_decode 进行base64解密
-- [ ] timestamp_convert 时间戳转换
+- [x] base64_encode 进行base64加密
+- [x] base64_decode 进行base64解密
+- [x] timestamp_convert 时间戳转换为时间"2006-01-02 15:04:05"
+- [x] time_convert 时间转换为时间戳"2006-01-02 15:04:05"
 
 ## 三. 环境安装(可选)
 
@@ -145,6 +146,10 @@ add_cron - 每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)
 delete_cron - 删除 例: 1
 chatgpt - chatgpt功能
 cutout - 抠图功能
+base64_encode - 进行base64加密
+base64_decode - 进行base64解密
+timestamp_convert - 时间戳转换为时间"2006-01-02 15:04:05"
+time_convert - 时间转换为时间戳"2006-01-02 15:04:05"
 youtube_download - 下载youtube的视频
 youtube_audio_download - 下载ytb音频
 youtube_download_cut - 下载youtube的视频并裁剪
@@ -159,9 +164,7 @@ __待实现__
 
 ```
 twitter_download - 下载twitter的视频
-base64_encode - 进行base64加密
-base64_decode - 进行base64解密
-timestamp_convert - 时间戳转换
+
 ```
 
 __弃用__
