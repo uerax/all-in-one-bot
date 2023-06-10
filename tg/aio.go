@@ -8,6 +8,7 @@ import (
 	"tg-aio-bot/cron"
 	"tg-aio-bot/crypto"
 	"tg-aio-bot/photo"
+	"tg-aio-bot/utils"
 	"tg-aio-bot/video"
 	"tg-aio-bot/vps"
 
@@ -27,6 +28,7 @@ type Aio struct {
 	Video *video.VideoDownload
 	Gif *Gif
 	Sticker *Sticker
+	Utils   *utils.Utils
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -84,6 +86,7 @@ func (t *Aio) NewBot(token string) {
 	t.Video = video.NewVideoDownload()
 	t.Gif = NewGif()
 	t.Sticker = NewSticker()
+	t.Utils = utils.NewUtils()
 
 	go t.WaitToSend()
 }
@@ -151,6 +154,11 @@ func (t *Aio) WaitToSend() {
 		case v := <-t.Sticker.C:
 			go t.SendFile(ChatId, v)
 		case v := <-t.Sticker.MsgC:
+			go t.SendMsg(ChatId, v)
+		// Utils
+		case v := <-t.Utils.MsgC:
+			go t.SendMarkdown(ChatId, v)
+		case v := <-t.Utils.ErrC:
 			go t.SendMsg(ChatId, v)
 		}
 

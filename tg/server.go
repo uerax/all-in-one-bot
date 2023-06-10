@@ -106,6 +106,16 @@ func Server() {
 				if update.Message.Animation != nil {
 					gifDownload(update.Message.Animation.FileID)
 				}
+			// Utils
+			case "base64_encode":
+				base64Encode(update.Message.Text)
+			case "base64_decode":
+				base64Decode(update.Message.Text)
+			case "timestamp_convert":
+				timestampConvert(update.Message.Text)
+			case "time_convert":
+				timeConvert(update.Message.Text)
+			
 			}
 		
 		}
@@ -200,6 +210,19 @@ func Server() {
 		case "sticker_download":
 			Cmd = "sticker_download"
 			tips(update.Message.Chat.ID, "发送你的贴纸")
+		// Utils
+		case "base64_encode":
+			Cmd = "base64_encode"
+			tips(update.Message.Chat.ID, "发送你要base64加密的内容")
+		case "base64_decode":
+			Cmd = "base64_decode"
+			tips(update.Message.Chat.ID, "发送你的base64编码")
+		case "timestamp_convert":
+			Cmd = "timestamp_convert"
+			tips(update.Message.Chat.ID, "发送你的时间搓 例:1686384050")
+		case "time_convert":
+			Cmd = "time_convert"
+			tips(update.Message.Chat.ID, "发送你的时间 格式为: 2023-06-10 16:00:50")
 		}
 		
 	}
