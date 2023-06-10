@@ -6,6 +6,12 @@
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ install
 ```
 
+`更新`
+
+```
+bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ update
+```
+
 `卸载`
 
 ```

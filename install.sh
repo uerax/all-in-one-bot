@@ -185,6 +185,9 @@ case $1 in
     uninstall)
         uninstall
         ;;
+    update)
+        update_aio
+        ;;
     *)
         menu
         ;;
