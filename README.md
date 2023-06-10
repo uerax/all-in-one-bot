@@ -1,10 +1,20 @@
-## 一. Usage
+## all-in-one-bot
+
+__Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图, Youtube视频/音频下载和剪切, Telegram贴纸Sticker下载, Telegram的gif图片下载, Bilibili视频下载, Douyin视频下载, 土狗币查询, 通用工具箱(base64,json格式化,时间戳转换)__
+
+## 二. Usage
 
 `安装`
 
 ```
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ install
 ```
+
+> 注: 配置文件以下两项必须添加,否则会启动失败
+* 在 all-in-one-bot.yml 添加你的 telegram token
+`telegram 搜索用户 @BotFather 发送 /newbot 获取`
+* 在 all-in-one-bot.yml 添加你的 telegram chatId
+`添加token后启动应用,去你的bot发送 /chatid 即可获取`
 
 `更新`
 
@@ -17,11 +27,6 @@ bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master
 ```
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ uninstall
 ```
-
-* 在 all-in-one-bot.yml 添加你的 telegram token
-`telegram 搜索用户 @BotFather 发送 /newbot 获取`
-* 在 all-in-one-bot.yml 添加你的 telegram chatId
-`添加token后启动应用,去你的bot发送 /chatid 即可获取`
 
 `操作`
 
@@ -36,7 +41,7 @@ systemctl enable aio
 systemctl status aio
 ```
 
-## 二. Command List
+## 三. Command List
 ### 1. 加密货币监控功能清单
 
 __单位默认USDT,可在配置文件crypto -> unit修改__
@@ -101,7 +106,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 - [x] time_convert 时间转换为时间戳"2006-01-02 15:04:05"
 - [x] json_format 格式化json
 
-## 三. 环境安装(可选)
+## 四. 环境安装(可选)
 
 __用到视频裁剪功能或者GIF下载功能需要安装 FFmpeg__
 
@@ -130,9 +135,9 @@ sudo dnf install ffmpeg
 sudo pacman -S ffmpeg
 ```
 
-## 四. Telegram Commands
+## 五. Telegram Commands
 
-__通过 @BotFather /setcommands 添加__
+__通过 @BotFather /setcommands 发送添加__
 
 ```
 chatid - 查询chatid
