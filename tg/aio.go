@@ -1,7 +1,9 @@
 package tg
 
 import (
+	"fmt"
 	"log"
+	"os/exec"
 	"strings"
 
 	"tg-aio-bot/chatgpt"
@@ -18,6 +20,7 @@ import (
 var api = &Aio{}
 
 type Aio struct {
+	local	   string
 	bot        *tgbotapi.BotAPI
 	CryptoApi  *crypto.CryptoMonitor
 	ChatGPTApi *chatgpt.ChatGPT
@@ -66,6 +69,22 @@ func (t *Aio) SendAudio(id int64, file string) {
 	mc := tgbotapi.NewAudio(id, tgbotapi.FilePath(file))
 	
 	t.bot.Send(mc)
+}
+
+func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
+	cmd := exec.Command("curl",
+		"-v", 
+		"-F", fmt.Sprintf("chat_id=%d", id),
+		"-F", fmt.Sprintf("video=file://%s", filepath),
+		"-F", "supports_streaming=true",
+		"-F", fmt.Sprintf("caption=%s", filename),
+		fmt.Sprintf("%s/bot%s/sendVideo", t.local, t.bot.Token),
+	)
+
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
 }
 
 
