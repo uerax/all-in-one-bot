@@ -193,7 +193,7 @@ func Server() {
 			Cmd = "youtube_download_cut"
 			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间(s) \n例: `ISqZpXkgNNs 100 2000`")
 		case "youtube_audio_download_cut":
-			Cmd = "youtube_download_cut"
+			Cmd = "youtube_audio_download_cut"
 			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间(s) \n例: `ISqZpXkgNNs 0:12:22 0:33:22`")
 		case "bilibili_download":
 			Cmd = "bilibili_download"
