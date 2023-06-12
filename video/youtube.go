@@ -64,7 +64,7 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 			return
 		}
 		
-		v.C <- filename + "_cut.m4a"
+		v.AudioC <- filename + "_cut.m4a"
 		go common.DeleteFileAfterTime(filename + "_cut.m4a", 5)
 		return
 	}
