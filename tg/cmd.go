@@ -136,7 +136,7 @@ func deleteMemeMonitor(args string) {
 func getMeme(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) == 1 {
-		arg = append(arg, "eth")
+		arg = append(arg, "")
 	}
 
 	go api.CryptoV2Api.MemePrice(arg[0], arg[1])
