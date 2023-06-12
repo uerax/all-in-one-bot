@@ -78,7 +78,7 @@ func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
 		"-F", fmt.Sprintf("video=file://%s", filepath),
 		"-F", "supports_streaming=true",
 		"-F", fmt.Sprintf("caption=%s", filename),
-		fmt.Sprintf("%s/bot%s/sendVideo", t.local, t.bot.Token),
+		fmt.Sprintf("%sbot%s/sendVideo", t.local, t.bot.Token),
 	)
 
 	_, err := cmd.CombinedOutput()
@@ -88,13 +88,14 @@ func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
 }
 
 
-func (t *Aio) NewBot(token string) {
+func (t *Aio) NewBot(token string, local string) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
 	}
 	bot.Debug = true
 	t.bot = bot
+	t.local = local
 
 	t.CryptoApi = crypto.NewCryptoMonitor()
 	t.ChatGPTApi = chatgpt.NewChatGPT()
