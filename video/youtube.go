@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"tg-aio-bot/common"
 
 	"github.com/kkdai/youtube/v2"
@@ -19,7 +20,8 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 		return
 	}
 
-	filename := v.path + video.Title
+	
+	filename := v.path + replaceSpecialChars(video.Title)
 
 	formats := video.Formats.FindByItag(140)
 
@@ -83,7 +85,7 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 		return
 	}
 
-	filename := v.path + video.Title
+	filename := v.path + replaceSpecialChars(video.Title)
 
 	formats := video.Formats.WithAudioChannels() // only get videos with audio
 	stream, _, err := client.GetStream(video, &formats[0])
@@ -131,4 +133,13 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 
 	v.C <- filename + ".mp4"
 	go common.DeleteFileAfterTime(filename + ".mp4", 5)
+}
+
+
+func replaceSpecialChars(fileName string) string {
+
+	re := regexp.MustCompile(`[\p{So}\p{Sk}\/\\:*?"<>| ]`)
+	result := re.ReplaceAllString(fileName, "")
+	
+	return result
 }
