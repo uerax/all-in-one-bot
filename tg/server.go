@@ -22,7 +22,7 @@ func Server() {
 	
 	ChatId = int64(id)
 
-	api.NewBot(token)
+	api.NewBot(token, goconf.VarStringOrDefault("http://localhost:8081/", "telegram", "local"))
 
 	// Create a new update channel
 	u := tgbotapi.NewUpdate(0)
