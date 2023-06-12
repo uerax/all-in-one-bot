@@ -108,6 +108,19 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 ## 四. 环境安装(可选)
 
+__Telegram 50M上传限制的解决思路__
+
+1. 前往[Guide](https://tdlib.github.io/telegram-bot-api/build.html)根据自己的系统选择参数,根据他提供的命令执行安装 Local Telegram Api
+2. 需要先去 https://my.telegram.org ，登录后，点API development tools可以看到你的api-id和api-hash
+3. 执行以下命令,用上面的api-id和api-hash替换里面的<arg>
+```
+telegram-bot-api --api-id=<arg> --api-hash=<arg> --local -l /var/logs/tgserver.log -v 3
+```
+4. 通过golang执行该命令发送文件
+```
+curl -v -F chat_id="<chat_id>" -F video="file://<filepath>" -F supports_streaming=true -F caption="<filename>" http://localhost:8081/bot<token>/sendVideo
+```
+
 __用到视频裁剪功能或者GIF下载功能需要安装 FFmpeg__
 
 `Ubuntu或Debian`
@@ -136,20 +149,6 @@ sudo pacman -S ffmpeg
 ```
 
 ## 五. Telegram Commands
-
-__Telegram 50M上传限制的解决思路__
-
-1. 前往[Guide](https://tdlib.github.io/telegram-bot-api/build.html)根据自己的系统选择参数,根据他提供的命令执行安装 Local Telegram Api
-2. 需要先去 https://my.telegram.org ，登录后，点API development tools可以看到你的api-id和api-hash
-3. 执行以下命令,用上面的api-id和api-hash替换里面的<arg>
-```
-telegram-bot-api --api-id=<arg> --api-hash=<arg> --local -l /var/logs/tgserver.log -v 3
-```
-4. 通过golang执行该命令发送文件
-```
-curl -v -F chat_id="<chat_id>" -F video="file://<filepath>" -F supports_streaming=true -F caption="<filename>" http://localhost:8081/bot<token>/sendVideo
-```
-
 
 __通过 @BotFather /setcommands 发送添加__
 
