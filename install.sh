@@ -13,7 +13,7 @@ GreenBG="\033[42;37m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
-version=v0.0.4
+version=v0.0.5
 prj_name="aio-bot"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
@@ -41,6 +41,7 @@ install() {
     # 下载链接
     download_url=$(curl -sL $prj_url | grep "browser_download_url" | cut -d '"' -f 4)
     cfg_url="https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml"
+    v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
 
     # 创建项目目录
     mkdir -p "$project_dir"
@@ -51,6 +52,8 @@ install() {
     wget --no-check-certificate ${cfg_url} -O ${cfg_path}/${prj_name}/all-in-one-bot.yml
 
     chmod +x ${project_dir}/${prj_name}
+
+    echo -e "安装完成,版本:$v"
 
 }
 
@@ -112,8 +115,10 @@ echo -e "修改完成后执行: systemctl start aio 启动服务"
 update_aio() {
     systemctl stop aio
     download_url=$(curl -sL $prj_url | grep "browser_download_url" | cut -d '"' -f 4)
+    v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
     curl -L "$download_url" -o "$project_dir/$prj_name"
     systemctl start aio
+    echo -e "更新完成,版本:$v"
 }
 
 uninstall() {
@@ -139,7 +144,7 @@ menu() {
     echo -e "${Blue}2)   编辑配置文件${Font}"
     echo -e "${Blue}3)   启动服务${Font}"
     echo -e "${Blue}4)   关闭服务${Font}"
-    echo -e "${Blue}5)   查看error日志(默认)${Font}"
+    echo -e "${Blue}5)   查看error日志${Font}"
     echo -e "${Blue}6)   查看output日志${Font}"
     echo -e "${Blue}7)   更新AIO${Font}"
     echo -e "${Blue}10)   完全卸载${Font}"
