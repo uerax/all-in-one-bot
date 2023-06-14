@@ -13,8 +13,8 @@ GreenBG="\033[42;37m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
-version=v0.0.5
-prj_name="aio-bot"
+version=v0.0.6
+prj_name="Aio"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
 cfg_path="/usr/local/etc"
@@ -39,7 +39,7 @@ is_root() {
 install() {
 
     # 下载链接
-    download_url=$(curl -sL $prj_url | grep "browser_download_url" | cut -d '"' -f 4)
+    download_url=$(curl -sL $prj_url | grep "browser_download_url" | grep "Aio-linux-64" | cut -d '"' -f 4)
     cfg_url="https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml"
     v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
 
@@ -94,9 +94,9 @@ User=root
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/aio-bot -c /usr/local/etc/aio-bot/all-in-one-bot.yml
-StandardOutput=file:/var/log/aio-bot/access.log
-StandardError=file:/var/log/aio-bot/error.log
+ExecStart=$project_dir/$prj_name -c $cfg_path/$prj_name/all-in-one-bot.yml
+StandardOutput=file:$log_url/$prj_name/access.log
+StandardError=file:$log_url/$prj_name/error.log
 Restart=on-failure
 RestartPreventExitStatus=23
 LimitNPROC=10000
@@ -108,7 +108,7 @@ EOF
 
 ln -s /etc/systemd/system/aio.service /etc/systemd/system/multi-user.target.wants/aio.service
 
-echo -e "手动前往配置文件(/usr/local/etc/aio-bot/all-in-one-bot.yml)添加bot的token和chatid"
+echo -e "手动前往配置文件($cfg_path/$prj_name/all-in-one-bot.yml)添加bot的token和chatid"
 echo -e "修改完成后执行: systemctl start aio 启动服务"
 }
 
@@ -144,9 +144,9 @@ menu() {
     echo -e "${Blue}2)   编辑配置文件${Font}"
     echo -e "${Blue}3)   启动服务${Font}"
     echo -e "${Blue}4)   关闭服务${Font}"
-    echo -e "${Blue}5)   查看error日志${Font}"
-    echo -e "${Blue}6)   查看output日志${Font}"
-    echo -e "${Blue}7)   更新AIO${Font}"
+    echo -e "${Blue}5)   查看 error 日志${Font}"
+    echo -e "${Blue}6)   查看 output 日志${Font}"
+    echo -e "${Blue}7)   更新 AIO${Font}"
     echo -e "${Blue}10)   完全卸载${Font}"
     echo -e "${Red}q)   退出${Font}"
     echo -e "${Cyan}————————————————————————————————————————${Font}\n"
