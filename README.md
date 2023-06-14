@@ -152,13 +152,20 @@ sudo pacman -S ffmpeg
 
 __通过 @BotFather /setcommands 发送添加__
 
+* 由于功能不断添加 command列表过长命令难找,采用分组形式自行查询获取,建议只填加以下常用命令到command列表,有需要其他功能进行查询获取
+
 `常用命令`
 
 ```
+chatid - 查询chatid
 get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选填)
 chatgpt - chatgpt功能
 youtube_audio_download_cut - 下载ytb音频并裁剪
-
+cmd_list - 列出全部功能
+crypto_cmd_list - 加密货币相关功能列表
+video_cmd_list - 音视频下载处理功能列表
+image_cmd_list - 图片处理/下载功能列表
+utils_cmd_list - 工具类功能列表
 ```
 
 `全部命令`
@@ -195,17 +202,18 @@ bilibili_download - 下载bilibili的视频
 douyin_download - 下载douyin的视频
 sticker_download - 下载贴纸表情
 gif_download - 下载GIF(非贴纸)
+cmd_list - 列出全部功能
+crypto_cmd_list - 加密货币相关功能列表
+video_cmd_list - 音视频下载处理功能列表
+image_cmd_list - 图片处理/下载功能列表
+utils_cmd_list - 工具类功能列表
 ```
 
 __待实现__
 
 ```
 twitter_download - 下载twitter的视频
-cmd_list - 列出全部功能
-crypto_cmd_list - 加密货币相关功能列表
-video_cmd_list - 音视频下载处理功能列表
-image_cmd_list - 图片处理/下载功能列表
-utils_cmd_list - 工具类功能列表
+
 ```
 
 __弃用__

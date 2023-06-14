@@ -9,6 +9,7 @@ import (
 	"tg-aio-bot/chatgpt"
 	"tg-aio-bot/cron"
 	"tg-aio-bot/crypto"
+	"tg-aio-bot/lists"
 	"tg-aio-bot/photo"
 	"tg-aio-bot/utils"
 	"tg-aio-bot/video"
@@ -32,6 +33,7 @@ type Aio struct {
 	Gif *Gif
 	Sticker *Sticker
 	Utils   *utils.Utils
+	Lists	*lists.Lists
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -107,6 +109,7 @@ func (t *Aio) NewBot(token string, local string) {
 	t.Gif = NewGif()
 	t.Sticker = NewSticker()
 	t.Utils = utils.NewUtils()
+	t.Lists = lists.NewLists()
 
 	go t.WaitToSend()
 }
@@ -179,6 +182,11 @@ func (t *Aio) WaitToSend() {
 		case v := <-t.Utils.MsgC:
 			go t.SendMarkdown(ChatId, v)
 		case v := <-t.Utils.ErrC:
+			go t.SendMsg(ChatId, v)
+		// Lists
+		case v := <-t.Lists.C:
+			go t.SendMarkdown(ChatId, v)
+		case v := <-t.Lists.ErrC:
 			go t.SendMsg(ChatId, v)
 		}
 
