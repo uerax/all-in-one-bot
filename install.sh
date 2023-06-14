@@ -14,7 +14,7 @@ RedBG="\033[41;37m"
 Font="\033[0m"
 
 version=v0.0.6
-prj_name="Aio"
+prj_name="aio"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
 cfg_path="/usr/local/etc"
@@ -85,7 +85,7 @@ add_service() {
 
 cat > /etc/systemd/system/aio.service << EOF
 [Unit]
-Description=Aio-Bot Service
+Description=Aio Service
 Documentation=https://github.com/uerax/all-in-one-bot
 After=network.target nss-lookup.target
 

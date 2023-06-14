@@ -28,6 +28,9 @@ GOOS=darwin GOARCH=arm64 go build -o build/$input/Aio-macos-arm64 main.go
 echo ""
 echo "打包完成"
 
+git tag $input
+git push --tag
+
 #gh release create "$version" --title "$version" --notes "$RELEASE_NOTES"
 
 # for file in build/$version/*; do
