@@ -25,14 +25,13 @@ GOOS=windows GOARCH=arm64 go build -o build/$input/Aio-windows-arm64.exe main.go
 echo "Building macOS versions..."
 GOOS=darwin GOARCH=arm64 go build -o build/$input/Aio-macos-arm64 main.go
 
-echo ""
 echo "打包完成"
 
-git tag $input
-git push --tag
+if command -v "git" >/dev/null 2>&1; then
+    echo "创建tag并推送到仓库..."
+    git tag $input
+    git push --tag
+fi
 
-#gh release create "$version" --title "$version" --notes "$RELEASE_NOTES"
+echo "完成"
 
-# for file in build/$version/*; do
-#   gh release upload "$version" "$file" --clobber
-# done
