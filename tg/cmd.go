@@ -327,6 +327,25 @@ func jsonFormat(args string) {
 	go api.Utils.JsonFormat(args)
 }
 
+// Lists
+func cryptoList() {
+	go api.Lists.Crypto()
+}
+func imageList() {
+	go api.Lists.Image()
+}
+func listsList() {
+	go api.Lists.List()
+}
+func utilsList() {
+	go api.Lists.Utils()
+}
+func videoList() {
+	go api.Lists.Video()
+}
+func allList() {
+	go api.Lists.All()
+}
 
 // Default
 func tips(id int64, msg string) {

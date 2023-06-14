@@ -227,6 +227,17 @@ func Server() {
 		case "json_format":
 			Cmd = "json_format"
 			tips(update.Message.Chat.ID, "发送json内容")
+		// Lists
+		case "cmd_list":
+			allList()
+		case "crypto_cmd_list":
+			cryptoList()
+		case "video_cmd_list":
+			videoList()
+		case "image_cmd_list":
+			imageList()
+		case "utils_cmd_list":
+			utilsList()
 		}
 		
 	}
