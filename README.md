@@ -152,6 +152,17 @@ sudo pacman -S ffmpeg
 
 __通过 @BotFather /setcommands 发送添加__
 
+`常用命令`
+
+```
+get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选填)
+chatgpt - chatgpt功能
+youtube_audio_download_cut - 下载ytb音频并裁剪
+
+```
+
+`全部命令`
+
 ```
 chatid - 查询chatid
 add_kline_strategy_probe - 探测连续3根一直走势的k线 例: btcusdt
@@ -190,6 +201,11 @@ __待实现__
 
 ```
 twitter_download - 下载twitter的视频
+cmd_list - 列出全部功能
+crypto_cmd_list - 加密货币相关功能列表
+video_cmd_list - 音视频下载处理功能列表
+image_cmd_list - 图片处理/下载功能列表
+utils_cmd_list - 工具类功能列表
 ```
 
 __弃用__
