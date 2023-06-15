@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/uerax/goconf"
@@ -17,7 +17,7 @@ type ChatGPT struct {
 
 func NewChatGPT() *ChatGPT {
 	return &ChatGPT{
-		apiKey: goconf.VarStringOrDefault("", "chatgpt", "apikey"),
+		apiKey: goconf.VarStringOrDefault("", "chatgpt", "key"),
 		C: make(chan map[int64]string, 5),
 	}
 }
@@ -82,7 +82,7 @@ func (t *ChatGPT) Ask(id int64, msg string) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
 		fmt.Println("响应body读取异常")
