@@ -82,6 +82,7 @@ add_service() {
     is_root
     env
     install
+    set_cfg
 
 cat > /etc/systemd/system/aio.service << EOF
 [Unit]
@@ -108,8 +109,6 @@ EOF
 
 ln -s /etc/systemd/system/aio.service /etc/systemd/system/multi-user.target.wants/aio.service
 
-echo -e "手动前往配置文件($cfg_path/$prj_name/all-in-one-bot.yml)添加bot的token和chatid"
-echo -e "修改完成后执行: systemctl start aio 启动服务"
 }
 
 update_aio() {
@@ -138,6 +137,8 @@ set_cfg() {
     echo -e "${Green}2)  设置chatid${Font}"
     echo -e "${Green}3)  设置chatgpt key${Font}"
     echo -e "${Green}4)  设置pixian key${Font}"
+    echo -e "${Green}q)  不设置${Font}"
+
 
     read -rp "输入数字(回车确认)：" num
     echo -e ""
@@ -155,8 +156,11 @@ set_cfg() {
     4)
     field_name=authorization
     ;;
+    q)
+    return
+    ;;
     *)
-    exit
+    return
     ;;
     esac
 
