@@ -20,7 +20,7 @@ crypto:
 
 # ChatGPT 配置项 
 chatgpt:
-  apikey: 
+  key: 
   # 不兼容3.5以下版本
   model: gpt-3.5-turbo
 
