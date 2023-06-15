@@ -133,6 +133,45 @@ uninstall() {
     
 }
 
+set_cfg() {
+    echo -e "${Green}1)  设置token${Font}"
+    echo -e "${Green}2)  设置chatid${Font}"
+    echo -e "${Green}3)  设置chatgpt key${Font}"
+    echo -e "${Green}4)  设置pixian key${Font}"
+
+    read -rp "输入数字(回车确认)：" num
+    echo -e ""
+
+    case $num in
+    1)
+    field_name=token
+    ;;
+    2)
+    field_name=chatId
+    ;;
+    3)
+    field_name=key
+    ;;
+    4)
+    field_name=authorization
+    ;;
+    *)
+    exit
+    ;;
+    esac
+
+    read -rp "输入要设置的值：" val
+
+    read -rp "新的值为: $val, 请确认(y/n):" confirm
+    if [ "$confirm" != "y" ]; then
+        echo "已取消操作，退出脚本"
+        exit
+    fi
+
+    sed -i "s/\b\($field_name: \).*/\1$val/" ${cfg_path}/${prj_name}/all-in-one-bot.yml
+
+}
+
 menu() {
     echo -e "${Cyan}——————————————— 脚本信息 ———————————————${Font}"
     echo -e "\t${Yellow}    aio-bot 操作脚本${Font}"
@@ -147,6 +186,8 @@ menu() {
     echo -e "${Blue}5)   查看 error 日志${Font}"
     echo -e "${Blue}6)   查看 output 日志${Font}"
     echo -e "${Blue}7)   更新 AIO${Font}"
+    echo -e "${Blue}8)   添加配置${Font}"
+
     echo -e "${Blue}10)   完全卸载${Font}"
     echo -e "${Red}q)   退出${Font}"
     echo -e "${Cyan}————————————————————————————————————————${Font}\n"
@@ -174,6 +215,9 @@ menu() {
     ;;
     7)
     update_aio
+    ;;
+    8)
+    set_cfg
     ;;
     10)
     uninstall
