@@ -174,9 +174,9 @@ utils_cmd_list - 工具类功能列表
 
 ```
 chatid - 查询chatid
-smart_addr_tx - 输入聪明地址和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
-smart_addr_probe - 监控聪明地址购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
-delete_smart_addr_probe - 输入关闭监控的聪明地址 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
+smart_addr_tx - 输入聪明地址(eth)和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
+smart_addr_probe - 监控聪明地址(eth)购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
+delete_smart_addr_probe - 输入关闭监控的聪明地址(eth) 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 add_kline_strategy_probe - 探测连续3根一直走势的k线 例: btcusdt
 delete_kline_strategy_probe - 删除探测 例: btcusdt
 get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选填)
