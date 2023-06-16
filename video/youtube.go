@@ -59,7 +59,11 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 
 	audio_cfg := make([]interface{}, 3)
 	if len(video.Thumbnails) > 0 {
-		thumb, err := http.Get(video.Thumbnails[len(video.Thumbnails) - 1].URL)
+		idx := 0
+		if len(video.Thumbnails) > 1 {
+			idx = 1
+		}
+		thumb, err := http.Get(video.Thumbnails[idx].URL)
 		if err == nil {
 			defer thumb.Body.Close()
 			tmp, err := os.Create(filename + ".jpg")
