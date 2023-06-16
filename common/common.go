@@ -63,3 +63,17 @@ func DeleteFileAfterTime(path string, m int) {
 	time.Sleep(time.Minute * time.Duration(m))
 	os.Remove(path)
 }
+
+func TimeIntervalSecond(start string, end string) int {
+	format := "15:04:05"
+	startTime, err := time.Parse(format[len(format)-len(start):], start)
+	if err != nil {
+		return 0
+	}
+	endTime, err := time.Parse(format[len(format)-len(start):], end)
+	if err != nil {
+		return 0
+	}
+
+	return int(endTime.Sub(startTime).Seconds())
+}

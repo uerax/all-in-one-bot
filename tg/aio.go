@@ -67,9 +67,13 @@ func (t *Aio) SendFile(id int64, file string) {
 	t.bot.Send(mc)
 }
 
-func (t *Aio) SendAudio(id int64, file string) {
-	mc := tgbotapi.NewAudio(id, tgbotapi.FilePath(file))
-	
+func (t *Aio) SendAudio(id int64, cfg []interface{}) {
+	if len(cfg) != 3 {
+		return
+	}
+	mc := tgbotapi.NewAudio(id, tgbotapi.FilePath(cfg[2].(string)))
+	mc.Duration = cfg[1].(int)
+	mc.Thumb = tgbotapi.FilePath(cfg[0].(string))
 	t.bot.Send(mc)
 }
 
