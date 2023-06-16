@@ -355,15 +355,19 @@ func (t *Probe) SmartAddr(addr string, offset string) {
 
 	msg := strings.Builder{}
 	msg.WriteString("探测到新买入地址有:")
+	e := make(map[string]struct{})
 	for _, v := range scan.Result {
 		if v.TokenSymbol != "WETH" {
-			msg.WriteString("\n")
-			msg.WriteString(v.TokenName)
-			msg.WriteString("-")
-			msg.WriteString(v.TokenSymbol)
-			msg.WriteString(":`")
-			msg.WriteString(v.ContractAddress)
-			msg.WriteString("`")
+			if _, ok := e[v.ContractAddress]; !ok {
+				e[v.ContractAddress] = struct{}{}
+				msg.WriteString("\n")
+				msg.WriteString(v.TokenName)
+				msg.WriteString("-")
+				msg.WriteString(v.TokenSymbol)
+				msg.WriteString(":`")
+				msg.WriteString(v.ContractAddress)
+				msg.WriteString("`")
+			}
 		}
 	}
 	t.Meme <- msg.String()
