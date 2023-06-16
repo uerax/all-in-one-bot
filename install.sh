@@ -13,12 +13,13 @@ GreenBG="\033[42;37m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
-version=v0.0.6
+version=v0.0.7
 prj_name="aio"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
 cfg_path="/usr/local/etc"
 log_url="/var/log/"
+assets="Aio-linux-64"
 
 env() {
     apt install -y curl
@@ -39,9 +40,10 @@ is_root() {
 install() {
 
     # 下载链接
-    download_url=$(curl -sL $prj_url | grep "browser_download_url" | grep "Aio-linux-64" | cut -d '"' -f 4)
+    
     cfg_url="https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml"
     v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
+    download_url="https://github.com/uerax/all-in-one-bot/releases/download/$v/$assets"
 
     # 创建项目目录
     mkdir -p "$project_dir"
@@ -112,11 +114,11 @@ ln -s /etc/systemd/system/aio.service /etc/systemd/system/multi-user.target.want
 }
 
 update_aio() {
+    env
     systemctl stop aio
-    download_url=$(curl -sL $prj_url | grep "browser_download_url" | cut -d '"' -f 4)
     v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
-    rm $project_dir/$prj_name
-    curl -L $download_url -o $project_dir/$prj_name
+    url="https://github.com/uerax/all-in-one-bot/releases/download/$v/$assets"
+    wget -q $url -O $project_dir/$prj_name
     chmod +x ${project_dir}/${prj_name}
     systemctl start aio
     echo -e "更新完成,版本:$v"
