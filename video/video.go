@@ -8,7 +8,7 @@ import (
 
 type VideoDownload struct {
 	C chan string
-	AudioC chan string
+	AudioC chan []interface{}
 	MsgC chan string
 	path string
 }
@@ -17,7 +17,7 @@ func NewVideoDownload() *VideoDownload {
 	return &VideoDownload{
 		C: make(chan string, 3),
 		MsgC: make(chan string, 3),
-		AudioC: make(chan string, 3),
+		AudioC: make(chan []interface{}, 3),
 		path: goconf.VarStringOrDefault("/tmp/aio-tgbot/video/", "video", "path"),
 	}
 }
