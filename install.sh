@@ -115,7 +115,8 @@ update_aio() {
     systemctl stop aio
     download_url=$(curl -sL $prj_url | grep "browser_download_url" | cut -d '"' -f 4)
     v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
-    curl -L "$download_url" -o "$project_dir/$prj_name"
+    rm $project_dir/$prj_name
+    curl -L $download_url -o $project_dir/$prj_name
     chmod +x ${project_dir}/${prj_name}
     systemctl start aio
     echo -e "更新完成,版本:$v"
