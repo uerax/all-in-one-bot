@@ -7,6 +7,8 @@ telegram:
 
 # 加密货币配置项 
 crypto:
+  etherscan:
+    apiKey: 
   binance:
     secretKey: 
     apiKey: 
