@@ -253,6 +253,8 @@ func Server() {
 			imageList()
 		case "utils_cmd_list":
 			utilsList()
+		case "list_cmd_list":
+			listsList()
 		}
 		
 	}
