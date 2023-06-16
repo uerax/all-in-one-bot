@@ -168,6 +168,7 @@ crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
 image_cmd_list - 图片处理/下载功能列表
 utils_cmd_list - 工具类功能列表
+list_cmd_list - 功能分类列表
 ```
 
 `全部命令`
