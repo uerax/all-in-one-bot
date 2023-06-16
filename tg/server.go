@@ -43,6 +43,12 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Crypto
+			case "smart_addr_tx":
+				smartAddrTx(update.Message.Text)
+			case "smart_addr_probe":
+				addSmartAddrProbe(update.Message.Text)
+			case "delete_smart_addr_probe":
+				deleteSmartAddrProbe(update.Message.Text)
 			case "add_kline_strategy_probe":
 				addKlineStrategyProbe(update.Message.Text)
 			case "delete_kline_strategy_probe":
@@ -122,6 +128,15 @@ func Server() {
 		}
 
 		switch update.Message.Command() {
+		case "smart_addr_tx":
+			Cmd = "smart_addr_tx"
+			tips(update.Message.Chat.ID, "输入聪明地址和近n条交易 例: \n`0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20`")
+		case "smart_addr_probe":
+			Cmd = "smart_addr_probe"
+			tips(update.Message.Chat.ID, "输入需要监控的聪明地址 例: \n`0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80`")
+		case "delete_smart_addr_probe":
+			Cmd = "delete_smart_addr_probe"
+			tips(update.Message.Chat.ID, "输入关闭监控的聪明地址 例: \n`0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80`")
 		case "add_kline_strategy_probe":
 			Cmd = "add_kline_strategy_probe"
 			tips(update.Message.Chat.ID, "输入要监控的u本位合约 例: \n`btcusdt`")
