@@ -2,7 +2,10 @@ package crypto
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +35,8 @@ type Probe struct {
 	task      map[string]context.CancelFunc
 	memeHighTask  map[string]context.CancelFunc
 	memeLowTask  map[string]context.CancelFunc
+	smartAddr	map[string]context.CancelFunc
+	smartBuys map[string]map[string]struct{}
 }
 
 func NewProbe() *Probe {
@@ -46,7 +51,8 @@ func NewProbe() *Probe {
 		task:      make(map[string]context.CancelFunc),
 		memeLowTask:  make(map[string]context.CancelFunc),
 		memeHighTask:  make(map[string]context.CancelFunc),
-		
+		smartAddr:  make(map[string]context.CancelFunc),
+		smartBuys: make(map[string]map[string]struct{}),
 	}
 }
 
@@ -130,8 +136,6 @@ func (p *Probe) MemePrice(query string, chain string) {
 		}
 	}
 
-
-	
 	s := fmt.Sprintf("*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*    %0.2f%%    $%0.2f    %d/%d\n*1H:*    %0.2f%%    $%0.2f    %d/%d\n*6H:*    %0.2f%%    $%0.2f    %d/%d\n*1D:*    %0.2f%%    $%0.2f    %d/%d\n\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S ,pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 
 	check := p.api.MemeCheck(query, chain)
@@ -303,37 +307,78 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 	}
 }
 
-// 以下为改造功能,由于目前已经不需要所以停止改造
-func (t *Probe) AddHighLine(crypto string, price string) {
-	if _, ok := t.HighLine[crypto]; !ok {
-		t.HighLine[crypto] = &line{}
+func (t *Probe) AddSmartAddr(addr string) {
+	if _, ok := t.smartAddr[addr]; !ok {
+		ctx, cf := context.WithCancel(context.Background())
+		t.smartAddr[addr] = cf
+		go t.SmartAddrProbe(ctx, addr)
 	}
-	t.HighLine[crypto].HighPrice = price
-	t.HighLine[crypto].HighNotify = 0
 }
 
-func (t *Probe) AddLowLine(crypto string, price string) {
-	if _, ok := t.LowLine[crypto]; !ok {
-		t.LowLine[crypto] = &line{}
+func (t *Probe) DeleteSmartAddr(addr string) {
+	if cf, ok := t.smartAddr[addr]; ok {
+		cf()
+		delete(t.smartAddr, addr)
 	}
-	t.LowLine[crypto].LowPrice = price
-	t.LowLine[crypto].LowNotify = 0
 }
 
-func (t *Probe) RmAllLine() {
-	t.HighLine = make(map[string]*line)
-	t.LowLine = make(map[string]*line)
+func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
+	apiKey := goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey")
+	if apiKey == "" {
+		t.Meme <- "未读取到etherscan的apikey无法启动监控"
+		delete(t.smartAddr, addr)
+		return
+	}
+	now := time.Now()
+	time.Sleep(time.Duration(60 - now.Second()))
+	tk := time.NewTicker(time.Minute)
+	t.smartBuys[addr] = make(map[string]struct{})
+	t.Meme <- fmt.Sprintf("已开启 %s 地址的监控", addr)
+	for {
+		select {
+		case <- ctx.Done():
+			t.Meme <- fmt.Sprintf("已关闭 %s 地址的监控", addr)
+			return
+		case <- tk.C:
+			url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=10&sort=desc&address=%s&apikey=%s"
+			r, err := http.Get(fmt.Sprintf(url, addr, apiKey))
+			if err != nil {
+				fmt.Println("请求失败")
+				continue
+			}
+			defer r.Body.Close()
+			b, err := io.ReadAll(r.Body)
+			if err != nil {
+				fmt.Println("读取body失败")
+				continue
+			}
+			scan := new(TokenTxResp)
+			err = json.Unmarshal(b, &scan)
+			if err != nil {
+				fmt.Println("json转换失败")
+				continue
+			}
+
+			msg := strings.Builder{}
+			msg.WriteString("探测到新买入地址有:")
+			for _, v := range scan.Result {
+				if v.TokenSymbol != "WETH" {
+					if _, ok := t.smartBuys[addr][v.ContractAddress]; !ok {
+						t.smartBuys[addr][v.ContractAddress] = struct{}{}
+						msg.WriteString("\n[")
+						msg.WriteString(v.TokenName)
+						msg.WriteString("-")
+						msg.WriteString(v.TokenSymbol)
+						msg.WriteString("]:`")
+						msg.WriteString(v.ContractAddress)
+						msg.WriteString("`")
+					}
+				}
+			}
+			t.Meme <- msg.String()
+		}
+
+	}
 }
 
-func (t *Probe) RmLowLine(crypto string) {
-	delete(t.LowLine, crypto)
-}
 
-func (t *Probe) RmHighLine(crypto string) {
-	delete(t.HighLine, crypto)
-}
-
-func (t *Probe) RmLine(crypto string) {
-	t.RmHighLine(crypto)
-	t.RmLowLine(crypto)
-}
