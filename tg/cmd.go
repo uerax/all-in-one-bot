@@ -8,6 +8,27 @@ import (
 )
 
 // Crypto Start
+func smartAddrTx(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) < 1 {
+		fmt.Printf("smartAddrTx 参数有误: %s", args)
+		go api.SendMessage("参数有误")
+		return
+	}
+	if len(arg) == 1 {
+		arg = append(arg, "20")
+	}
+	go api.CryptoV2Api.SmartAddr(arg[0], arg[1])
+}
+
+func deleteSmartAddrProbe(args string) {
+	go api.CryptoV2Api.DeleteSmartAddr(args)
+}
+
+func addSmartAddrProbe(args string) {
+	go api.CryptoV2Api.AddSmartAddr(args)
+}
+
 func addKlineStrategyProbe(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
