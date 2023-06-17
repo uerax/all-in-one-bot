@@ -382,56 +382,63 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	}
 	now := time.Now()
 	frequency := goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval")
-	time.Sleep(time.Duration((60 - now.Second()) % frequency))
-	tk := time.NewTicker(time.Minute * time.Duration(frequency))
-	t.smartBuys[addr] = make(map[string]struct{})
 	t.Meme <- fmt.Sprintf("已开启 %s 地址的监控", addr)
+	time.Sleep(time.Duration((60 - now.Minute()) % frequency) * time.Minute)
+
+	monitor := func() {
+		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=30&sort=desc&address=%s&apikey=%s"
+		r, err := http.Get(fmt.Sprintf(url, addr, apiKey))
+		if err != nil {
+			fmt.Println("请求失败")
+			return
+		}
+		defer r.Body.Close()
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println("读取body失败")
+			return
+		}
+		scan := new(TokenTxResp)
+		err = json.Unmarshal(b, &scan)
+		if err != nil {
+			fmt.Println("json转换失败")
+			return
+		}
+
+		if scan.Status != "1" {
+			return
+		}
+
+		msg := strings.Builder{}
+		msg.WriteString("探测到新买入地址有:")
+		for _, v := range scan.Result {
+			if v.TokenSymbol != "WETH" {
+				if _, ok := t.smartBuys[addr][v.ContractAddress]; !ok {
+					t.smartBuys[addr][v.ContractAddress] = struct{}{}
+					msg.WriteString("\n[")
+					msg.WriteString(v.TokenSymbol)
+					msg.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
+					msg.WriteString(v.ContractAddress)
+					msg.WriteString("): `")
+					msg.WriteString(v.ContractAddress)
+					msg.WriteString("`")
+				}
+			}
+		}
+		t.Meme <- msg.String()
+	}
+	t.smartBuys[addr] = make(map[string]struct{})
+
+	monitor()
+
+	tk := time.NewTicker(time.Minute * time.Duration(frequency))
 	for {
 		select {
 		case <-ctx.Done():
 			t.Meme <- fmt.Sprintf("已关闭 %s 地址的监控", addr)
 			return
 		case <-tk.C:
-			url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=30&sort=desc&address=%s&apikey=%s"
-			r, err := http.Get(fmt.Sprintf(url, addr, apiKey))
-			if err != nil {
-				fmt.Println("请求失败")
-				continue
-			}
-			defer r.Body.Close()
-			b, err := io.ReadAll(r.Body)
-			if err != nil {
-				fmt.Println("读取body失败")
-				continue
-			}
-			scan := new(TokenTxResp)
-			err = json.Unmarshal(b, &scan)
-			if err != nil {
-				fmt.Println("json转换失败")
-				continue
-			}
-
-			if scan.Status != "1" {
-				continue
-			}
-
-			msg := strings.Builder{}
-			msg.WriteString("探测到新买入地址有:")
-			for _, v := range scan.Result {
-				if v.TokenSymbol != "WETH" {
-					if _, ok := t.smartBuys[addr][v.ContractAddress]; !ok {
-						t.smartBuys[addr][v.ContractAddress] = struct{}{}
-						msg.WriteString("\n[")
-						msg.WriteString(v.TokenSymbol)
-						msg.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
-						msg.WriteString(v.ContractAddress)
-						msg.WriteString("): `")
-						msg.WriteString(v.ContractAddress)
-						msg.WriteString("`")
-					}
-				}
-			}
-			t.Meme <- msg.String()
+			monitor()
 		}
 
 	}
