@@ -7,8 +7,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"tg-aio-bot/common"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 

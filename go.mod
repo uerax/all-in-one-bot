@@ -1,4 +1,4 @@
-module tg-aio-bot
+module github.com/uerax/all-in-one-bot
 
 go 1.19
 
