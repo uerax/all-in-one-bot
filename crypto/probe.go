@@ -360,11 +360,11 @@ func (t *Probe) SmartAddr(addr string, offset string) {
 		if v.TokenSymbol != "WETH" {
 			if _, ok := e[v.ContractAddress]; !ok {
 				e[v.ContractAddress] = struct{}{}
-				msg.WriteString("\n")
-				msg.WriteString(v.TokenName)
-				msg.WriteString("-")
+				msg.WriteString("\n[")
 				msg.WriteString(v.TokenSymbol)
-				msg.WriteString(":`")
+				msg.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
+				msg.WriteString(v.ContractAddress)
+				msg.WriteString("): `")
 				msg.WriteString(v.ContractAddress)
 				msg.WriteString("`")
 			}
@@ -381,9 +381,9 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		return
 	}
 	now := time.Now()
-
-	time.Sleep(time.Duration(60 - now.Second()))
-	tk := time.NewTicker(time.Minute)
+	frequency := goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval")
+	time.Sleep(time.Duration((60 - now.Second()) % frequency))
+	tk := time.NewTicker(time.Minute * time.Duration(frequency))
 	t.smartBuys[addr] = make(map[string]struct{})
 	t.Meme <- fmt.Sprintf("已开启 %s 地址的监控", addr)
 	for {
@@ -421,11 +421,11 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 				if v.TokenSymbol != "WETH" {
 					if _, ok := t.smartBuys[addr][v.ContractAddress]; !ok {
 						t.smartBuys[addr][v.ContractAddress] = struct{}{}
-						msg.WriteString("\n")
-						msg.WriteString(v.TokenName)
-						msg.WriteString("-")
+						msg.WriteString("\n[")
 						msg.WriteString(v.TokenSymbol)
-						msg.WriteString(":`")
+						msg.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
+						msg.WriteString(v.ContractAddress)
+						msg.WriteString("): `")
 						msg.WriteString(v.ContractAddress)
 						msg.WriteString("`")
 					}
