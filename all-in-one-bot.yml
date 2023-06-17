@@ -9,6 +9,8 @@ telegram:
 crypto:
   etherscan:
     apiKey: 
+    # 探测间隔 默认30分钟
+    interval: 30
   binance:
     secretKey: 
     apiKey: 
