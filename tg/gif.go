@@ -57,12 +57,11 @@ func (t *Gif) GifDownload(fileId string) {
 	}
 	defer resp.Body.Close()
 
-
 	// 创建本地文件以保存下载的贴纸
 	fileName := filepath.Base(file.FilePath)
 	fileExt := filepath.Ext(fileName)
 	newFileName := strings.TrimSuffix(fileName, fileExt)
-	filePath := filepath.Join(t.path, newFileName + ".mp4")
+	filePath := filepath.Join(t.path, newFileName+".mp4")
 	if _, err := os.Stat(t.path); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(t.path, os.ModePerm) // 创建目录
 		if err != nil {
@@ -96,7 +95,7 @@ func (t *Gif) GifDownload(fileId string) {
 		return
 	}
 
-	err = common.Zip(filePath + ".gif", filePath + ".zip")
+	err = common.Zip(filePath+".gif", filePath+".zip")
 	if err != nil {
 		fmt.Printf("创建压缩包失败%s\n", err.Error())
 		t.MsgC <- "创建压缩包失败"
@@ -104,5 +103,5 @@ func (t *Gif) GifDownload(fileId string) {
 	}
 
 	t.C <- filePath + ".zip"
-	go common.DeleteFileAfterTime(filePath + ".zip", 5)
+	go common.DeleteFileAfterTime(filePath+".zip", 5)
 }

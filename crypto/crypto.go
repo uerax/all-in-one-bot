@@ -11,9 +11,9 @@ import (
 
 var (
 	// apiUrl  = "https://api.binance.com"
-	dataUrl = "https://data.binance.com"
-	fapiUrl = "https://fapi.binance.com"
-	memeUrl = "https://api.dexscreener.com/latest/dex/search/?q="
+	dataUrl      = "https://data.binance.com"
+	fapiUrl      = "https://fapi.binance.com"
+	memeUrl      = "https://api.dexscreener.com/latest/dex/search/?q="
 	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
 )
 
@@ -25,9 +25,9 @@ type Crypto struct {
 
 func NewCrypto(api, secret string) *Crypto {
 	return &Crypto{
-		apiKey: api,
+		apiKey:    api,
 		secretKey: secret,
-		chainMap: map[string]string{"ethereum":"1","optimism":"10","cronos":"25","bsc":"56","okc":"66","gnosis":"100","heco":"128","polygon":"137","fantom":"250","kcc":"321","zksync":"324","ethw":"10001","fon":"201022","arbitrum":"42161","avalanche":"43114","linea":"59140","harmony":"1666600000","tron":"tron"},
+		chainMap:  map[string]string{"ethereum": "1", "optimism": "10", "cronos": "25", "bsc": "56", "okc": "66", "gnosis": "100", "heco": "128", "polygon": "137", "fantom": "250", "kcc": "321", "zksync": "324", "ethw": "10001", "fon": "201022", "arbitrum": "42161", "avalanche": "43114", "linea": "59140", "harmony": "1666600000", "tron": "tron"},
 	}
 }
 
@@ -42,12 +42,12 @@ func (t *Crypto) Ping() bool {
 func (t *Crypto) Price(name ...string) (prices map[string]string) {
 	prices = make(map[string]string)
 	if len(name) == 0 {
-		return 
+		return
 	}
 	symbols := fmt.Sprintf(`/api/v3/ticker/price?symbols=["%s"]`, strings.Join(name, `","`))
 	res, err := http.NewRequest(http.MethodGet, dataUrl+symbols, nil)
 	if err != nil {
-		return 
+		return
 	}
 
 	resp, err := http.DefaultClient.Do(res)
@@ -60,7 +60,7 @@ func (t *Crypto) Price(name ...string) (prices map[string]string) {
 	if err != nil {
 		return
 	}
-	
+
 	price := []priceResp{}
 	if err = json.Unmarshal(resBody, &price); err != nil {
 		return
@@ -70,18 +70,18 @@ func (t *Crypto) Price(name ...string) (prices map[string]string) {
 		prices[v.Symbol] = v.Price
 	}
 
-	return 
+	return
 }
 
 func (t *Crypto) FuturesPrice(name string) (prices string) {
 	if len(name) == 0 {
-		return 
+		return
 	}
 	symbols := fmt.Sprintf(`/fapi/v1/ticker/price?symbol=%s`, name)
 	res, err := http.NewRequest(http.MethodGet, fapiUrl+symbols, nil)
 	if err != nil {
 		fmt.Println("请求失败：", err)
-		return 
+		return
 	}
 
 	resp, err := http.DefaultClient.Do(res)
@@ -96,15 +96,14 @@ func (t *Crypto) FuturesPrice(name string) (prices string) {
 		fmt.Println("body读取失败：", err)
 		return
 	}
-	
+
 	price := priceResp{}
 	if err = json.Unmarshal(resBody, &price); err != nil {
 		fmt.Println("body转换为结构体失败", err)
 		return
 	}
-	
 
-	return price.Price 
+	return price.Price
 }
 
 // 前3根k线的涨跌结果,1 涨 -1 跌
@@ -122,22 +121,22 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 	defer resp.Body.Close()
 
 	// 解析JSON数据
-	
+
 	b, _ := io.ReadAll(resp.Body)
 
 	var result [][]interface{}
 	json.Unmarshal(b, &result)
-	
+
 	// 打印K线数据
 	for _, kline := range result {
 		end, _ := strconv.ParseFloat(kline[4].(string), 64)
 		start, _ := strconv.ParseFloat(kline[1].(string), 64)
-		if end - start >= 0 {
+		if end-start >= 0 {
 			res = append(res, 1)
 		} else {
 			res = append(res, -1)
 		}
-		
+
 	}
 
 	return res
@@ -200,13 +199,13 @@ func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
 	defer r.Body.Close()
 	if err != nil {
 		fmt.Println("Body读取失败", err)
-		return nil 
+		return nil
 	}
 
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
 		fmt.Println("json转换失败", err)
-		return nil 
+		return nil
 	}
 
 	for _, v := range meme.MemeCheckers {

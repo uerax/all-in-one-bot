@@ -114,7 +114,7 @@ func (t *VpsMonitor) probe(url, keyword string) {
 			if len(s) > 0 {
 				t.C <- s
 			}
-			
+
 		}
 
 	}

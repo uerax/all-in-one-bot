@@ -9,15 +9,15 @@ import (
 
 type Task struct {
 	task map[string]context.CancelFunc
-	C chan string
-	idx int
+	C    chan string
+	idx  int
 }
 
 func NewTask() *Task {
 	return &Task{
 		task: make(map[string]context.CancelFunc),
-		C: make(chan string, 5),
-		idx: 0,
+		C:    make(chan string, 5),
+		idx:  0,
 	}
 }
 
@@ -27,7 +27,7 @@ func (t *Task) AddTask(itv string, msg string) {
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	t.task[strconv.Itoa(t.idx)] = cancel	
+	t.task[strconv.Itoa(t.idx)] = cancel
 	go t.Do(i, msg, ctx, t.idx)
 	t.Increase()
 	t.C <- fmt.Sprintf("定时提醒编号为: %d 已启动", t.idx)
@@ -52,13 +52,11 @@ func (t *Task) Do(itv int64, msg string, ctx context.Context, idx int) {
 
 	for {
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 			t.C <- m
-		case <- ctx.Done():
+		case <-ctx.Done():
 			t.C <- fmt.Sprintf("编号: %d 的定时提醒已关闭", idx)
 			return
 		}
 	}
 }
-
-

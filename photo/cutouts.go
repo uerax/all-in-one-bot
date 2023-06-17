@@ -13,20 +13,20 @@ import (
 )
 
 type Cutouts struct {
-	rmbgKey string
+	rmbgKey   string
 	pixianKey string
-	path string
-	C chan map[int64]string
-	ErrC chan string
+	path      string
+	C         chan map[int64]string
+	ErrC      chan string
 }
 
 func NewCutouts() *Cutouts {
 	return &Cutouts{
-		rmbgKey: goconf.VarStringOrDefault("", "photo", "removebg", "apikey"),
+		rmbgKey:   goconf.VarStringOrDefault("", "photo", "removebg", "apikey"),
 		pixianKey: goconf.VarStringOrDefault("", "photo", "pixian", "authorization"),
-		C: make(chan map[int64]string, 5),
-		ErrC: make(chan string, 1),
-		path: goconf.VarStringOrDefault("/tmp/aio-tgbot/", "photo", "path"),
+		C:         make(chan map[int64]string, 5),
+		ErrC:      make(chan string, 1),
+		path:      goconf.VarStringOrDefault("/tmp/aio-tgbot/", "photo", "path"),
 	}
 }
 
@@ -37,7 +37,7 @@ func (t *Cutouts) RemoveBackground(id int64, uri string) {
 	if t.rmbgKey != "" {
 		t.removebg(id, uri)
 	}
-	
+
 }
 
 func (t *Cutouts) pixian(id int64, uri string) {
@@ -78,7 +78,6 @@ func (t *Cutouts) pixian(id int64, uri string) {
 
 	r.Header.Add("Authorization", t.pixianKey)
 	r.Header.Set("Content-Type", writer.FormDataContentType())
-	
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
@@ -107,11 +106,11 @@ func (t *Cutouts) pixian(id int64, uri string) {
 	}
 
 	t.C <- map[int64]string{
-		id:filename,
+		id: filename,
 	}
 
 	go common.DeleteFileAfterTime(filename, 2)
-	
+
 }
 
 func (t *Cutouts) removebg(id int64, uri string) {
@@ -155,7 +154,7 @@ func (t *Cutouts) removebg(id int64, uri string) {
 			return
 		}
 	}
-	
+
 	r, err := http.NewRequest(http.MethodPost, "https://api.remove.bg/v1.0/removebg", form)
 	if err != nil {
 		fmt.Println("Remove Background请求生成失败")
@@ -165,7 +164,6 @@ func (t *Cutouts) removebg(id int64, uri string) {
 
 	r.Header.Set("X-API-Key", t.rmbgKey)
 	r.Header.Set("Content-Type", writer.FormDataContentType())
-	
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
@@ -194,7 +192,7 @@ func (t *Cutouts) removebg(id int64, uri string) {
 	}
 
 	t.C <- map[int64]string{
-		id:filename,
+		id: filename,
 	}
 	go common.DeleteFileAfterTime(filename, 2)
 }
