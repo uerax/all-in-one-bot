@@ -21,19 +21,19 @@ import (
 var api = &Aio{}
 
 type Aio struct {
-	local	   string
-	bot        *tgbotapi.BotAPI
-	CryptoApi  *crypto.CryptoMonitor
-	ChatGPTApi *chatgpt.ChatGPT
-	VpsApi     *vps.VpsMonitor
-	PhotoApi   *photo.Cutouts
+	local       string
+	bot         *tgbotapi.BotAPI
+	CryptoApi   *crypto.CryptoMonitor
+	ChatGPTApi  *chatgpt.ChatGPT
+	VpsApi      *vps.VpsMonitor
+	PhotoApi    *photo.Cutouts
 	CryptoV2Api *crypto.Probe
-	Cron *cron.Task
-	Video *video.VideoDownload
-	Gif *Gif
-	Sticker *Sticker
-	Utils   *utils.Utils
-	Lists	*lists.Lists
+	Cron        *cron.Task
+	Video       *video.VideoDownload
+	Gif         *Gif
+	Sticker     *Sticker
+	Utils       *utils.Utils
+	Lists       *lists.Lists
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -79,7 +79,7 @@ func (t *Aio) SendAudio(id int64, cfg []interface{}) {
 
 func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
 	cmd := exec.Command("curl",
-		"-v", 
+		"-v",
 		"-F", fmt.Sprintf("chat_id=%d", id),
 		"-F", fmt.Sprintf("video=file://%s", filepath),
 		"-F", "supports_streaming=true",
@@ -92,7 +92,6 @@ func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
 		fmt.Println("Error:", err)
 	}
 }
-
 
 func (t *Aio) NewBot(token string, local string) {
 	bot, err := tgbotapi.NewBotAPI(token)

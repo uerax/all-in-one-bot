@@ -12,37 +12,37 @@ import (
 
 type ChatGPT struct {
 	apiKey string
-	C chan map[int64]string
+	C      chan map[int64]string
 }
 
 func NewChatGPT() *ChatGPT {
 	return &ChatGPT{
 		apiKey: goconf.VarStringOrDefault("", "chatgpt", "key"),
-		C: make(chan map[int64]string, 5),
+		C:      make(chan map[int64]string, 5),
 	}
 }
 
 type ChatGPTRequest struct {
-	Model    string    `json:"model"`   
+	Model    string     `json:"model"`
 	Messages []*Message `json:"messages"`
 }
 
 type Message struct {
-	Role    string `json:"role"`   
+	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
 type Choice struct {
-	Index         int      `json:"index"`
-	Message       Message  `json:"message"`
-	FinishReason  string   `json:"finish_reason"`
+	Index        int     `json:"index"`
+	Message      Message `json:"message"`
+	FinishReason string  `json:"finish_reason"`
 }
 
 type ChatGPTResponse struct {
-	ID        string   `json:"id"`
-	Object    string   `json:"object"`
-	Created   int64    `json:"created"`
-	Choices   []Choice `json:"choices"`
+	ID      string   `json:"id"`
+	Object  string   `json:"object"`
+	Created int64    `json:"created"`
+	Choices []Choice `json:"choices"`
 }
 
 func (t *ChatGPT) Ask(id int64, msg string) {
@@ -57,7 +57,7 @@ func (t *ChatGPT) Ask(id int64, msg string) {
 		Model: model,
 		Messages: []*Message{
 			{
-				Role: "user",
+				Role:    "user",
 				Content: msg,
 			},
 		},
@@ -97,7 +97,7 @@ func (t *ChatGPT) Ask(id int64, msg string) {
 	}
 
 	t.C <- map[int64]string{
-		id:respBody.Choices[0].Message.Content,
+		id: respBody.Choices[0].Message.Content,
 	}
-	
+
 }

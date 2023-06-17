@@ -8,12 +8,12 @@ import (
 
 type Lists struct {
 	crypto []interface{}
-	video []interface{}
-	image []interface{}
-	utils []interface{}
-	list []interface{}
-	C chan string
-	ErrC chan string
+	video  []interface{}
+	image  []interface{}
+	utils  []interface{}
+	list   []interface{}
+	C      chan string
+	ErrC   chan string
 }
 
 func NewLists() *Lists {
@@ -24,12 +24,12 @@ func NewLists() *Lists {
 	_list, _ := goconf.VarArray("command", "list")
 	return &Lists{
 		crypto: _crypto,
-		video: _video,
-		image: _image,
-		utils: _utils,
-		list: _list,
-		C: make(chan string, 3),
-		ErrC: make(chan string, 3),
+		video:  _video,
+		image:  _image,
+		utils:  _utils,
+		list:   _list,
+		C:      make(chan string, 3),
+		ErrC:   make(chan string, 3),
 	}
 }
 
@@ -104,7 +104,6 @@ func (t *Lists) All() {
 		b.WriteString("\n`/")
 		b.WriteString(strings.ReplaceAll(v.(string), " -", "` -"))
 	}
-	
+
 	t.C <- b.String()
 }
-

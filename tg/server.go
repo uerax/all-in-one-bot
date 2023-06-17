@@ -19,7 +19,7 @@ func Server() {
 		panic(err)
 	}
 	id := goconf.VarIntOrDefault(0, "telegram", "chatId")
-	
+
 	ChatId = int64(id)
 
 	api.NewBot(token, goconf.VarStringOrDefault("http://localhost:8081/", "telegram", "local"))
@@ -108,7 +108,7 @@ func Server() {
 			// Sticker And Gif
 			case "sticker_download":
 				if update.Message.Sticker != nil {
-					stickerDownload(update.Message.Sticker.FileID)                          
+					stickerDownload(update.Message.Sticker.FileID)
 				}
 			case "gif_download":
 				if update.Message.Animation != nil {
@@ -126,7 +126,7 @@ func Server() {
 			case "json_format":
 				jsonFormat(update.Message.Text)
 			}
-		
+
 		}
 
 		switch update.Message.Command() {
@@ -205,10 +205,10 @@ func Server() {
 		// Video
 		case "youtube_download":
 			Cmd = "youtube_download"
-			tips(update.Message.Chat.ID, "输入url或者vid 例: `ISqZpXkgNNs`")			
+			tips(update.Message.Chat.ID, "输入url或者vid 例: `ISqZpXkgNNs`")
 		case "youtube_audio_download":
 			Cmd = "youtube_audio_download"
-			tips(update.Message.Chat.ID, "输入url或者vid 例: `ISqZpXkgNNs`")			
+			tips(update.Message.Chat.ID, "输入url或者vid 例: `ISqZpXkgNNs`")
 		case "youtube_download_cut":
 			Cmd = "youtube_download_cut"
 			tips(update.Message.Chat.ID, "输入url或者vid 开始时间 结束时间(s) \n例: `ISqZpXkgNNs 100 2000`")
@@ -224,7 +224,7 @@ func Server() {
 		case "twitter_download":
 			Cmd = "twitter_download"
 			tips(update.Message.Chat.ID, "输入url 例: `https://twitter.com/SpaceX/status/1660401510969212929?s=20`")
-		// Sticker And Gif			
+		// Sticker And Gif
 		case "gif_download":
 			Cmd = "gif_download"
 			tips(update.Message.Chat.ID, "发送需要转换的GIF图")
@@ -261,6 +261,6 @@ func Server() {
 		case "list_cmd_list":
 			listsList()
 		}
-		
+
 	}
 }

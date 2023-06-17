@@ -55,7 +55,7 @@ func deleteKlineStrategyProbe(args string) {
 
 func deleteKlineStrategyProbeTip() {
 	msg := api.CryptoV2Api.ListKLineProbe()
-	go api.SendMarkdown(ChatId, msg + "\n\n请输入要删除的u本位合约 例: `btcusdt`")
+	go api.SendMarkdown(ChatId, msg+"\n\n请输入要删除的u本位合约 例: `btcusdt`")
 }
 
 func listKlineStrategyProbe() {
@@ -70,7 +70,7 @@ func addCryptoGrowthMonitor(id int64, args string) {
 		go api.SendMessage("参数有误")
 		return
 	}
-	
+
 	go api.CryptoApi.AddHighMonitor(id, arg[0], arg[1])
 
 }
@@ -82,7 +82,7 @@ func addCryptoDeclineMonitor(id int64, args string) {
 		go api.SendMessage("参数有误")
 		return
 	}
-	
+
 	go api.CryptoApi.AddLowMonitor(id, arg[0], arg[1])
 }
 
@@ -101,7 +101,7 @@ func getCryptoPrice(id int64, args string) {
 		sb.WriteString(":")
 		sb.WriteString(v)
 	}
-	go api.SendMsg(id, sb.String())	
+	go api.SendMsg(id, sb.String())
 }
 
 func deleteCryptoMinitor(id int64, args string) {
@@ -122,7 +122,7 @@ func getUFuturesCryptoPrice(id int64, args string) {
 	sb.WriteString(args)
 	sb.WriteString(":")
 	sb.WriteString(ctp)
-	go api.SendMsg(id, sb.String())	
+	go api.SendMsg(id, sb.String())
 }
 
 func addMemeGrowthMonitor(args string) {
@@ -214,7 +214,7 @@ func cutouts(id int64, photos []tgbotapi.PhotoSize) {
 		go api.SendMessage("图片读取失败,请重新发送")
 		return
 	}
-	
+
 	go api.PhotoApi.RemoveBackground(id, file)
 }
 

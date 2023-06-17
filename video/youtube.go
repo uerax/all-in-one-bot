@@ -21,7 +21,6 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 		return
 	}
 
-	
 	filename := v.path + replaceSpecialChars(video.Title)
 
 	formats := video.Formats.FindByItag(140)
@@ -32,7 +31,6 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 		fmt.Println(err)
 		return
 	}
-
 
 	if _, err := os.Stat(v.path); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(v.path, os.ModePerm) // 创建目录
@@ -80,24 +78,24 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 	audio_cfg[2] = filename + ".m4a"
 
 	if len(startAndEnd) == 2 {
-		err = v.Cut(filename + ".m4a", startAndEnd[0], startAndEnd[1], filename + "_C.m4a")
+		err = v.Cut(filename+".m4a", startAndEnd[0], startAndEnd[1], filename+"_C.m4a")
 		if err != nil {
 			v.MsgC <- "请检查是否安装ffmpeg"
 			fmt.Println(err)
 			return
 		}
-		audio_cfg[1] = common.TimeIntervalSecond(startAndEnd[0],startAndEnd[1])
+		audio_cfg[1] = common.TimeIntervalSecond(startAndEnd[0], startAndEnd[1])
 		audio_cfg[2] = filename + "_C.m4a"
 		v.AudioC <- audio_cfg
-		go common.DeleteFileAfterTime(filename + "_C.m4a", 5)
-		go common.DeleteFileAfterTime(filename + ".m4a", 5)
-		go common.DeleteFileAfterTime(filename + ".jpg", 5)
+		go common.DeleteFileAfterTime(filename+"_C.m4a", 5)
+		go common.DeleteFileAfterTime(filename+".m4a", 5)
+		go common.DeleteFileAfterTime(filename+".jpg", 5)
 		return
 	}
 
 	v.AudioC <- audio_cfg
-	go common.DeleteFileAfterTime(filename + ".m4a", 5)
-	go common.DeleteFileAfterTime(filename + ".jpg", 5)
+	go common.DeleteFileAfterTime(filename+".m4a", 5)
+	go common.DeleteFileAfterTime(filename+".jpg", 5)
 
 }
 
@@ -146,7 +144,7 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 	}
 
 	if len(startAndEnd) == 2 {
-		err = v.Cut(filename + ".mp4", startAndEnd[0], startAndEnd[1], filename + "_C.mp4")
+		err = v.Cut(filename+".mp4", startAndEnd[0], startAndEnd[1], filename+"_C.mp4")
 		if err != nil {
 			v.MsgC <- "请检查是否安装ffmpeg"
 			fmt.Println(err)
@@ -154,19 +152,19 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 		}
 
 		v.C <- filename + "_C.mp4"
-		go common.DeleteFileAfterTime(filename + "_C.mp4", 5)
-		go common.DeleteFileAfterTime(filename + ".mp4", 5)
+		go common.DeleteFileAfterTime(filename+"_C.mp4", 5)
+		go common.DeleteFileAfterTime(filename+".mp4", 5)
 		return
 	}
 
 	v.C <- filename + ".mp4"
-	go common.DeleteFileAfterTime(filename + ".mp4", 5)
+	go common.DeleteFileAfterTime(filename+".mp4", 5)
 }
 
 func replaceSpecialChars(fileName string) string {
 
 	re := regexp.MustCompile(`[\p{So}\p{Sk}\/\\:*?"<>| ]`)
 	result := re.ReplaceAllString(fileName, "_")
-	
+
 	return result
 }

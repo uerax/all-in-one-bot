@@ -9,7 +9,6 @@ import (
 	"github.com/iawia002/lux/extractors/bilibili"
 )
 
-
 func (v *VideoDownload) BilibiliDownload(url string) {
 	d, err := bilibili.New().Extract(url, extractors.Options{Playlist: false})
 	if err != nil || len(d) == 0 {
@@ -27,7 +26,7 @@ func (v *VideoDownload) BilibiliDownload(url string) {
 		}
 		filename := v.path + d[0].Title + ".mp4"
 		v.C <- filename
-		go common.DeleteFileAfterTime(v.path + d[0].Title + ".mp4", 5)
+		go common.DeleteFileAfterTime(v.path+d[0].Title+".mp4", 5)
 	}
-	
+
 }
