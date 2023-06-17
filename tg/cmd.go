@@ -8,6 +8,10 @@ import (
 )
 
 // Crypto Start
+func setSmartAddrProbeItv(args string) {
+	go api.CryptoV2Api.SetSmartAddrProbeItv(args)
+}
+
 func smartAddrTx(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) < 1 {

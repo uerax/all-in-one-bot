@@ -46,6 +46,10 @@ systemctl status aio
 
 __单位默认USDT,可在配置文件crypto -> unit修改__
 
+- [x] set_smart_addr_probe_itv 修改聪明地址探测频率 例: 15
+- [x] smart_addr_tx 输入聪明地址(eth)和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
+- [x] smart_addr_probe 监控聪明地址(eth)购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
+- [x] delete_smart_addr_probe 输入关闭监控的聪明地址(eth) 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 - [x] add_kline_strategy_probe 探测连续3根一直走势的k线 例: btcusdt
 - [x] delete_kline_strategy_probe 删除探测 例: btcusdt
 - [x] get_meme 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 bsc(可选填)
@@ -175,7 +179,8 @@ list_cmd_list - 功能分类列表
 
 ```
 chatid - 查询chatid
-smart_addr_tx - 输入聪明地址(eth)和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
+set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15
+smart_addr_tx - 输入聪明地址(eth)和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 50
 smart_addr_probe - 监控聪明地址(eth)购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 delete_smart_addr_probe - 输入关闭监控的聪明地址(eth) 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 add_kline_strategy_probe - 探测连续3根一直走势的k线 例: btcusdt

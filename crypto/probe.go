@@ -35,6 +35,7 @@ type Probe struct {
 	memeLowTask  map[string]context.CancelFunc
 	smartAddr    map[string]context.CancelFunc
 	smartBuys    map[string]map[string]struct{}
+	smartItv	 int
 }
 
 func NewProbe() *Probe {
@@ -51,6 +52,7 @@ func NewProbe() *Probe {
 		memeHighTask: make(map[string]context.CancelFunc),
 		smartAddr:    make(map[string]context.CancelFunc),
 		smartBuys:    make(map[string]map[string]struct{}),
+		smartItv:	  goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval"),
 	}
 }
 
@@ -310,6 +312,7 @@ func (t *Probe) AddSmartAddr(addr string) {
 		ctx, cf := context.WithCancel(context.Background())
 		t.smartAddr[addr] = cf
 		go t.SmartAddrProbe(ctx, addr)
+		t.Meme <- fmt.Sprintf("已开启 %s 地址的监控", addr)
 	}
 }
 
@@ -317,6 +320,7 @@ func (t *Probe) DeleteSmartAddr(addr string) {
 	if cf, ok := t.smartAddr[addr]; ok {
 		cf()
 		delete(t.smartAddr, addr)
+		t.Meme <- fmt.Sprintf("已关闭 %s 地址的监控", addr)
 	}
 }
 
@@ -373,6 +377,26 @@ func (t *Probe) SmartAddr(addr string, offset string) {
 	t.Meme <- msg.String()
 }
 
+func (t *Probe) SetSmartAddrProbeItv(itv string) {
+	i, err := strconv.Atoi(itv)
+	if err != nil {
+		t.Meme <- "请输入[1,60]分钟"
+		return
+	}
+	if i > 60 || i < 1 {
+		t.Meme <- "间隔必须在1-60之间"
+		return
+	}
+
+	t.smartItv = i
+	for addr, cf := range t.smartAddr {
+		cf()
+		ctx, c := context.WithCancel(context.Background())
+		t.smartAddr[addr] = c
+		go t.SmartAddrProbe(ctx, addr)
+	}
+}
+
 func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	apiKey := goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey")
 	if apiKey == "" {
@@ -380,13 +404,21 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		delete(t.smartAddr, addr)
 		return
 	}
-	now := time.Now()
-	frequency := goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval")
-	t.Meme <- fmt.Sprintf("已开启 %s 地址的监控", addr)
-	time.Sleep(time.Duration((60 - now.Minute()) % frequency) * time.Minute - time.Second)
 
+	if t.smartItv > 60 || t.smartItv < 1 {
+		t.Meme <- "间隔必须在1-60之间"
+		return
+	}
+
+	now := time.Now()
+	m := time.Duration((60 - now.Minute()) % t.smartItv) * time.Minute
+	if m == 0 {
+		m = time.Duration(t.smartItv) * time.Minute
+	}
+	time.Sleep(m - time.Second)
+	
 	monitor := func() {
-		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=30&sort=desc&address=%s&apikey=%s"
+		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=desc&address=%s&apikey=%s"
 		r, err := http.Get(fmt.Sprintf(url, addr, apiKey))
 		if err != nil {
 			fmt.Println("请求失败")
@@ -427,15 +459,23 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		}
 		t.Meme <- msg.String()
 	}
-	t.smartBuys[addr] = make(map[string]struct{})
+	
+	if _, ok := t.smartBuys[addr]; !ok {
+		t.smartBuys[addr] = make(map[string]struct{})
+	}
+	
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		monitor()
+	}
+	
 
-	monitor()
-
-	tk := time.NewTicker(time.Minute * time.Duration(frequency))
+	tk := time.NewTicker(time.Minute * time.Duration(t.smartItv))
 	for {
 		select {
 		case <-ctx.Done():
-			t.Meme <- fmt.Sprintf("已关闭 %s 地址的监控", addr)
 			return
 		case <-tk.C:
 			monitor()
