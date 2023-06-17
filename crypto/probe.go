@@ -395,6 +395,7 @@ func (t *Probe) SetSmartAddrProbeItv(itv string) {
 		t.smartAddr[addr] = c
 		go t.SmartAddrProbe(ctx, addr)
 	}
+	t.Meme <- "修改完成"
 }
 
 func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
