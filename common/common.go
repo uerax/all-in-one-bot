@@ -77,3 +77,13 @@ func TimeIntervalSecond(start string, end string) int {
 
 	return int(endTime.Sub(startTime).Seconds())
 }
+
+func ImmediateTicker(sec int, do func()) {
+	do()
+	t := time.NewTicker(time.Duration(sec)*time.Second)
+	defer t.Stop()
+
+	for range t.C {
+		go do()
+	}
+}
