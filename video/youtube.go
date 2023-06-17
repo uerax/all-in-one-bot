@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"tg-aio-bot/common"
 
 	"github.com/kkdai/youtube/v2"
+	"github.com/uerax/all-in-one-bot/common"
 )
 
 func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) {

@@ -6,16 +6,15 @@ import (
 	"os/exec"
 	"strings"
 
-	"tg-aio-bot/chatgpt"
-	"tg-aio-bot/cron"
-	"tg-aio-bot/crypto"
-	"tg-aio-bot/lists"
-	"tg-aio-bot/photo"
-	"tg-aio-bot/utils"
-	"tg-aio-bot/video"
-	"tg-aio-bot/vps"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/uerax/all-in-one-bot/chatgpt"
+	"github.com/uerax/all-in-one-bot/cron"
+	"github.com/uerax/all-in-one-bot/crypto"
+	"github.com/uerax/all-in-one-bot/lists"
+	"github.com/uerax/all-in-one-bot/photo"
+	"github.com/uerax/all-in-one-bot/utils"
+	"github.com/uerax/all-in-one-bot/video"
+	"github.com/uerax/all-in-one-bot/vps"
 )
 
 var api = &Aio{}

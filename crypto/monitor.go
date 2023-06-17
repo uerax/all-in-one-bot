@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"tg-aio-bot/common"
 	"time"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 

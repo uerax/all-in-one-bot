@@ -1,8 +1,8 @@
 package main
 
 import (
-	"tg-aio-bot/config"
-	"tg-aio-bot/tg"
+	"github.com/uerax/all-in-one-bot/config"
+	"github.com/uerax/all-in-one-bot/tg"
 )
 
 

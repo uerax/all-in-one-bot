@@ -2,11 +2,11 @@ package video
 
 import (
 	"fmt"
-	"tg-aio-bot/common"
 
 	"github.com/iawia002/lux/downloader"
 	"github.com/iawia002/lux/extractors"
 	"github.com/iawia002/lux/extractors/bilibili"
+	"github.com/uerax/all-in-one-bot/common"
 )
 
 func (v *VideoDownload) BilibiliDownload(url string) {
