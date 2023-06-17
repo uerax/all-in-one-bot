@@ -3,7 +3,7 @@ package vps
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -89,7 +89,7 @@ func (t *VpsMonitor) probe(url, keyword string) {
 		return
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("body解析失败")
 		return
