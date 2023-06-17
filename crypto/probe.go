@@ -383,7 +383,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	now := time.Now()
 	frequency := goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval")
 	t.Meme <- fmt.Sprintf("已开启 %s 地址的监控", addr)
-	time.Sleep(time.Duration((60 - now.Minute()) % frequency) * time.Minute)
+	time.Sleep(time.Duration((60 - now.Minute()) % frequency) * time.Minute - time.Second)
 
 	monitor := func() {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=30&sort=desc&address=%s&apikey=%s"
