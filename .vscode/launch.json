@@ -8,8 +8,13 @@
             "name": "Launch Package",
             "type": "go",
             "request": "launch",
-            "mode": "auto",
-            "program": "main.go"
+            "mode": "debug",
+            "program": "main.go",
+            "args": [
+                "-c","../all-in-one-bot.yml",
+                "-v"
+            ],
+            "showLog": true
         }
     ]
 }
