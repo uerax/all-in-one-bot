@@ -134,4 +134,7 @@ type TokenTx struct {
 	TokenName string `json:"tokenName"`
 	TokenSymbol string `json:"tokenSymbol"`
 	ContractAddress string `json:"contractAddress"`
+	Hash string `json:"hash"`
+	From string `json:"from"`
+	To string `json:"to"`
 }
