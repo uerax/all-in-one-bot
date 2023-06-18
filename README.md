@@ -47,6 +47,7 @@ systemctl status aio
 __单位默认USDT,可在配置文件crypto -> unit修改__
 
 - [x] set_smart_addr_probe_itv 修改聪明地址探测频率 例: 15
+- [x] dump_smart_addr_probe_list - dump聪明地址的过滤合约(建议每次准备重启服务的时候执行一次)
 - [x] smart_addr_tx 输入聪明地址(eth)和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
 - [x] smart_addr_probe 监控聪明地址(eth)购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 - [x] delete_smart_addr_probe 输入关闭监控的聪明地址(eth) 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
