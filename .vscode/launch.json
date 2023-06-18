@@ -11,8 +11,8 @@
             "mode": "debug",
             "program": "main.go",
             "args": [
-                "-c","../all-in-one-bot.yml",
-                "-v"
+                //"-c","all-in-one-bot.yml",
+                //"-v"
             ],
             "showLog": true
         }
