@@ -165,6 +165,7 @@ chatid - 查询chatid
 get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选填)
 smart_addr_tx - 输入聪明地址和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
 smart_addr_probe - 监控聪明地址购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
+set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15
 chatgpt - chatgpt功能
 youtube_audio_download_cut - 下载ytb音频并裁剪
 cmd_list - 列出全部功能
@@ -181,6 +182,7 @@ list_cmd_list - 功能分类列表
 chatid - 查询chatid
 set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15
 smart_addr_tx - 输入聪明地址(eth)和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 50
+dump_smart_addr_probe_list - dump聪明地址的过滤合约(建议每次准备重启服务的时候执行一次)
 smart_addr_probe - 监控聪明地址(eth)购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 delete_smart_addr_probe - 输入关闭监控的聪明地址(eth) 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 add_kline_strategy_probe - 探测连续3根一直走势的k线 例: btcusdt

@@ -12,6 +12,10 @@ func setSmartAddrProbeItv(args string) {
 	go api.CryptoV2Api.SetSmartAddrProbeItv(args)
 }
 
+func dumpSmartAddrList() {
+	go api.CryptoV2Api.DumpSmartAddrList()
+}
+
 func smartAddrTx(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) < 1 {
