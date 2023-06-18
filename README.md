@@ -10,7 +10,7 @@ __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ install
 ```
 
-> 注: 配置文件以下两项必须添加,否则会启动失败
+> 注: 配置文件token必须添加,否则会启动失败, chatId不添加的情况下只能执行 /chatid 命令获取chatid, 获取到后添加到配置文件并重启服务(可以通过`其他`脚本修改)
 * 在 all-in-one-bot.yml 添加你的 telegram token
 `telegram 搜索用户 @BotFather 发送 /newbot 获取`
 * 在 all-in-one-bot.yml 添加你的 telegram chatId
@@ -26,6 +26,12 @@ bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master
 
 ```
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ uninstall
+```
+
+`其他`
+
+```
+bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @
 ```
 
 `操作`
