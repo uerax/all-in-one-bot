@@ -13,17 +13,17 @@ if [ "$confirm" != "y" ]; then
 fi
 
 echo "Building Linux versions..."
-GOOS=linux GOARCH=amd64 go build -o build/$input/Aio-linux-64 main.go
-GOOS=linux GOARCH=arm64 go build -o build/$input/Aio-linux-arm64 main.go
+GOOS=linux GOARCH=amd64 go build -o build/$input/Aio-linux-64 -trimpath -ldflags "-s -w -buildid=" main.go
+GOOS=linux GOARCH=arm64 go build -o build/$input/Aio-linux-arm64 -trimpath -ldflags "-s -w -buildid=" main.go
 
 # 打包 Windows 版本
 echo "Building Windows versions..."
-GOOS=windows GOARCH=amd64 go build -o build/$input/Aio-windows.exe main.go
-GOOS=windows GOARCH=arm64 go build -o build/$input/Aio-windows-arm64.exe main.go
+GOOS=windows GOARCH=amd64 go build -o build/$input/Aio-windows.exe -trimpath -ldflags "-s -w -buildid=" main.go
+GOOS=windows GOARCH=arm64 go build -o build/$input/Aio-windows-arm64.exe -trimpath -ldflags "-s -w -buildid=" main.go
 
 # 打包 macOS 版本
 echo "Building macOS versions..."
-GOOS=darwin GOARCH=arm64 go build -o build/$input/Aio-macos-arm64 main.go
+GOOS=darwin GOARCH=arm64 go build -o build/$input/Aio-macos-arm64 -trimpath -ldflags "-s -w -buildid=" main.go
 
 echo "打包完成"
 
