@@ -11,6 +11,7 @@ crypto:
     apiKey: 
     # 探测间隔 默认30分钟
     interval: 30
+    path: /usr/local/share/aio/
   binance:
     secretKey: 
     apiKey: 
@@ -41,6 +42,7 @@ vps:
 command:
   crypto:
     - 'set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15'
+    - 'dump_smart_addr_probe_list - dump聪明地址的过滤合约(建议每次准备重启服务的时候执行一次)'
     - 'smart_addr_tx - 输入聪明地址和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20'
     - 'smart_addr_probe - 监控聪明地址购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80'
     - 'delete_smart_addr_probe - 输入关闭监控的聪明地址 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80'
