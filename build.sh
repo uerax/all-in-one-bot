@@ -27,10 +27,13 @@ GOOS=darwin GOARCH=arm64 go build -o build/$input/Aio-macos-arm64 -trimpath -ldf
 
 echo "打包完成"
 
-if command -v "git" >/dev/null 2>&1; then
-    echo "创建tag并推送到仓库..."
-    git tag $input
-    git push --tag
+read -rp "是否创建tag并推送(y/n):" push_tag
+if [ "$push_tag" != "y" ]; then
+    if command -v "git" >/dev/null 2>&1; then
+        echo "创建tag并推送到仓库..."
+        git tag $input
+        git push --tag
+    fi
 fi
 
 echo "完成"
