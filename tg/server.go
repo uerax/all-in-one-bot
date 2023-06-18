@@ -133,6 +133,8 @@ func Server() {
 		case "set_smart_addr_probe_itv":
 			Cmd = "set_smart_addr_probe_itv"
 			tips(update.Message.Chat.ID, "修改聪明地址探测频率(1-60分钟) 例: \n`15`")
+		case "dump_smart_addr_probe_list":
+			dumpSmartAddrList()
 		case "smart_addr_tx":
 			Cmd = "smart_addr_tx"
 			tips(update.Message.Chat.ID, "输入聪明地址(eth)和近n条交易 例: \n`0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20`")

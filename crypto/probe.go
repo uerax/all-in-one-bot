@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,37 +25,43 @@ type line struct {
 }
 
 type Probe struct {
-	HighLine     map[string]*line
-	LowLine      map[string]*line
-	C            chan map[string]string
-	Kline        chan string
-	Meme         chan string
-	frequency    int64
-	api          *Crypto
-	task         map[string]context.CancelFunc
-	memeHighTask map[string]context.CancelFunc
-	memeLowTask  map[string]context.CancelFunc
-	smartAddr    map[string]context.CancelFunc
-	smartBuys    map[string]map[string]struct{}
-	smartItv	 int
+	HighLine      map[string]*line
+	LowLine       map[string]*line
+	C             chan map[string]string
+	Kline         chan string
+	Meme          chan string
+	frequency     int64
+	api           *Crypto
+	task          map[string]context.CancelFunc
+	memeHighTask  map[string]context.CancelFunc
+	memeLowTask   map[string]context.CancelFunc
+	smartAddr     map[string]context.CancelFunc
+	smartBuys     map[string]map[string]struct{}
+	smartItv      int
+	smartDumpPath string
 }
 
 func NewProbe() *Probe {
-	return &Probe{
-		HighLine:     make(map[string]*line),
-		LowLine:      make(map[string]*line),
-		C:            make(chan map[string]string),
-		Kline:        make(chan string, 5),
-		Meme:         make(chan string, 5),
-		frequency:    goconf.VarInt64OrDefault(600, "crypto", "monitor", "frequency"),
-		api:          NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"), goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
-		task:         make(map[string]context.CancelFunc),
-		memeLowTask:  make(map[string]context.CancelFunc),
-		memeHighTask: make(map[string]context.CancelFunc),
-		smartAddr:    make(map[string]context.CancelFunc),
-		smartBuys:    make(map[string]map[string]struct{}),
-		smartItv:	  goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval"),
+	p := &Probe{
+		HighLine:      make(map[string]*line),
+		LowLine:       make(map[string]*line),
+		C:             make(chan map[string]string),
+		Kline:         make(chan string, 5),
+		Meme:          make(chan string, 5),
+		frequency:     goconf.VarInt64OrDefault(600, "crypto", "monitor", "frequency"),
+		api:           NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"), goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
+		task:          make(map[string]context.CancelFunc),
+		memeLowTask:   make(map[string]context.CancelFunc),
+		memeHighTask:  make(map[string]context.CancelFunc),
+		smartAddr:     make(map[string]context.CancelFunc),
+		smartBuys:     recoverSmartAddrList(),
+		smartItv:      goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval"),
+		smartDumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 	}
+
+	go p.DumpCron()
+
+	return p
 }
 
 func (t *Probe) ListKLineProbe() string {
@@ -412,12 +420,12 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	}
 
 	now := time.Now()
-	m := time.Duration((60 - now.Minute()) % t.smartItv) * time.Minute
+	m := time.Duration((60-now.Minute())%t.smartItv) * time.Minute
 	if m == 0 {
 		m = time.Duration(t.smartItv) * time.Minute
 	}
 	time.Sleep(m - time.Second)
-	
+
 	monitor := func() {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=desc&address=%s&apikey=%s"
 		r, err := http.Get(fmt.Sprintf(url, addr, apiKey))
@@ -441,12 +449,12 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		if scan.Status != "1" {
 			return
 		}
-
+		cnt := 0
 		msg := strings.Builder{}
-		msg.WriteString("探测到新买入地址有:")
 		for _, v := range scan.Result {
 			if v.TokenSymbol != "WETH" {
 				if _, ok := t.smartBuys[addr][v.ContractAddress]; !ok {
+					cnt++
 					t.smartBuys[addr][v.ContractAddress] = struct{}{}
 					msg.WriteString("\n[")
 					msg.WriteString(v.TokenSymbol)
@@ -458,20 +466,22 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 				}
 			}
 		}
-		t.Meme <- msg.String()
+
+		if msg.Len() != 0 {
+			t.Meme <- "探测到新买入地址有:" + msg.String()
+		}
 	}
-	
+
 	if _, ok := t.smartBuys[addr]; !ok {
 		t.smartBuys[addr] = make(map[string]struct{})
 	}
-	
+
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		monitor()
 	}
-	
 
 	tk := time.NewTicker(time.Minute * time.Duration(t.smartItv))
 	for {
@@ -483,4 +493,61 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		}
 
 	}
+}
+
+func (t *Probe) DumpCron() {
+	h := time.NewTicker(time.Hour)
+	for range h.C {
+		t.DumpSmartAddrList()
+	}
+}
+
+func (t *Probe) DumpSmartAddrList() {
+	if len(t.smartBuys) == 0 {
+		return
+	}
+	b, err := json.Marshal(t.smartBuys)
+	if err != nil {
+		fmt.Println("序列化失败:", err)
+		t.Meme <- "序列化失败"
+		return
+	}
+
+	if _, err := os.Stat(t.smartDumpPath); os.IsNotExist(err) { // 检查目录是否存在
+		err := os.MkdirAll(t.smartDumpPath, os.ModePerm) // 创建目录
+		if err != nil {
+			fmt.Println("创建本地文件失败")
+			t.Meme <- "创建本地文件失败"
+			return
+		}
+	}
+
+	err = ioutil.WriteFile(t.smartDumpPath+"smart_dump.json", b, 0644)
+	if err != nil {
+		fmt.Println("dump文件创建/写入失败")
+		t.Meme <- "dump文件创建/写入失败"
+		return
+	}
+
+	t.Meme <- "已探测地址dump完成"
+
+}
+
+
+func recoverSmartAddrList() map[string]map[string]struct{} {
+	dump := make(map[string]map[string]struct{})
+	b, err := ioutil.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "smart_dump.json")
+	if err != nil {
+		fmt.Println("dump文件读取失败:", err)
+		return dump
+	}
+
+	err = json.Unmarshal(b, &dump)
+	if err != nil {
+		fmt.Println("SmartAddrList数据读取失败:", err)
+		return dump
+	}
+
+	return dump
+
 }
