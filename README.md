@@ -119,7 +119,7 @@ __单位默认USDT,可在配置文件crypto -> unit修改__
 
 ## 四. 环境安装(可选)
 
-__Telegram 50M上传限制的解决思路__
+* __Telegram 50M上传限制的解决思路__
 
 1. 前往[Guide](https://tdlib.github.io/telegram-bot-api/build.html)根据自己的系统选择参数,根据他提供的命令执行安装 Local Telegram Api
 2. 需要先去 https://my.telegram.org ，登录后，点API development tools可以看到你的api-id和api-hash
@@ -132,7 +132,7 @@ telegram-bot-api --api-id=<arg> --api-hash=<arg> --local -l /var/logs/tgserver.l
 curl -v -F chat_id="<chat_id>" -F video="file://<filepath>" -F supports_streaming=true -F caption="<filename>" http://localhost:8081/bot<token>/sendVideo
 ```
 
-__用到视频裁剪功能或者GIF下载功能需要安装 FFmpeg__
+* __用到视频裁剪功能或者GIF下载功能需要安装 FFmpeg__
 
 `Ubuntu或Debian`
 ```
