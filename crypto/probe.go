@@ -508,7 +508,6 @@ func (t *Probe) DumpSmartAddrList() {
 	b, err := json.Marshal(t.smartBuys)
 	if err != nil {
 		fmt.Println("序列化失败:", err)
-		t.Meme <- "序列化失败"
 		return
 	}
 
@@ -516,18 +515,14 @@ func (t *Probe) DumpSmartAddrList() {
 		err := os.MkdirAll(t.smartDumpPath, os.ModePerm) // 创建目录
 		if err != nil {
 			fmt.Println("创建本地文件失败")
-			t.Meme <- "创建本地文件失败"
 			return
 		}
 	}
 	err = os.WriteFile(t.smartDumpPath+"smart_dump.json", b, 0644)
 	if err != nil {
 		fmt.Println("dump文件创建/写入失败")
-		t.Meme <- "dump文件创建/写入失败"
 		return
 	}
-
-	t.Meme <- "已探测地址dump完成"
 
 }
 
