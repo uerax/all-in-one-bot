@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -424,7 +423,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	if m == 0 {
 		m = time.Duration(t.smartItv) * time.Minute
 	}
-	time.Sleep(m - time.Second)
+	time.Sleep(m - time.Duration(now.Second()))
 
 	monitor := func() {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=desc&address=%s&apikey=%s"
@@ -521,8 +520,7 @@ func (t *Probe) DumpSmartAddrList() {
 			return
 		}
 	}
-
-	err = ioutil.WriteFile(t.smartDumpPath+"smart_dump.json", b, 0644)
+	err = os.WriteFile(t.smartDumpPath+"smart_dump.json", b, 0644)
 	if err != nil {
 		fmt.Println("dump文件创建/写入失败")
 		t.Meme <- "dump文件创建/写入失败"
@@ -536,7 +534,7 @@ func (t *Probe) DumpSmartAddrList() {
 
 func recoverSmartAddrList() map[string]map[string]struct{} {
 	dump := make(map[string]map[string]struct{})
-	b, err := ioutil.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "smart_dump.json")
+	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "smart_dump.json")
 	if err != nil {
 		fmt.Println("dump文件读取失败:", err)
 		return dump
