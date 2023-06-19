@@ -423,7 +423,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	if m == 0 {
 		m = time.Duration(t.smartItv) * time.Minute
 	}
-	time.Sleep(m - time.Duration(now.Second()))
+	time.Sleep(m - time.Duration(now.Second()) + 20)
 
 	monitor := func() {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=desc&address=%s&apikey=%s"
