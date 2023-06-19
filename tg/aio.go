@@ -45,9 +45,10 @@ func (t *Aio) SendMessage(msg string) {
 	t.bot.Send(mc)
 }
 
-func (t *Aio) SendMarkdown(id int64, msg string) {
+func (t *Aio) SendMarkdown(id int64, msg string, preview bool) {
 	mc := tgbotapi.NewMessage(id, msg)
 	mc.ParseMode = "Markdown"
+	mc.DisableWebPagePreview = preview
 	t.bot.Send(mc)
 }
 
@@ -160,7 +161,7 @@ func (t *Aio) WaitToSend() {
 		case v := <-t.CryptoV2Api.Kline:
 			go t.SendMsg(ChatId, v)
 		case v := <-t.CryptoV2Api.Meme:
-			go t.SendMarkdown(ChatId, v)
+			go t.SendMarkdown(ChatId, v, true)
 		case v := <-t.Cron.C:
 			go t.SendMsg(ChatId, v)
 		// Youtube
@@ -182,12 +183,12 @@ func (t *Aio) WaitToSend() {
 			go t.SendMsg(ChatId, v)
 		// Utils
 		case v := <-t.Utils.MsgC:
-			go t.SendMarkdown(ChatId, v)
+			go t.SendMarkdown(ChatId, v, false)
 		case v := <-t.Utils.ErrC:
 			go t.SendMsg(ChatId, v)
 		// Lists
 		case v := <-t.Lists.C:
-			go t.SendMarkdown(ChatId, v)
+			go t.SendMarkdown(ChatId, v, false)
 		case v := <-t.Lists.ErrC:
 			go t.SendMsg(ChatId, v)
 		}
