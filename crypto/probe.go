@@ -144,7 +144,7 @@ func (p *Probe) MemePrice(query string, chain string) {
 	}
 
 	s := fmt.Sprintf("*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*    %0.2f%%    $%0.2f    %d/%d\n*1H:*    %0.2f%%    $%0.2f    %d/%d\n*6H:*    %0.2f%%    $%0.2f    %d/%d\n*1D:*    %0.2f%%    $%0.2f    %d/%d\n\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
-
+	isHoneypot := p.api.HoneypotCheck(query)
 	check := p.api.MemeCheck(query, chain)
 	if check != nil {
 		if strings.Contains(check.TotalSupply, ".") {
@@ -153,7 +153,7 @@ func (p *Probe) MemePrice(query string, chain string) {
 		if strings.Contains(check.LpTotalSupply, ".") {
 			check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
 		}
-		s += fmt.Sprintf("*Buy Tax:* %s | *Sell Tax:* %s\n*Total Supply:* %s\n*LP Supply:* %s\n*Holder:* %s\n*Owner:* `%s`\n*Creator:* `%s`\nPercent:* %s | Balance:* %s\n", check.BuyTax, check.SellTax, check.TotalSupply, check.LpTotalSupply, check.HolderCount, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent, check.CreatorBalance)
+		s += fmt.Sprintf("*Honeypot:* %s\n*Buy Tax:* %s | *Sell Tax:* %s\n*Total Supply:* %s\n*Total LP:* %0.2f\n*Holder:* %s\n*Locked LP:* %0.5f\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent:* %s | *Balance:* %s\n",isHoneypot, check.BuyTax, check.SellTax, check.TotalSupply, pair.Lp.Usd, check.HolderCount,check.LpLockedTotal, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent, check.CreatorBalance)
 	}
 
 	chainScan := ""
