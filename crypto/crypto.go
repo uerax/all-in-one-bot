@@ -13,8 +13,9 @@ var (
 	// apiUrl  = "https://api.binance.com"
 	dataUrl      = "https://data.binance.com"
 	fapiUrl      = "https://fapi.binance.com"
-	memeUrl      = "https://api.dexscreener.com/latest/dex/search/?q="
+	memeUrl      = "https://api.dexscreener.com/latest/dex/search/?q="	
 	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
+	honeypotUrl  = "https://api.honeypot.is/v2/IsHoneypot?address="
 )
 
 type Crypto struct {
@@ -209,8 +210,45 @@ func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
 	}
 
 	for _, v := range meme.MemeCheckers {
+		lockedlp := 0.0
+		for _, v := range v.LpHolders {
+			if v.IsLocked == 1 {
+				if f, err := strconv.ParseFloat(v.Percent, 64); err == nil {
+					lockedlp += f
+				}
+			}	
+		}
+		v.LpLockedTotal = lockedlp
 		return v
 	}
 
 	return nil
+}
+
+func (t *Crypto) HoneypotCheck(addr string) string {
+	r, err := http.Get(honeypotUrl + addr)
+	if err != nil {
+		fmt.Println("honeypotUrl请求失败", err)
+		return "Do your own research"
+	}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Println("body读取失败", err)
+		return "Do your own research"
+	}
+
+	res := new(HoneypotResp)
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		fmt.Println("json序列化失败", err)
+		return "Do your own research"
+	}
+
+	if res.Honeypot.Is {
+		return "HONEYPOT DETECTED!!! RUN THE FUCK AWAY!"
+	}
+
+	return "DOES NOT SEEM LIKE A HONEYPOT"
 }
