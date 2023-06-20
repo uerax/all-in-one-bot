@@ -13,7 +13,7 @@ func setSmartAddrProbeItv(args string) {
 }
 
 func dumpSmartAddrList() {
-	go api.CryptoV2Api.DumpSmartAddrList()
+	go api.CryptoV2Api.DumpSmartAddrList(true)
 }
 
 func smartAddrTx(args string) {

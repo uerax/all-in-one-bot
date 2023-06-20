@@ -497,31 +497,47 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 func (t *Probe) DumpCron() {
 	h := time.NewTicker(time.Hour)
 	for range h.C {
-		t.DumpSmartAddrList()
+		t.DumpSmartAddrList(false)
 	}
 }
 
-func (t *Probe) DumpSmartAddrList() {
+func (t *Probe) DumpSmartAddrList(tip bool) {
 	if len(t.smartBuys) == 0 {
+		if tip {
+			t.Meme <- "列表为空,不执行dump"
+		}
 		return
 	}
 	b, err := json.Marshal(t.smartBuys)
 	if err != nil {
 		fmt.Println("序列化失败:", err)
+		if tip {
+			t.Meme <- "dump失败: list序列化报错"
+		}
 		return
 	}
 
 	if _, err := os.Stat(t.smartDumpPath); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(t.smartDumpPath, os.ModePerm) // 创建目录
 		if err != nil {
-			fmt.Println("创建本地文件失败")
+			fmt.Println("创建本地文件夹失败")
+			if tip {
+				t.Meme <- "dump失败: 创建本地文件夹失败"
+			}
 			return
 		}
 	}
 	err = os.WriteFile(t.smartDumpPath+"smart_dump.json", b, 0644)
 	if err != nil {
 		fmt.Println("dump文件创建/写入失败")
+		if tip {
+			t.Meme <- "dump失败: dump文件创建/写入失败"
+		}
 		return
+	}
+
+	if tip {
+		t.Meme <- "dump完成"
 	}
 
 }
