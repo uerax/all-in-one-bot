@@ -252,3 +252,28 @@ func (t *Crypto) HoneypotCheck(addr string) string {
 
 	return "DOES NOT SEEM LIKE A HONEYPOT"
 }
+
+
+func (t *Crypto) WhetherHoneypot(addr string) bool {
+	r, err := http.Get(honeypotUrl + addr)
+	if err != nil {
+		fmt.Println("honeypotUrl请求失败", err)
+		return false
+	}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Println("body读取失败", err)
+		return false
+	}
+
+	res := new(HoneypotResp)
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		fmt.Println("json序列化失败", err)
+		return false
+	}
+
+	return res.Honeypot.Is
+}

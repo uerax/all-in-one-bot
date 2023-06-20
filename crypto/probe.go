@@ -365,19 +365,25 @@ func (t *Probe) SmartAddr(addr string, offset string) {
 	}
 
 	msg := strings.Builder{}
-	msg.WriteString("探测到新买入地址有:")
+	msg.WriteString("*探测到新买入地址有:*")
 	e := make(map[string]struct{})
 	for _, v := range scan.Result {
 		if v.TokenSymbol != "WETH" {
 			if _, ok := e[v.ContractAddress]; !ok {
+				isHoneypot := t.api.WhetherHoneypot(v.ContractAddress)
 				e[v.ContractAddress] = struct{}{}
-				msg.WriteString("\n[")
+				msg.WriteString("\n")
+				if isHoneypot {
+					msg.WriteString("*[Scam]*")
+				}
+				msg.WriteString("[")
 				msg.WriteString(v.TokenSymbol)
 				msg.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 				msg.WriteString(v.ContractAddress)
 				msg.WriteString("): `")
 				msg.WriteString(v.ContractAddress)
 				msg.WriteString("`")
+				
 			}
 		}
 	}
@@ -423,7 +429,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	if m == 0 {
 		m = time.Duration(t.smartItv) * time.Minute
 	}
-	time.Sleep(m - time.Duration(now.Second()) + 20)
+	time.Sleep(m - time.Duration(now.Second()) + 15)
 
 	monitor := func() {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=desc&address=%s&apikey=%s"
@@ -455,7 +461,12 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 				if _, ok := t.smartBuys[addr][v.ContractAddress]; !ok {
 					cnt++
 					t.smartBuys[addr][v.ContractAddress] = struct{}{}
-					msg.WriteString("\n[")
+					isHoneypot := t.api.WhetherHoneypot(v.ContractAddress)
+					msg.WriteString("\n")
+					if isHoneypot {
+						msg.WriteString("*[Scam]*")
+					}
+					msg.WriteString("[")
 					msg.WriteString(v.TokenSymbol)
 					msg.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 					msg.WriteString(v.ContractAddress)
@@ -467,7 +478,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		}
 
 		if msg.Len() != 0 {
-			t.Meme <- "探测到新买入地址有:" + msg.String()
+			t.Meme <- "*探测到新买入地址有:*" + msg.String()
 		}
 	}
 
@@ -488,7 +499,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		case <-ctx.Done():
 			return
 		case <-tk.C:
-			monitor()
+			go monitor()
 		}
 
 	}
