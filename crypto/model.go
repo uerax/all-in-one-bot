@@ -142,6 +142,8 @@ type TokenTx struct {
 	Hash            string `json:"hash"`
 	From            string `json:"from"`
 	To              string `json:"to"`
+	Value           string `json:"value"`
+	Decimal         string `json:"tokenDecimal"`
 }
 
 type HoneypotResp struct {
@@ -149,5 +151,5 @@ type HoneypotResp struct {
 }
 
 type Honeypot struct {
-	Is     bool   `json:"isHoneypot"`
+	Is bool `json:"isHoneypot"`
 }
