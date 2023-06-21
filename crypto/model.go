@@ -144,6 +144,7 @@ type TokenTx struct {
 	To              string `json:"to"`
 	Value           string `json:"value"`
 	Decimal         string `json:"tokenDecimal"`
+	TimeStamp		string `json:"timeStamp"`
 }
 
 type HoneypotResp struct {
