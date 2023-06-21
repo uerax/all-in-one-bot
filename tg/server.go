@@ -42,6 +42,11 @@ func Server() {
 
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
+			// Track
+			case "wallet_tracking":
+				walletTracking(update.Message.Text)
+			case "stop_wallet_tracking":
+				stopWalletTracking(update.Message.Text)
 			// Crypto
 			case "set_smart_addr_probe_itv":
 				setSmartAddrProbeItv(update.Message.Text)
@@ -130,6 +135,14 @@ func Server() {
 		}
 
 		switch update.Message.Command() {
+		// Track
+		case "wallet_tracking":
+			Cmd = "wallet_tracking"
+			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0x7431931094e8BAe1ECAA7D0b57d2284e121F760e`")
+		case "stop_wallet_tracking":
+			Cmd = "stop_wallet_tracking"
+			tips(update.Message.Chat.ID, "停止追踪聪明钱包买卖动态 例: \n`0x7431931094e8BAe1ECAA7D0b57d2284e121F760e`")
+		// Crypto
 		case "set_smart_addr_probe_itv":
 			Cmd = "set_smart_addr_probe_itv"
 			tips(update.Message.Chat.ID, "修改聪明地址探测频率(1-60分钟) 例: \n`15`")

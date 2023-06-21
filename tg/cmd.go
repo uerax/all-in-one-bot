@@ -8,6 +8,14 @@ import (
 )
 
 // Crypto Start
+func walletTracking(args string) {
+	go api.Track.CronTracking(args)
+}
+
+func stopWalletTracking(args string) {
+	go api.Track.StopTracking(args)
+}
+
 func setSmartAddrProbeItv(args string) {
 	go api.CryptoV2Api.SetSmartAddrProbeItv(args)
 }
