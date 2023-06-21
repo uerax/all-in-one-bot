@@ -195,7 +195,7 @@ func (t *Aio) WaitToSend() {
 			go t.SendMsg(ChatId, v)
 		// Track
 		case v := <-t.Track.C:
-			go t.SendMarkdown(ChatId, v, false)
+			go t.SendMarkdown(ChatId, v, true)
 		}
 
 	}
