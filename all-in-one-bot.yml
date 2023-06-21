@@ -10,7 +10,7 @@ crypto:
   etherscan:
     apiKey: 
     # 探测间隔 默认30分钟
-    interval: 30
+    interval: 15
     path: /usr/local/share/aio/
   binance:
     secretKey: 
@@ -41,6 +41,8 @@ vps:
 
 command:
   crypto:
+    - 'wallet_tracking 追踪聪明钱包买卖动态 - 例: 0x7431931094e8BAe1ECAA7D0b57d2284e121F760e'
+    - 'stop_wallet_tracking - 停止追踪聪明钱包买卖动态 例: 0x7431931094e8BAe1ECAA7D0b57d2284e121F760e'
     - 'set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15'
     - 'dump_smart_addr_probe_list - dump聪明地址的过滤合约(建议每次准备重启服务的时候执行一次)'
     - 'smart_addr_tx - 输入聪明地址和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20'
