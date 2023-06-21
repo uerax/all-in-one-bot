@@ -43,7 +43,7 @@ func (t *Track) CronTracking(addr string) {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
 		go t.Tracking(addr, ctx)
-		t.C <- "添加完成"
+		t.C <- "开始追踪" + addr
 	}
 }
 
@@ -51,7 +51,7 @@ func (t *Track) StopTracking(addr string) {
 	if v, ok := t.Task[addr]; ok {
 		v()
 		delete(t.Task, addr)
-		t.C <- "已停止追踪"
+		t.C <- "已停止追踪" + addr
 	}
 }
 
@@ -73,29 +73,25 @@ func (t *Track) WalletTracking(addr string) {
 		return
 	}
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, "10", addr, t.apiKey))
+	r, err := http.Get(fmt.Sprintf(url, "30", addr, t.apiKey))
 	if err != nil {
 		fmt.Println("请求失败")
-		t.C <- "etherscan请求失败"
 		return
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println("读取body失败")
-		t.C <- "读取body失败"
 		return
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		fmt.Println("json转换失败")
-		t.C <- "json转换失败"
 		return
 	}
 
 	if scan.Status != "1" {
-		t.C <- scan.Message
 		return
 	}
 
@@ -103,10 +99,16 @@ func (t *Track) WalletTracking(addr string) {
 		return
 	}
 
+	t.Newest[addr] = scan.Result[0].Hash
+
 	sb := strings.Builder{}
 
 	for _, record := range scan.Result {
 		if record.TokenSymbol != "WETH" {
+			balance := t.getEthByHash(record.Hash)
+			if balance == "" {
+				continue
+			}
 			if strings.EqualFold(record.From, addr) {
 				sb.WriteString("\n*Sell:*")
 			} else {
@@ -117,7 +119,7 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 			sb.WriteString(record.ContractAddress)
 			sb.WriteString("):")
-			sb.WriteString(t.getEthByHash(record.Hash))
+			sb.WriteString(balance)
 			sb.WriteString(" ETH\n")
 			sb.WriteString("`")
 			sb.WriteString(record.ContractAddress)
@@ -128,8 +130,6 @@ func (t *Track) WalletTracking(addr string) {
 	if sb.Len() > 0 {
 		t.C <- "监控地址执行操作:\n" + sb.String()
 	}
-
-	t.Newest[addr] = scan.Result[0].Hash
 
 }
 

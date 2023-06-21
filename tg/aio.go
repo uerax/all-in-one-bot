@@ -155,7 +155,6 @@ func (t *Aio) WaitToSend() {
 			for k, v := range v {
 				go t.SendMsg(k, v)
 			}
-
 		case v := <-t.PhotoApi.C:
 			for k, v := range v {
 				go t.SendImg(k, v)
