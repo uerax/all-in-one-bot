@@ -119,7 +119,7 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 			sb.WriteString(record.ContractAddress)
 			sb.WriteString("):")
-			sb.WriteString(balance)
+			sb.WriteString(balance[:10])
 			sb.WriteString(" ETH\n")
 			sb.WriteString("`")
 			sb.WriteString(record.ContractAddress)
