@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -110,18 +111,22 @@ func (t *Track) WalletTracking(addr string) {
 				continue
 			}
 			if strings.EqualFold(record.From, addr) {
-				sb.WriteString("\n*Sell:*")
+				sb.WriteString("\n*Sell: *")
 			} else {
-				sb.WriteString("\n*Buy:*")
+				sb.WriteString("\n*Buy: *")
 			}
 			sb.WriteString("[")
 			sb.WriteString(record.TokenSymbol)
 			sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 			sb.WriteString(record.ContractAddress)
-			sb.WriteString("):")
+			sb.WriteString("): ")
 			sb.WriteString(balance[:10])
-			sb.WriteString(" ETH\n")
-			sb.WriteString("`")
+			sb.WriteString(" ETH (")
+			i, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+			if err == nil {
+				sb.WriteString(time.Unix(i, 0).Format("01-02 15:04:05"))
+			}
+			sb.WriteString(")\n`")
 			sb.WriteString(record.ContractAddress)
 			sb.WriteString("`")
 		}
