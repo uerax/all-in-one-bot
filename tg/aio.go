@@ -33,6 +33,32 @@ type Aio struct {
 	Sticker     *Sticker
 	Utils       *utils.Utils
 	Lists       *lists.Lists
+	Track 		*crypto.Track
+}
+
+func (t *Aio) NewBot(token string, local string) {
+	bot, err := tgbotapi.NewBotAPI(token)
+	if err != nil {
+		log.Panic(err)
+	}
+	bot.Debug = true
+	t.bot = bot
+	t.local = local
+
+	t.CryptoApi = crypto.NewCryptoMonitor()
+	t.ChatGPTApi = chatgpt.NewChatGPT()
+	t.VpsApi = vps.NewVpsMonitor()
+	t.PhotoApi = photo.NewCutouts()
+	t.CryptoV2Api = crypto.NewProbe()
+	t.Cron = cron.NewTask()
+	t.Video = video.NewVideoDownload()
+	t.Gif = NewGif()
+	t.Sticker = NewSticker()
+	t.Utils = utils.NewUtils()
+	t.Lists = lists.NewLists()
+	t.Track = crypto.NewTrack()
+
+	go t.WaitToSend()
 }
 
 func (t *Aio) SendMsg(id int64, msg string) {
@@ -91,30 +117,6 @@ func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
-}
-
-func (t *Aio) NewBot(token string, local string) {
-	bot, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		log.Panic(err)
-	}
-	bot.Debug = true
-	t.bot = bot
-	t.local = local
-
-	t.CryptoApi = crypto.NewCryptoMonitor()
-	t.ChatGPTApi = chatgpt.NewChatGPT()
-	t.VpsApi = vps.NewVpsMonitor()
-	t.PhotoApi = photo.NewCutouts()
-	t.CryptoV2Api = crypto.NewProbe()
-	t.Cron = cron.NewTask()
-	t.Video = video.NewVideoDownload()
-	t.Gif = NewGif()
-	t.Sticker = NewSticker()
-	t.Utils = utils.NewUtils()
-	t.Lists = lists.NewLists()
-
-	go t.WaitToSend()
 }
 
 func (t *Aio) WaitToSend() {
@@ -191,6 +193,9 @@ func (t *Aio) WaitToSend() {
 			go t.SendMarkdown(ChatId, v, false)
 		case v := <-t.Lists.ErrC:
 			go t.SendMsg(ChatId, v)
+		// Track
+		case v := <-t.Track.C:
+			go t.SendMarkdown(ChatId, v, false)
 		}
 
 	}
