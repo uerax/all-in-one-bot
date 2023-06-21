@@ -138,10 +138,10 @@ func Server() {
 		// Track
 		case "wallet_tracking":
 			Cmd = "wallet_tracking"
-			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0x7431931094e8BAe1ECAA7D0b57d2284e121F760e`")
+			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
 		case "stop_wallet_tracking":
 			Cmd = "stop_wallet_tracking"
-			tips(update.Message.Chat.ID, "停止追踪聪明钱包买卖动态 例: \n`0x7431931094e8BAe1ECAA7D0b57d2284e121F760e`")
+			tips(update.Message.Chat.ID, "停止追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
 		// Crypto
 		case "set_smart_addr_probe_itv":
 			Cmd = "set_smart_addr_probe_itv"
