@@ -50,8 +50,7 @@ systemctl status aio
 ## 三. Command List
 ### 1. 加密货币监控功能清单
 
-__单位默认USDT,可在配置文件crypto -> unit修改__
-
+- [x] wallet_tx_analyze 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30
 - [x] wallet_tracking 追踪聪明钱包买卖动态 例: 0x7431931094e8BAe1ECAA7D0b57d2284e121F760e
 - [x] stop_wallet_tracking 停止追踪聪明钱包买卖动态 例: 0x7431931094e8BAe1ECAA7D0b57d2284e121F760e
 - [x] set_smart_addr_probe_itv 修改聪明地址探测频率 例: 15
@@ -172,11 +171,12 @@ __通过 @BotFather /setcommands 发送添加__
 ```
 chatid - 查询chatid
 get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选填)
+wallet_tx_analyze - 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30
+wallet_tracking - 追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
+stop_wallet_tracking - 停止追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
 smart_addr_tx - 输入聪明地址和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
 smart_addr_probe - 监控聪明地址购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15
-wallet_tracking - 追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
-stop_wallet_tracking - 停止追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
 chatgpt - chatgpt功能
 youtube_audio_download_cut - 下载ytb音频并裁剪
 cmd_list - 列出全部功能
@@ -191,6 +191,7 @@ list_cmd_list - 功能分类列表
 
 ```
 chatid - 查询chatid
+wallet_tx_analyze - 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30
 wallet_tracking - 追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
 stop_wallet_tracking - 停止追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
 set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15
