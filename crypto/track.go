@@ -254,9 +254,9 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 	}
 
 
-	msg := fmt.Sprintf("*近%s条交易总利润为: %0.3f eth, 详细交易数如下:*\n", offset, profit)
+	msg := fmt.Sprintf("*近%s条交易总利润为: %0.5f eth, 详细交易数如下:*\n", offset, profit)
 	for k, v := range detail {
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*Buy:* %0.3f | *Sell:* %0.3f | *Profit:* %0.3f eth\n", v.Symbol, k, k, v.Buy, v.Sell, v.Profit)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*Buy:* %0.3f | *Sell:* %0.3f | *Profit:* %0.5f eth\n", v.Symbol, k, k, v.Buy, v.Sell, v.Profit)
 	}
 
 	t.C <- msg
