@@ -231,9 +231,15 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			
 			if record.Decimal != "" {
 				dec, err := strconv.Atoi(record.Decimal)
-				
+				l := len(record.Value)-dec
 				if err == nil {
-					cnt, err := strconv.ParseFloat(record.Value[:len(record.Value)-dec], 64)
+					tmp := ""
+					if l <= 0 {
+						tmp = "0." + strings.Repeat("0", -l) + record.Value
+					} else {
+						tmp = record.Value[:l]
+					}
+					cnt, err := strconv.ParseFloat(tmp, 64)
 					if err == nil {
 						if _, ok := detail[record.ContractAddress]; !ok {
 							detail[record.ContractAddress] = new(txs)
@@ -253,10 +259,9 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 	}
 
-
 	msg := fmt.Sprintf("*近%s条交易总利润为: %0.5f eth, 详细交易数如下:*\n", offset, profit)
 	for k, v := range detail {
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*Buy:* %0.3f | *Sell:* %0.3f | *Profit:* %0.5f eth\n", v.Symbol, k, k, v.Buy, v.Sell, v.Profit)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.3f | *S:* %0.3f | *P:* %0.5f eth\n", v.Symbol, k, k, v.Buy, v.Sell, v.Profit)
 	}
 
 	t.C <- msg
