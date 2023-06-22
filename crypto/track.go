@@ -171,3 +171,85 @@ func (t *Track) getEthByHash(hash string) string {
 	}
 
 }
+
+func (t *Track) WalletTxAnalyze(addr string, offset string) {
+	if t.apiKey == "" {
+		t.C <- "未读取到etherscan的apikey无法启动监控"
+		return
+	}
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.apiKey))
+	if err != nil {
+		fmt.Println("请求失败")
+		return
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("读取body失败")
+		return
+	}
+	scan := new(TokenTxResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		fmt.Println("json转换失败")
+		return
+	}
+
+	if scan.Status != "1" {
+		return
+	}
+
+
+	type txs struct {
+		Buy float64
+		Sell float64
+		Symbol string
+	}
+	profit := 0.0
+	detail := make(map[string]*txs)
+
+	for _, record := range scan.Result {
+		if record.TokenSymbol != "WETH" {
+			balance := t.getEthByHash(record.Hash)
+			if balance == "" {
+				continue
+			}
+			val, err := strconv.ParseFloat(balance[:10], 64)
+			if err == nil {
+				if strings.EqualFold(record.From, addr) {
+					profit -= val
+				} else {
+					profit += val
+				}
+			}
+			
+			if record.Decimal != "" {
+				dec, err := strconv.Atoi(record.Decimal)
+				
+				if err == nil {
+					cnt, err := strconv.ParseFloat(record.Value[:len(record.Value)-dec], 64)
+					if err == nil {
+						if strings.EqualFold(record.From, addr) {
+							detail[record.ContractAddress].Sell += cnt
+						} else {
+							detail[record.ContractAddress].Buy += cnt
+						}
+						detail[record.ContractAddress].Symbol = record.TokenSymbol
+					}
+				}
+			}
+
+		}
+	}
+
+
+	msg := fmt.Sprintf("近%s条交易总利润为: %0.5f, 详细交易如下", offset, profit)
+	for k, v := range detail {
+		msg += fmt.Sprintf("[*%s*](https://www.dextools.io/app/cn/ether/pair-explorer/%s): `%s`\n*Buy:* %0.5f | *Sell:* %0.5f\n", v.Symbol, k, k, v.Buy, v.Sell)
+	}
+
+	t.C <- msg
+
+
+}
