@@ -18,6 +18,7 @@ type Track struct {
 	Newest map[string]string
 	apiKey string
 	Task   map[string]context.CancelFunc
+	api    *Crypto
 }
 
 type txResp struct {
@@ -35,7 +36,8 @@ func NewTrack() *Track {
 		C:      make(chan string, 5),
 		Newest: make(map[string]string),
 		apiKey: goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey"),
-		Task: make(map[string]context.CancelFunc),
+		Task:   make(map[string]context.CancelFunc),
+		api:    NewCrypto("", ""),
 	}
 }
 
@@ -60,9 +62,9 @@ func (t *Track) Tracking(addr string, ctx context.Context) {
 	tick := time.NewTicker(time.Minute)
 	for {
 		select {
-		case <- ctx.Done():
+		case <-ctx.Done():
 			return
-		case <- tick.C:
+		case <-tick.C:
 			go t.WalletTracking(addr)
 		}
 	}
@@ -204,12 +206,12 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		return
 	}
 
-
 	type txs struct {
-		Buy float64
-		Sell float64
+		Buy    float64
+		Sell   float64
 		Symbol string
 		Profit float64
+		Scam   string
 	}
 	profit := 0.0
 	detail := make(map[string]*txs)
@@ -228,10 +230,10 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 					profit -= val
 				}
 			}
-			
+
 			if record.Decimal != "" {
 				dec, err := strconv.Atoi(record.Decimal)
-				l := len(record.Value)-dec
+				l := len(record.Value) - dec
 				if err == nil {
 					tmp := ""
 					if l <= 0 {
@@ -252,6 +254,10 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 							detail[record.ContractAddress].Profit -= val
 						}
 						detail[record.ContractAddress].Symbol = record.TokenSymbol
+						isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
+						if isHoneypot {
+							detail[record.ContractAddress].Scam = "*[SCAM]*"
+						}
 					}
 				}
 			}
@@ -261,10 +267,9 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 
 	msg := fmt.Sprintf("*近%s条交易总利润为: %0.5f eth, 详细交易数如下:*\n", offset, profit)
 	for k, v := range detail {
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.3f | *S:* %0.3f | *P:* %0.5f eth\n", v.Symbol, k, k, v.Buy, v.Sell, v.Profit)
+		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.3f | *S:* %0.3f | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, v.Buy, v.Sell, v.Profit)
 	}
 
 	t.C <- msg
-
 
 }
