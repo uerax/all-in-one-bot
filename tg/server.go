@@ -43,6 +43,8 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Track
+			case "wallet_tx_analyze":
+				walletAnalyze(update.Message.Text)
 			case "wallet_tracking":
 				walletTracking(update.Message.Text)
 			case "stop_wallet_tracking":
@@ -136,6 +138,9 @@ func Server() {
 
 		switch update.Message.Command() {
 		// Track
+		case "wallet_tx_analyze":
+			Cmd = "wallet_tx_analyze"
+			tips(update.Message.Chat.ID, "分析钱包近n条交易的利润 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30`")
 		case "wallet_tracking":
 			Cmd = "wallet_tracking"
 			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
