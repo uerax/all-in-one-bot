@@ -124,11 +124,12 @@ func (t *Track) WalletTracking(addr string) {
 		return
 	}
 
-	t.Newest[addr] = scan.Result[0].Hash
-
 	sb := strings.Builder{}
 
 	for _, record := range scan.Result {
+		if record.Hash == t.Newest[addr] {
+			break
+		}
 		if record.TokenSymbol != "WETH" {
 			balance := t.getEthByHash(record.Hash)
 			if balance == "" {
@@ -155,6 +156,8 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString("`")
 		}
 	}
+
+	t.Newest[addr] = scan.Result[0].Hash
 
 	if sb.Len() > 0 {
 		t.C <- "*监控地址执行操作:*" + sb.String()
