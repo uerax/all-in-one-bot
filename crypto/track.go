@@ -46,7 +46,7 @@ func (t *Track) CronTracking(addr string) {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
 		go t.Tracking(addr, ctx)
-		t.C <- "开始追踪" + addr
+		t.C <- "*开始追踪* " + addr
 	}
 }
 
@@ -54,7 +54,7 @@ func (t *Track) StopTracking(addr string) {
 	if v, ok := t.Task[addr]; ok {
 		v()
 		delete(t.Task, addr)
-		t.C <- "已停止追踪" + addr
+		t.C <- "*已停止追踪* " + addr
 	}
 }
 
@@ -150,7 +150,7 @@ func (t *Track) WalletTracking(addr string) {
 	}
 
 	if sb.Len() > 0 {
-		t.C <- "监控地址执行操作:\n" + sb.String()
+		t.C <- "*监控地址执行操作:*" + sb.String()
 	}
 
 }
