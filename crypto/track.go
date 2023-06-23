@@ -309,8 +309,6 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 
 }
 
-
-
 func (t *Track) DumpTrackingList(tip bool) {
 	if len(t.Newest) == 0 {
 		if tip {
