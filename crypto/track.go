@@ -160,7 +160,7 @@ func (t *Track) WalletTracking(addr string) {
 	t.Newest[addr] = scan.Result[0].Hash
 
 	if sb.Len() > 0 {
-		t.C <- "*监控地址执行操作:*" + sb.String()
+		t.C <- "`" + addr + "`*执行操作:*" + sb.String()
 	}
 
 }
