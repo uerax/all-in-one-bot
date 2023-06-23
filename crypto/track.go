@@ -63,6 +63,7 @@ func (t *Track) Tracking(addr string, ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			t.Newest[addr] = ""
 			return
 		case <-tick.C:
 			go t.WalletTracking(addr)
@@ -114,6 +115,12 @@ func (t *Track) WalletTracking(addr string) {
 	}
 
 	if len(scan.Result) == 0 || strings.EqualFold(scan.Result[0].Hash, t.Newest[addr]) {
+		return
+	}
+
+	// 首次不做探测
+	if t.Newest[addr] == "" {
+		t.Newest[addr] = scan.Result[0].Hash
 		return
 	}
 
