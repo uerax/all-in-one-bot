@@ -142,6 +142,8 @@ func Server() {
 			listWalletTracking()
 		case "list_smart_addr_probe":
 			listSmartAddrProbe()
+		case "dump_tracking_list":
+			dumpTrackingList()
 		case "wallet_tx_analyze":
 			Cmd = "wallet_tx_analyze"
 			tips(update.Message.Chat.ID, "分析钱包近n条交易的利润 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30`")

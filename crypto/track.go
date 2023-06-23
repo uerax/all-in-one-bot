@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ type Track struct {
 	apiKey string
 	Task   map[string]context.CancelFunc
 	api    *Crypto
+	dumpPath string
 }
 
 type txResp struct {
@@ -32,13 +34,19 @@ type tx struct {
 }
 
 func NewTrack() *Track {
-	return &Track{
+
+	t := &Track{
 		C:      make(chan string, 5),
 		Newest: make(map[string]string),
 		apiKey: goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey"),
 		Task:   make(map[string]context.CancelFunc),
 		api:    NewCrypto("", ""),
+		dumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 	}
+
+	go t.recoverTrackingList()
+
+	return t
 }
 
 func (t *Track) CronTracking(addr string) {
@@ -299,4 +307,73 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 
 	t.C <- msg
 
+}
+
+
+
+func (t *Track) DumpTrackingList(tip bool) {
+	if len(t.Newest) == 0 {
+		if tip {
+			t.C <- "列表为空,不执行dump"
+		}
+		return
+	}
+	b, err := json.Marshal(t.Newest)
+	if err != nil {
+		fmt.Println("序列化失败:", err)
+		if tip {
+			t.C <- "dump失败: list序列化报错"
+		}
+		return
+	}
+
+	if _, err := os.Stat(t.dumpPath); os.IsNotExist(err) { // 检查目录是否存在
+		err := os.MkdirAll(t.dumpPath, os.ModePerm) // 创建目录
+		if err != nil {
+			fmt.Println("创建本地文件夹失败")
+			if tip {
+				t.C <- "dump失败: 创建本地文件夹失败"
+			}
+			return
+		}
+	}
+	err = os.WriteFile(t.dumpPath+"tracking.json", b, 0644)
+	if err != nil {
+		fmt.Println("dump文件创建/写入失败")
+		if tip {
+			t.C <- "dump失败: dump文件创建/写入失败"
+		}
+		return
+	}
+
+	if tip {
+		t.C <- "dump完成"
+	}
+
+}
+
+
+func (t *Track) recoverTrackingList() map[string]string {
+	dump := make(map[string]string)
+	b, err := os.ReadFile(t.dumpPath + "tracking.json")
+	if err != nil {
+		fmt.Println("dump文件读取失败:", err)
+		return dump
+	}
+
+	err = json.Unmarshal(b, &dump)
+	if err != nil {
+		fmt.Println("TrackingList数据读取失败:", err)
+		return dump
+	}
+
+	return dump
+
+}
+
+func (t *Track) DumpCron() {
+	h := time.NewTicker(time.Hour)
+	for range h.C {
+		t.DumpTrackingList(false)
+	}
 }

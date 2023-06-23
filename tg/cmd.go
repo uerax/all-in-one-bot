@@ -16,6 +16,10 @@ func listSmartAddrProbe() {
 	go api.CryptoV2Api.ListSmartAddr(false)
 }
 
+func dumpTrackingList() {
+	go api.Track.DumpTrackingList(true)
+}
+
 func walletAnalyze(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) < 1 {
