@@ -64,6 +64,7 @@ func (t *Track) CronTracking(addr string) {
 	if _, ok := t.Task[addr]; !ok {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
+		t.Newest[addr] = ""
 		go t.Tracking(addr, ctx)
 		t.C <- "*开始追踪* " + addr
 	}
@@ -73,19 +74,16 @@ func (t *Track) StopTracking(addr string) {
 	if v, ok := t.Task[addr]; ok {
 		v()
 		delete(t.Task, addr)
+		delete(t.Newest, addr)
 		t.C <- "*已停止追踪* " + addr
 	}
 }
 
 func (t *Track) Tracking(addr string, ctx context.Context) {
 	tick := time.NewTicker(time.Second * 10)
-	if _, ok := t.Newest[addr]; !ok {
-		t.Newest[addr] = ""
-	}
 	for {
 		select {
 		case <-ctx.Done():
-			t.Newest[addr] = ""
 			return
 		case <-tick.C:
 			go t.WalletTracking(addr)
