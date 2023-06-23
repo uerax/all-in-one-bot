@@ -50,6 +50,8 @@ systemctl status aio
 ## 三. Command List
 ### 1. 加密货币监控功能清单
 
+- [x] list_wallet_tracking 列出正在追踪的聪明钱包地址
+- [x] list_smart_addr_probe 列出正在探测的聪明钱包地址
 - [x] wallet_tx_analyze 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30
 - [x] wallet_tracking 追踪聪明钱包买卖动态 例: 0x7431931094e8BAe1ECAA7D0b57d2284e121F760e
 - [x] stop_wallet_tracking 停止追踪聪明钱包买卖动态 例: 0x7431931094e8BAe1ECAA7D0b57d2284e121F760e
