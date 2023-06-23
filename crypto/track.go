@@ -79,6 +79,9 @@ func (t *Track) StopTracking(addr string) {
 
 func (t *Track) Tracking(addr string, ctx context.Context) {
 	tick := time.NewTicker(time.Minute)
+	if _, ok := t.Newest[addr]; !ok {
+		t.Newest[addr] = ""
+	}
 	for {
 		select {
 		case <-ctx.Done():
