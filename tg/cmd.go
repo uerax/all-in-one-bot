@@ -8,6 +8,14 @@ import (
 )
 
 // Crypto Start
+func listWalletTracking() {
+	go api.Track.TrackingList(false)
+}
+
+func listSmartAddrProbe() {
+	go api.CryptoV2Api.ListSmartAddr(false)
+}
+
 func walletAnalyze(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) < 1 {
@@ -28,6 +36,11 @@ func walletTracking(args string) {
 
 func stopWalletTracking(args string) {
 	go api.Track.StopTracking(args)
+}
+
+func stopWalletTrackingTip(tip string) {
+	s := api.Track.TrackingList(true)
+	go api.SendMarkdown(ChatId, s + "\n" + tip, true)
 }
 
 func setSmartAddrProbeItv(args string) {
@@ -53,6 +66,11 @@ func smartAddrTx(args string) {
 
 func deleteSmartAddrProbe(args string) {
 	go api.CryptoV2Api.DeleteSmartAddr(args)
+}
+
+func deleteSmartAddrProbeTip(tip string) {
+	s := api.CryptoV2Api.ListSmartAddr(true)
+	go api.SendMarkdown(ChatId, s + "\n" + tip, true)
 }
 
 func addSmartAddrProbe(args string) {

@@ -70,6 +70,21 @@ func (t *Track) Tracking(addr string, ctx context.Context) {
 	}
 }
 
+func (t *Track) TrackingList(tip bool) string {
+	var sb strings.Builder
+	for k := range t.Task {
+		sb.WriteString("\n`")
+		sb.WriteString(k)
+		sb.WriteString("`")
+	}
+	if sb.Len() != 0 && tip {
+		t.C <- "*当前正在追踪的地址有:*" + sb.String()
+	}
+
+	return "*当前正在追踪的地址有:*" + sb.String()
+
+}
+
 func (t *Track) WalletTracking(addr string) {
 	if t.apiKey == "" {
 		t.C <- "未读取到etherscan的apikey无法启动监控"
