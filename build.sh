@@ -33,6 +33,7 @@ if [ "$push_tag" == "y" ]; then
         echo "创建tag并推送到仓库..."
         git tag $input
         git push --tag
+        git tag -d $input
     fi
 fi
 
