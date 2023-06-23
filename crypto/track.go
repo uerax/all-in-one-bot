@@ -37,16 +37,27 @@ func NewTrack() *Track {
 
 	t := &Track{
 		C:      make(chan string, 5),
-		Newest: make(map[string]string),
+		Newest: recoverTrackingList(),
 		apiKey: goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey"),
 		Task:   make(map[string]context.CancelFunc),
 		api:    NewCrypto("", ""),
 		dumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 	}
 
-	go t.recoverTrackingList()
+	go t.DumpCron()
+	go t.Recover()
 
 	return t
+}
+
+func (t *Track) Recover() {
+	for k := range t.Newest {
+		ctx, cf := context.WithCancel(context.Background())
+		t.Task[k] = cf
+		go t.Tracking(k, ctx)
+		// 免费api一秒可调用次数有限,分散请求防止达到阈值
+		time.Sleep(time.Second)
+	}
 }
 
 func (t *Track) CronTracking(addr string) {
@@ -351,9 +362,9 @@ func (t *Track) DumpTrackingList(tip bool) {
 }
 
 
-func (t *Track) recoverTrackingList() map[string]string {
+func recoverTrackingList() map[string]string {
 	dump := make(map[string]string)
-	b, err := os.ReadFile(t.dumpPath + "tracking.json")
+	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "tracking.json")
 	if err != nil {
 		fmt.Println("dump文件读取失败:", err)
 		return dump
