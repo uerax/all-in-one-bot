@@ -78,7 +78,7 @@ func (t *Track) StopTracking(addr string) {
 }
 
 func (t *Track) Tracking(addr string, ctx context.Context) {
-	tick := time.NewTicker(time.Minute)
+	tick := time.NewTicker(time.Second * 10)
 	if _, ok := t.Newest[addr]; !ok {
 		t.Newest[addr] = ""
 	}
