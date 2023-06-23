@@ -49,7 +49,6 @@ systemctl status aio
 
 ## 三. Command List
 ### 1. 加密货币监控功能清单
-
 - [x] list_wallet_tracking 列出正在追踪的聪明钱包地址
 - [x] list_smart_addr_probe 列出正在探测的聪明钱包地址
 - [x] dump_tracking_list dump追踪地址列表(建议每次准备重启服务的时候执行一次)
@@ -76,30 +75,24 @@ systemctl status aio
 - [x] get_crypto_ufutures_price u本位合约[可选,默认BTCUSDT] 例子: ETHBTC
 
 ### 2. ChatGPT功能清单
-
 - [x] chatgpt
 
 ### 3. VPS库存监控功能清单(已弃用)
-
 - [ ] vps_monitor_supported_list 查看支持监控的网站
 - [ ] vps_add_supported_list 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
 - [ ] add_vps_monitor url(必须是vps_monitor_supported_list有的,或者系统站点模版的商家)
 
 ### 4. 抠图功能
-
 - [x] cutout (需要在配置文件添加apikey)
 
 ### 5. Telegram 信息获取
-
 - [x] chatid
 
 ### 6. Cron 定时提醒
-
 - [x] add_cron 每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)
 - [x] delete_cron 删除 例: 1
 
 ### 7. 视频下载
-
 - [x] youtube_download 下载ytb视频
 - [x] youtube_audio_download 下载ytb音频
 - [x] bilibili_download 下载bilibili视频
@@ -109,12 +102,10 @@ systemctl status aio
 - [x] douyin_download 下载douyin的视频
 
 ### 8. 贴纸和GIF下载
-
 - [x] sticker_download 下载贴纸表情
 - [x] gif_download 下载GIF(非贴纸)
 
 ### 9. 工具箱
-
 - [x] base64_encode 进行base64加密
 - [x] base64_decode 进行base64解密
 - [x] timestamp_convert 时间戳转换为时间"2006-01-02 15:04:05"
@@ -172,7 +163,7 @@ __通过 @BotFather /setcommands 发送添加__
 `常用命令`
 
 ```
-chatid - 查询chatid
+chatid - 查询当前帐号的chatid
 get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选填)
 wallet_tx_analyze - 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30
 wallet_tracking - 追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
