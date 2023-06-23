@@ -138,6 +138,10 @@ func Server() {
 
 		switch update.Message.Command() {
 		// Track
+		case "list_wallet_tracking":
+			listWalletTracking()
+		case "list_smart_addr_probe":
+			listSmartAddrProbe()
 		case "wallet_tx_analyze":
 			Cmd = "wallet_tx_analyze"
 			tips(update.Message.Chat.ID, "分析钱包近n条交易的利润 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30`")
@@ -146,7 +150,7 @@ func Server() {
 			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
 		case "stop_wallet_tracking":
 			Cmd = "stop_wallet_tracking"
-			tips(update.Message.Chat.ID, "停止追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
+			stopWalletTrackingTip("停止追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
 		// Crypto
 		case "set_smart_addr_probe_itv":
 			Cmd = "set_smart_addr_probe_itv"
@@ -161,7 +165,7 @@ func Server() {
 			tips(update.Message.Chat.ID, "输入需要监控的聪明地址(eth) 例: \n`0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80`")
 		case "delete_smart_addr_probe":
 			Cmd = "delete_smart_addr_probe"
-			tips(update.Message.Chat.ID, "输入关闭监控的聪明地址(eth) 例: \n`0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80`")
+			deleteSmartAddrProbeTip("输入关闭监控的聪明地址(eth) 例: \n`0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80`")
 		case "add_kline_strategy_probe":
 			Cmd = "add_kline_strategy_probe"
 			tips(update.Message.Chat.ID, "输入要监控的u本位合约 例: \n`btcusdt`")
