@@ -40,7 +40,7 @@ func stopWalletTracking(args string) {
 
 func stopWalletTrackingTip(tip string) {
 	s := api.Track.TrackingList(true)
-	go api.SendMarkdown(ChatId, s + "\n" + tip, true)
+	go api.SendMarkdown(ChatId, s + "\n\n" + tip, true)
 }
 
 func setSmartAddrProbeItv(args string) {
@@ -70,7 +70,7 @@ func deleteSmartAddrProbe(args string) {
 
 func deleteSmartAddrProbeTip(tip string) {
 	s := api.CryptoV2Api.ListSmartAddr(true)
-	go api.SendMarkdown(ChatId, s + "\n" + tip, true)
+	go api.SendMarkdown(ChatId, s + "\n\n" + tip, true)
 }
 
 func addSmartAddrProbe(args string) {

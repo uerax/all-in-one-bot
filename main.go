@@ -20,6 +20,11 @@ func main() {
 		fmt.Println(version)
 		return
 	}
+	defer func ()  {
+		if err := recover(); err != nil {
+			fmt.Printf("Runtime panic caught: %v\n", err)
+		}
+	}()
 	config.Load(*path)
 	tg.Server()
 }

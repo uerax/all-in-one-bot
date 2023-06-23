@@ -77,7 +77,7 @@ func (t *Track) TrackingList(tip bool) string {
 		sb.WriteString(k)
 		sb.WriteString("`")
 	}
-	if sb.Len() != 0 && tip {
+	if !tip {
 		t.C <- "*当前正在追踪的地址有:*" + sb.String()
 	}
 

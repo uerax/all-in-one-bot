@@ -231,7 +231,7 @@ func (t *Probe) ListSmartAddr(tip bool) string {
 		sb.WriteString(k)
 		sb.WriteString("`")
 	}
-	if sb.Len() != 0 && !tip {
+	if !tip {
 		t.Meme <- "*当前正在探测的地址有:*" + sb.String()
 	}
 	return "*当前正在探测的地址有:*" + sb.String()
