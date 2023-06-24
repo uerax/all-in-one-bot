@@ -31,6 +31,8 @@ type txResp struct {
 
 type tx struct {
 	Value string `json:"value"`
+	From string `json:"from"`
+	To string `json:"To"`
 }
 
 func NewTrack() *Track {
@@ -145,16 +147,21 @@ func (t *Track) WalletTracking(addr string) {
 	}
 
 	sb := strings.Builder{}
-
+	his := make(map[string]struct{})
 	for _, record := range scan.Result {
 		if record.Hash == t.Newest[addr] {
 			break
 		}
-		if record.TokenSymbol != "WETH" {
-			balance := t.getEthByHash(record.Hash)
-			if balance == "" {
-				continue
+		if record.TokenSymbol != "WETH" || !isNull(record.From) || !isNull(record.To) {
+			balance := 0.0
+			if _, ok := his[record.Hash]; !ok {
+				his[record.Hash] = struct{}{}
+				balance = t.getEthByHash(record.Hash)
+				if balance == 0 {
+					continue
+				}
 			}
+			
 			if strings.EqualFold(record.From, addr) {
 				sb.WriteString("\n*Sell: *")
 			} else {
@@ -165,7 +172,7 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 			sb.WriteString(record.ContractAddress)
 			sb.WriteString("): ")
-			sb.WriteString(balance[:10])
+			sb.WriteString(fmt.Sprintf("%f", balance))
 			sb.WriteString(" ETH (")
 			i, err := strconv.ParseInt(record.TimeStamp, 10, 64)
 			if err == nil {
@@ -185,37 +192,50 @@ func (t *Track) WalletTracking(addr string) {
 
 }
 
-func (t *Track) getEthByHash(hash string) string {
+func (t *Track) getEthByHash(hash string) float64 {
 	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
 	if err != nil {
 		fmt.Println("请求失败")
-		return ""
+		return 0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println("读取body失败")
-		return ""
+		return 0
 	}
 	scan := new(txResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		fmt.Println("json转换失败")
-		return ""
+		return 0
 	}
 
 	if scan.Status != "1" || len(scan.Result) == 0 {
-		return ""
+		return 0
 	}
-	val := scan.Result[0].Value
-	if len(val) > 18 {
-		return val[:len(val)-18] + "." + val[len(val)-18:]
-	} else if len(val) == 18 {
-		return "0." + val
-	} else {
-		return "0." + strings.Repeat("0", 18-len(val)) + val
+
+	cnt := 0.0
+	for _, v := range scan.Result {
+		tmp := ""
+		// 内部交易可能会出现多轮交易,该步骤用于过滤 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2为WETH
+		if !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.From) && !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.To) {
+			continue
+		}
+		if len(v.Value) > 18 {
+			tmp = v.Value[:len(v.Value)-18] + "." + v.Value[len(v.Value)-18:]
+		} else if len(v.Value) == 18 {
+			tmp = "0." + v.Value
+		} else {
+			tmp = "0." + strings.Repeat("0", 18-len(v.Value)) + v.Value
+		}
+		f, err := strconv.ParseFloat(tmp, 64)
+		if err == nil {
+			cnt += f
+		}
 	}
+	return cnt
 
 }
 
@@ -261,20 +281,23 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 	}
 	profit := 0.0
 	detail := make(map[string]*txs)
+	his := make(map[string]struct{})
 
 	for _, record := range scan.Result {
-		if record.TokenSymbol != "WETH" {
-			balance := t.getEthByHash(record.Hash)
-			if balance == "" {
-				continue
-			}
-			val, err := strconv.ParseFloat(balance[:10], 64)
-			if err == nil {
-				if strings.EqualFold(record.From, addr) {
-					profit += val
-				} else {
-					profit -= val
+		if record.TokenSymbol != "WETH" || !isNull(record.From) || !isNull(record.To) {
+			val := 0.0
+			if _, ok := his[record.Hash]; !ok {
+				his[record.Hash] = struct{}{}
+				val = t.getEthByHash(record.Hash)
+				if val == 0 {
+					continue
 				}
+			}
+			
+			if strings.EqualFold(record.From, addr) {
+				profit += val
+			} else {
+				profit -= val
 			}
 
 			if record.Decimal != "" {
@@ -308,13 +331,12 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 					}
 				}
 			}
-
 		}
 	}
 
-	msg := fmt.Sprintf("*近%s条交易总利润为: %0.5f eth, 详细交易数如下:*\n", offset, profit)
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)*近%s条交易总利润为: %0.5f eth: *\n", addr, offset, profit)
 	for k, v := range detail {
-		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *T:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit)
+		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit)
 	}
 
 	t.C <- msg
@@ -362,7 +384,6 @@ func (t *Track) DumpTrackingList(tip bool) {
 
 }
 
-
 func recoverTrackingList() map[string]string {
 	dump := make(map[string]string)
 	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "tracking.json")
@@ -386,4 +407,8 @@ func (t *Track) DumpCron() {
 	for range h.C {
 		t.DumpTrackingList(false)
 	}
+}
+
+func isNull(addr string) bool {
+	return strings.EqualFold("0x0000000000000000000000000000000000000000", addr) || strings.EqualFold("0x000000000000000000000000000000000000dead", addr)
 }
