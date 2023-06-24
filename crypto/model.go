@@ -145,6 +145,7 @@ type TokenTx struct {
 	Value           string `json:"value"`
 	Decimal         string `json:"tokenDecimal"`
 	TimeStamp		string `json:"timeStamp"`
+	Block			string `json:"blockNumber"`
 }
 
 type HoneypotResp struct {
@@ -153,4 +154,16 @@ type HoneypotResp struct {
 
 type Honeypot struct {
 	Is bool `json:"isHoneypot"`
+}
+
+
+type ContractCreationResp struct {
+	Status  string    `json:"status"`
+	Message string    `json:"message"`
+	Result  []ContractCreation `json:"result"`
+}
+
+type ContractCreation struct {
+	Address string `json:"contractAddress"`
+	Creator string `json:"contractCreator"`
 }

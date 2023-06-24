@@ -49,6 +49,7 @@ systemctl status aio
 
 ## 三. Command List
 ### 1. 加密货币监控功能清单
+- [x] smart_addr_finder 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 - [x] list_wallet_tracking 列出正在追踪的聪明钱包地址
 - [x] list_smart_addr_probe 列出正在探测的聪明钱包地址
 - [x] dump_tracking_list dump追踪地址列表(建议每次准备重启服务的时候执行一次)
@@ -168,6 +169,7 @@ get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 e
 wallet_tx_analyze - 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30
 wallet_tracking - 追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
 stop_wallet_tracking - 停止追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
+smart_addr_finder - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 smart_addr_tx - 输入聪明地址和近n条交易 例: 0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80 20
 smart_addr_probe - 监控聪明地址购买情况 例:  0x6b75d8AF000000e20B7a7DDf000Ba900b4009A80
 set_smart_addr_probe_itv - 修改聪明地址探测频率 例: 15
@@ -185,6 +187,7 @@ list_cmd_list - 功能分类列表
 
 ```
 chatid - 查询chatid
+smart_addr_finder - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 list_wallet_tracking - 列出正在追踪的聪明钱包地址
 list_smart_addr_probe - 列出正在探测的聪明钱包地址
 dump_tracking_list - dump追踪地址列表(建议每次准备重启服务的时候执行一次)
