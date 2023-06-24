@@ -42,6 +42,7 @@ vps:
 
 command:
   crypto:
+    - "smart_addr_finder 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1"
     - "list_wallet_tracking - 列出正在追踪的聪明钱包地址"
     - "list_smart_addr_probe - 列出正在探测的聪明钱包地址"
     - "dump_tracking_list - dump追踪地址列表(建议每次准备重启服务的时候执行一次)"
