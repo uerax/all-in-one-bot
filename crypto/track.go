@@ -454,12 +454,15 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 			if len(list) != 0 {
 				analyze[address] = new(txs)
 				for _, tx := range list {
-					//val := t.getEthByHash(tx.Hash)
+					val := t.getEthByHash(tx.Hash)
 					if address == tx.From {
 						// sell
-						
+						analyze[address].Profit += val
+						analyze[address].Sell += val
 					} else {
 						// buy
+						analyze[address].Profit -= val
+						analyze[address].Buy += val
 					}
 				}
 			}
@@ -470,9 +473,14 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 		handle(v.From)
 		handle(v.To)
 	}
-}
 
-func (t *Track) TxListInternal(hash string) {
+	if len(analyze) > 0 {
+		msg := fmt.Sprintf("%s 分析完毕:", token)
+		for k, v := range analyze {
+			msg += fmt.Sprintf("\n`%s`\n*B:* %0.5f | *S:* %0.5f | *P:* %0.5f", k, v.Buy, v.Sell, v.Profit)
+		}
+		t.C <- msg
+	}
 	
 }
 

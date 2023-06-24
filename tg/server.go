@@ -43,6 +43,8 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Track
+			case "smart_addr_finder":
+				smartAddrFinder(update.Message.Text)
 			case "wallet_tx_analyze":
 				walletAnalyze(update.Message.Text)
 			case "wallet_tracking":
@@ -138,6 +140,9 @@ func Server() {
 
 		switch update.Message.Command() {
 		// Track
+		case "smart_addr_finder":
+			Cmd = "smart_addr_finder"
+			tips(update.Message.Chat.ID, "分析高涨幅度币的地址收益来寻找聪明地址 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1`")
 		case "list_wallet_tracking":
 			listWalletTracking()
 		case "list_smart_addr_probe":

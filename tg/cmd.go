@@ -8,6 +8,17 @@ import (
 )
 
 // Crypto Start
+func smartAddrFinder(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 3 {
+		fmt.Printf("smartAddrFinder 参数有误: %s", args)
+		go api.SendMessage("参数有误")
+		return
+	}
+
+	go api.Track.SmartAddrFinder(arg[0], arg[1], arg[2])
+}
+
 func listWalletTracking() {
 	go api.Track.TrackingList(false)
 }
