@@ -2,7 +2,9 @@ package common
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"io"
+	"net/http"
 	"os"
 	"reflect"
 	"time"
@@ -86,4 +88,18 @@ func ImmediateTicker(sec int, do func()) {
 	for range t.C {
 		go do()
 	}
+}
+
+func HttpGet(url string, v any) error {
+		r, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer r.Body.Close()
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(b, &v)
+
 }
