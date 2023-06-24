@@ -455,14 +455,28 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 				analyze[address] = new(txs)
 				for _, tx := range list {
 					val := t.getEthByHash(tx.Hash)
+					cnt := 0.0
+					dec, err := strconv.Atoi(tx.Decimal)
+					if err == nil {
+						l := len(tx.Value) - dec
+						tmp := ""
+						if l <= 0 {
+							tmp = "0." + strings.Repeat("0", -l) + tx.Value
+						} else {
+							tmp = tx.Value[:l]
+						}
+						cnt, _ = strconv.ParseFloat(tmp, 64)
+					}
+					
 					if address == tx.From {
 						// sell
 						analyze[address].Profit += val
-						analyze[address].Sell += val
+						analyze[address].Sell += cnt
 					} else {
 						// buy
 						analyze[address].Profit -= val
-						analyze[address].Buy += val
+						analyze[address].Buy += cnt
+						analyze[address].Pay += val
 					}
 				}
 			}
@@ -477,7 +491,12 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 	if len(analyze) > 0 {
 		msg := fmt.Sprintf("%s 分析完毕:", token)
 		for k, v := range analyze {
-			msg += fmt.Sprintf("\n`%s`\n*B:* %0.5f | *S:* %0.5f | *P:* %0.5f", k, v.Buy, v.Sell, v.Profit)
+			if len(msg) > 3500 {
+				msg += "\n内容过长进行裁剪"
+				t.C <- msg
+				msg = "裁剪后的下部分:"
+			}
+			msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
 		}
 		t.C <- msg
 	}

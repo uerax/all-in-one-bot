@@ -17,6 +17,7 @@ func smartAddrFinder(args string) {
 	}
 
 	go api.Track.SmartAddrFinder(arg[0], arg[1], arg[2])
+	go api.SendMessage("分析一般需要1-2分钟, 数量越多时间越长, 请耐心等待")
 }
 
 func listWalletTracking() {
