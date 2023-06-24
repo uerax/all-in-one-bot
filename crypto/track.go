@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 
@@ -31,6 +32,15 @@ type txResp struct {
 
 type tx struct {
 	Value string `json:"value"`
+}
+
+type txs struct {
+	Buy    float64
+	Sell   float64
+	Symbol string
+	Profit float64
+	Scam   string
+	Pay    float64
 }
 
 func NewTrack() *Track {
@@ -251,14 +261,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		return
 	}
 
-	type txs struct {
-		Buy    float64
-		Sell   float64
-		Symbol string
-		Profit float64
-		Scam   string
-		Pay    float64
-	}
+	
 	profit := 0.0
 	detail := make(map[string]*txs)
 
@@ -386,4 +389,84 @@ func (t *Track) DumpCron() {
 	for range h.C {
 		t.DumpTrackingList(false)
 	}
+}
+
+// 1. 拉取某个 token 最初的交易列表
+// 2. 遍历列表, 查询所有 from 和 to 的地址在该 token 的交易记录
+// 3. 过滤掉买卖数超过 6 的地址, 此类一般为夹子机器人
+// 4. 对交易记录遍历查询内部交易, 对地址的买卖数收益记录
+func (t *Track) SmartAddrFinder(token, offset, page string) {
+	if t.apiKey == "" {
+		t.C <- "未读取到etherscan的apikey无法启动分析"
+		return
+	}
+	// getContractCreationUrl := "https://api.etherscan.io/api?module=contract&action=getcontractcreation&contractaddresses=%s&apikey=%s"
+	// creator := new(ContractCreationResp)
+	// err := common.HttpGet(fmt.Sprintf(getContractCreationUrl, token, apiKey), &creator)
+
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=%s&offset=%s&sort=asc&contractaddress=%s&apikey=%s"
+	scan := new(TokenTxResp)
+	err := common.HttpGet(fmt.Sprintf(url, page, offset, token, t.apiKey), &scan)
+	if err != nil {
+		fmt.Println("请求失败: ", err)
+		return
+	}
+
+	if scan.Status != "1" {
+		return
+	}
+
+	recorded := map[string]struct{}{
+		"0x0000000000000000000000000000000000000000": {},
+		"0x000000000000000000000000000000000000dead": {},
+		// uniswap router
+		"0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD": {},
+		"0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": {},
+	}
+
+	analyze := make(map[string]*txs)
+
+	handle := func (address string)  {
+		if _, ok := recorded[address]; !ok {
+			recorded[address] = struct{}{}
+			list := t.TransferList(address, token)
+			if len(list) != 0 {
+				analyze[address] = new(txs)
+				for _, tx := range list {
+					//val := t.getEthByHash(tx.Hash)
+					if address == tx.From {
+						// sell
+						
+					} else {
+						// buy
+					}
+				}
+			}
+		}
+	}
+
+	for _, v := range scan.Result {
+		handle(v.From)
+		handle(v.To)
+	}
+}
+
+func (t *Track) TxListInternal(hash string) {
+	
+}
+
+func (t *Track) TransferList(addr, token string) []TokenTx {
+	transferListUrl := "https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=%s&address=%s&apikey=%s"
+	tx := new(TokenTxResp)
+	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.apiKey), &tx)
+
+	if err != nil {
+		fmt.Println("请求失败: ", err)
+		return nil
+	}
+	if len(tx.Result) > 6 {
+		return nil
+	}
+
+	return tx.Result
 }
