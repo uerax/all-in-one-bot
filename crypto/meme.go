@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 
@@ -477,4 +478,34 @@ func recoverSmartAddrList() map[string]map[string]struct{} {
 
 	return dump
 
+}
+
+
+func (t *Probe) SmartAddrFinder(token string) {
+	apiKey := goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey")
+	if apiKey == "" {
+		t.Meme <- "未读取到etherscan的apikey无法启动分析"
+		return
+	}
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=asc&contractaddress=%s&apikey=%s"
+	scan := new(TokenTxResp)
+	err := common.HttpGet(fmt.Sprintf(url, token, apiKey), &scan)
+	if err != nil {
+		fmt.Println("请求失败: ", err)
+		return
+	}
+
+	if scan.Status != "1" {
+		return
+	}
+
+	
+
+	for _, v := range scan.Result {
+		t.ContractProfit(v.From, token)
+	}
+}
+
+func (t *Probe) ContractProfit(addr, contract string) {
+	
 }
