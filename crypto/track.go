@@ -57,12 +57,12 @@ func NewTrack() *Track {
 	}
 
 	go t.DumpCron()
-	go t.Recover()
+	go t.recover()
 
 	return t
 }
 
-func (t *Track) Recover() {
+func (t *Track) recover() {
 	for k := range t.Newest {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[k] = cf
@@ -355,12 +355,6 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 }
 
 func (t *Track) DumpTrackingList(tip bool) {
-	if len(t.Newest) == 0 {
-		if tip {
-			t.C <- "列表为空,不执行dump"
-		}
-		return
-	}
 	b, err := json.Marshal(t.Newest)
 	if err != nil {
 		fmt.Println("序列化失败:", err)
