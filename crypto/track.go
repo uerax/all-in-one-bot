@@ -78,6 +78,7 @@ func (t *Track) CronTracking(addr string) {
 		t.Task[addr] = cf
 		t.Newest[addr] = ""
 		go t.Tracking(addr, ctx)
+		fmt.Println("开始追踪: ", addr)
 		t.C <- "*开始追踪* " + addr
 	}
 }
@@ -87,6 +88,7 @@ func (t *Track) StopTracking(addr string) {
 		v()
 		delete(t.Task, addr)
 		delete(t.Newest, addr)
+		fmt.Println("已停止追踪: ", addr)
 		t.C <- "*已停止追踪* " + addr
 	}
 }
