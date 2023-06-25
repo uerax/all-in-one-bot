@@ -494,7 +494,8 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 			if len(msg) > 3500 {
 				msg += "\n内容过长进行裁剪"
 				t.C <- msg
-				msg = "裁剪后的下部分:"
+				time.Sleep(time.Millisecond)
+				msg = "*裁剪后的下部分:*"
 			}
 			msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
 		}
