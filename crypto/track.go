@@ -57,12 +57,12 @@ func NewTrack() *Track {
 	}
 
 	go t.DumpCron()
-	go t.Recover()
+	go t.recover()
 
 	return t
 }
 
-func (t *Track) Recover() {
+func (t *Track) recover() {
 	for k := range t.Newest {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[k] = cf
@@ -78,6 +78,7 @@ func (t *Track) CronTracking(addr string) {
 		t.Task[addr] = cf
 		t.Newest[addr] = ""
 		go t.Tracking(addr, ctx)
+		fmt.Println("开始追踪: ", addr)
 		t.C <- "*开始追踪* " + addr
 	}
 }
@@ -87,6 +88,7 @@ func (t *Track) StopTracking(addr string) {
 		v()
 		delete(t.Task, addr)
 		delete(t.Newest, addr)
+		fmt.Println("已停止追踪: ", addr)
 		t.C <- "*已停止追踪* " + addr
 	}
 }
@@ -345,7 +347,11 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			time.Sleep(time.Millisecond)
 			msg = "*------裁剪后的另外部分------\n*"
 		}
-		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit)
+		unsold := ""
+		if v.Sell == 0.0 {
+			unsold = "*[unsold]*"
+		}
+		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n%s*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, unsold, v.Buy, v.Sell, v.Pay, v.Profit)
 	}
 
 	t.C <- msg
@@ -353,12 +359,6 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 }
 
 func (t *Track) DumpTrackingList(tip bool) {
-	if len(t.Newest) == 0 {
-		if tip {
-			t.C <- "列表为空,不执行dump"
-		}
-		return
-	}
 	b, err := json.Marshal(t.Newest)
 	if err != nil {
 		fmt.Println("序列化失败:", err)
@@ -503,7 +503,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 				time.Sleep(time.Millisecond)
 				msg = "*------裁剪后的另外部分------*"
 			}
-			if !(v.Buy == 0.0 || v.Profit < 0) {
+			if !(v.Pay == 0.0 || v.Profit < 0.0) {
 				msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
 			}
 		}
