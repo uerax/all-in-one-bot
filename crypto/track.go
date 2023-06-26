@@ -347,7 +347,11 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			time.Sleep(time.Millisecond)
 			msg = "*------裁剪后的另外部分------\n*"
 		}
-		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit)
+		unsold := ""
+		if v.Sell == 0.0 {
+			unsold = "*[unsold]*"
+		}
+		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n%s*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, unsold, v.Buy, v.Sell, v.Pay, v.Profit)
 	}
 
 	t.C <- msg
@@ -499,7 +503,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 				time.Sleep(time.Millisecond)
 				msg = "*------裁剪后的另外部分------*"
 			}
-			if !(v.Buy == 0.0 || v.Profit < 0) {
+			if !(v.Pay == 0.0 || v.Profit < 0.0) {
 				msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
 			}
 		}
