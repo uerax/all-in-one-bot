@@ -499,7 +499,9 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 				time.Sleep(time.Millisecond)
 				msg = "*------裁剪后的另外部分------*"
 			}
-			msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
+			if !(v.Buy == 0.0 || v.Profit < 0) {
+				msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
+			}
 		}
 		t.C <- msg
 	}
