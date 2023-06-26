@@ -340,10 +340,10 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)*近%s条交易总利润为: %0.5f eth: *\n", addr, offset, profit)
 	for k, v := range detail {
 		if len(msg) > 3500 {
-			msg += "------内容过长进行裁剪------"
+			msg += "*------内容过长进行裁剪------*"
 			t.C <- msg
 			time.Sleep(time.Millisecond)
-			msg = "*裁剪后的下部分:\n*"
+			msg = "*------裁剪后的另外部分------\n*"
 		}
 		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit)
 	}
@@ -498,12 +498,14 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 		msg := fmt.Sprintf("*合约地址:* `%s`\n *------------分析完毕:------------*", token)
 		for k, v := range analyze {
 			if len(msg) > 3500 {
-				msg += "\n内容过长进行裁剪"
+				msg += "\n*------内容过长进行裁剪------*"
 				t.C <- msg
 				time.Sleep(time.Millisecond)
-				msg = "*裁剪后的下部分:*"
+				msg = "*------裁剪后的另外部分------*"
 			}
-			msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
+			if !(v.Buy == 0.0 || v.Profit < 0) {
+				msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
+			}
 		}
 		t.C <- msg
 	}
