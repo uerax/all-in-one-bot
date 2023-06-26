@@ -47,7 +47,52 @@ systemctl enable aio
 systemctl status aio
 ```
 
-## 三. Command List
+## 三. Use Case
+
+* 功能太多太杂导致我自己使用都会有些混乱, 整理一些常用的组合用法
+### 1. 如何找聪明钱包
+
+__首先找到一个金狗(涨幅巨大),使用smart_addr_finder去找出早期购买且收益高的钱包地址, 我这边随便找一个作为示例__
+
+`发送命令`
+
+```
+/smart_addr_finder
+```
+
+`发送参数`
+
+* 50 1即最早的1-50号交易, 50 2 就是51-100号交易,以此类推
+
+```
+0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 10
+```
+
+__经过一分钟左右等待, 会自动分析出买卖利润>0且非空投的地址, 然后选择其中收益比较高的地址,然后使用wallet_tx_analyze分析他近期交易收益__
+
+`发送命令`
+
+```
+/wallet_tx_analyze
+```
+
+`发送参数`
+
+* 30为近期30条, 可以省略不写默认为30, 也可以根据情况扩大分析范围
+
+```
+0x1b63e884871aff9a6a55fdd30dbcb82d647d5f99 30
+```
+
+__观察钱包的交易总收益和情况,如果返回交易数特别少那大概率是狗庄的老鼠仓,参考价值不高可以省略, 如果交易数高为正常钱包的可能性更高,这个需要自行判断. 然后当判断改地址为聪明钱包时,使用wallet_tracking监控该地址之后的买入卖出操作__
+
+`发送命令`
+
+```
+/wallet_tracking
+```
+
+## 四. Command List
 ### 1. 加密货币监控功能清单
 - [x] smart_addr_finder 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 - [x] list_wallet_tracking 列出正在追踪的聪明钱包地址
@@ -113,7 +158,7 @@ systemctl status aio
 - [x] time_convert 时间转换为时间戳"2006-01-02 15:04:05"
 - [x] json_format 格式化json
 
-## 四. 环境安装(可选)
+## 五. 环境安装(可选)
 
 * __Telegram 50M上传限制的解决思路__
 
@@ -155,7 +200,7 @@ sudo dnf install ffmpeg
 sudo pacman -S ffmpeg
 ```
 
-## 五. Telegram Commands
+## 六. Telegram Commands
 
 __通过 @BotFather /setcommands 发送添加__
 
