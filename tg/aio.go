@@ -5,6 +5,7 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/uerax/all-in-one-bot/chatgpt"
@@ -76,6 +77,21 @@ func (t *Aio) SendMarkdown(id int64, msg string, preview bool) {
 	mc.ParseMode = "Markdown"
 	mc.DisableWebPagePreview = preview
 	t.bot.Send(mc)
+}
+
+func (t *Aio) DeleteAfterSendMarkdown(id int64, msg string, preview bool) {
+	mc := tgbotapi.NewMessage(id, msg)
+	mc.ParseMode = "Markdown"
+	mc.DisableWebPagePreview = preview
+	m, err := t.bot.Send(mc)
+	if err == nil {
+		go t.deleteAfterMinute(id, m.MessageID, 2)
+	}
+}
+
+func (t *Aio) deleteAfterMinute(id int64, msgId int, minute int) {
+	time.Sleep(time.Minute * time.Duration(minute))
+	t.bot.Send(tgbotapi.NewDeleteMessage(id, msgId))
 }
 
 func (t *Aio) SendImg(id int64, img string) {
@@ -189,7 +205,7 @@ func (t *Aio) WaitToSend() {
 			go t.SendMsg(ChatId, v)
 		// Lists
 		case v := <-t.Lists.C:
-			go t.SendMarkdown(ChatId, v, false)
+			go t.DeleteAfterSendMarkdown(ChatId, v, false)
 		case v := <-t.Lists.ErrC:
 			go t.SendMsg(ChatId, v)
 		// Track

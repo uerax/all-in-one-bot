@@ -344,7 +344,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		if len(msg) > 3500 {
 			msg += "*------内容过长进行裁剪------*"
 			t.C <- msg
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Microsecond * 100)
 			msg = "*------裁剪后的另外部分------\n*"
 		}
 		unsold := ""
@@ -500,7 +500,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 			if len(msg) > 3500 {
 				msg += "\n*------内容过长进行裁剪------*"
 				t.C <- msg
-				time.Sleep(time.Millisecond)
+				time.Sleep(time.Microsecond * 100)
 				msg = "*------裁剪后的另外部分------*"
 			}
 			if !(v.Pay == 0.0 || v.Profit < 0.0) {
