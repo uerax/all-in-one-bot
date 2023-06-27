@@ -92,6 +92,30 @@ __观察钱包的交易总收益和情况,如果返回交易数特别少那大�
 /wallet_tracking
 ```
 
+### 2. 跟着聪明钱包买入后寻找出点
+
+__聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以有时候聪明钱包在等多倍的时候, 我们应该选择翻倍出场或者是翻倍出本, 这样的操作可能会导致少赚但是更加安全. 所以买入后使用 add_meme_growth_monitor / add_meme_decline_monitor 进行价格监控, 自己选择出点而不是无脑相信聪明钱包__
+
+`监控上涨命令`
+
+```
+/add_meme_growth_monitor
+```
+
+`监控下跌命令`
+
+```
+/add_meme_growth_monitor
+```
+
+`发送参数`
+
+* 参数 eth/bsc 是该币的链, 2 为价格(usdt)
+
+```
+0x51187cab377ed5e1386042919a9c3d6b5ea402f0 eth 2.4
+```
+
 ## 四. Command List
 ### 1. 加密货币监控功能清单
 - [x] smart_addr_finder 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
