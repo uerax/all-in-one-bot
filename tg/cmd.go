@@ -440,5 +440,5 @@ func allList() {
 
 // Default
 func tips(id int64, msg string) {
-	go api.SendMarkdown(id, msg, false)
+	go api.DeleteAfterSendMarkdown(id, msg, false)
 }
