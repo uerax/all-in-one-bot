@@ -344,7 +344,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		if len(msg) > 3500 {
 			msg += "*------内容过长进行裁剪------*"
 			t.C <- msg
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Microsecond * 100)
 			msg = "*------裁剪后的另外部分------\n*"
 		}
 		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit)
@@ -496,7 +496,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 			if len(msg) > 3500 {
 				msg += "\n*------内容过长进行裁剪------*"
 				t.C <- msg
-				time.Sleep(time.Millisecond)
+				time.Sleep(time.Microsecond * 100)
 				msg = "*------裁剪后的另外部分------*"
 			}
 			if !(v.Buy == 0.0 || v.Profit < 0) {
