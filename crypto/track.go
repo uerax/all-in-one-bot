@@ -141,7 +141,7 @@ func (t *Track) WalletTracking(addr string) {
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("json转换失败")
+		fmt.Println("WalletTracking: json转换失败")
 		return
 	}
 
@@ -223,7 +223,7 @@ func (t *Track) getEthByHash(hash string) float64 {
 	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
 	if err != nil {
 		fmt.Println("请求失败")
-		return 0.0
+		return 0.0		
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
