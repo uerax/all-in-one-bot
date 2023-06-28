@@ -161,7 +161,7 @@ func (t *Track) WalletTracking(addr string) {
 
 	sb := strings.Builder{}
 	his := make(map[string]struct{})
-
+	newest := ""
 	for _, record := range scan.Result {
 		if record.Hash == t.Newest[addr] {
 			break
@@ -178,6 +178,9 @@ func (t *Track) WalletTracking(addr string) {
 			balance = t.getEthByHash(record.Hash)
 			if balance == 0.0 {
 				continue
+			}
+			if newest == "" {
+				newest = record.Hash
 			}
 
 			sb.WriteString("\n")
