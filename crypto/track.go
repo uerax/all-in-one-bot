@@ -161,7 +161,6 @@ func (t *Track) WalletTracking(addr string) {
 
 	sb := strings.Builder{}
 	his := make(map[string]struct{})
-	newest := ""
 	for _, record := range scan.Result {
 		if record.Hash == t.Newest[addr] {
 			break
@@ -179,14 +178,11 @@ func (t *Track) WalletTracking(addr string) {
 			if balance == 0.0 {
 				continue
 			}
-			if newest == "" {
-				newest = record.Hash
-			}
 
 			sb.WriteString("\n")
 			isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
 			if isHoneypot {
-				sb.WriteString("*[SCAM]*")
+				sb.WriteString("*[SCAM3]*")
 			}
 			if strings.EqualFold(record.From, addr) {
 				sb.WriteString("*Sell: *")
@@ -352,7 +348,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 						detail[record.ContractAddress].Symbol = record.TokenSymbol
 						isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
 						if isHoneypot {
-							detail[record.ContractAddress].Scam = "*[SCAM]*"
+							detail[record.ContractAddress].Scam = "SCAM"
 						}
 					}
 				}
@@ -370,9 +366,9 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 		unsold := ""
 		if v.Sell == 0.0 {
-			unsold = "*[UNSOLE]*"
+			unsold = "UNSOLE"
 		}
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n%s %s %s", v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit, v.Scam, v.Time, unsold)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*%s* | *Detect:%s* | *Status:%s*\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n", v.Symbol, k, k, v.Time, v.Scam, unsold, v.Buy, v.Sell, v.Pay, v.Profit)
 	}
 
 	t.C <- msg
