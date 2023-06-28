@@ -336,10 +336,6 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 					if err == nil {
 						if _, ok := detail[record.ContractAddress]; !ok {
 							detail[record.ContractAddress] = new(txs)
-							ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
-							if err == nil {
-								detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("0102150405")
-							}
 						}
 						if strings.EqualFold(record.From, addr) {
 							detail[record.ContractAddress].Sell += cnt
@@ -348,6 +344,10 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 							detail[record.ContractAddress].Buy += cnt
 							detail[record.ContractAddress].Profit -= val
 							detail[record.ContractAddress].Pay += val
+						}
+						ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+						if err == nil {
+							detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("01/02 15:04:05")
 						}
 						detail[record.ContractAddress].Symbol = record.TokenSymbol
 						isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
@@ -372,7 +372,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		if v.Sell == 0.0 {
 			unsold = "*[UNSOLE]*"
 		}
-		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n%s*%s* *B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n", v.Scam, v.Symbol, k, k, unsold, v.Time, v.Buy, v.Sell, v.Pay, v.Profit)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n%s %s %s", v.Symbol, k, k, v.Buy, v.Sell, v.Pay, v.Profit, v.Scam, v.Time, unsold)
 	}
 
 	t.C <- msg
