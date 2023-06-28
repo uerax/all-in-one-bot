@@ -43,6 +43,7 @@ type txs struct {
 	Profit float64
 	Scam   string
 	Pay    float64
+	Time   string
 }
 
 func NewTrack() *Track {
@@ -140,7 +141,7 @@ func (t *Track) WalletTracking(addr string) {
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("json转换失败")
+		fmt.Println("WalletTracking: json转换失败")
 		return
 	}
 
@@ -160,24 +161,37 @@ func (t *Track) WalletTracking(addr string) {
 
 	sb := strings.Builder{}
 	his := make(map[string]struct{})
+	newest := ""
 	for _, record := range scan.Result {
 		if record.Hash == t.Newest[addr] {
 			break
 		}
 		if record.TokenSymbol != "WETH" || !isNull(record.From) || !isNull(record.To) {
-			balance := 0.0
-			if _, ok := his[record.Hash]; !ok {
-				his[record.Hash] = struct{}{}
-				balance = t.getEthByHash(record.Hash)
-				if balance == 0 {
-					continue
-				}
-			}
 			
+			// 过滤掉重复记录
+			if _, ok := his[record.Hash]; ok {
+				continue
+			}
+			balance := 0.0
+
+			his[record.Hash] = struct{}{}
+			balance = t.getEthByHash(record.Hash)
+			if balance == 0.0 {
+				continue
+			}
+			if newest == "" {
+				newest = record.Hash
+			}
+
+			sb.WriteString("\n")
+			isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
+			if isHoneypot {
+				sb.WriteString("*[SCAM]*")
+			}
 			if strings.EqualFold(record.From, addr) {
-				sb.WriteString("\n*Sell: *")
+				sb.WriteString("*Sell: *")
 			} else {
-				sb.WriteString("\n*Buy: *")
+				sb.WriteString("*Buy: *")
 			}
 			sb.WriteString("[")
 			sb.WriteString(record.TokenSymbol)
@@ -195,7 +209,7 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString("`")
 		}
 	}
-
+	
 	t.Newest[addr] = scan.Result[0].Hash
 
 	if sb.Len() > 0 {
@@ -209,23 +223,23 @@ func (t *Track) getEthByHash(hash string) float64 {
 	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
 	if err != nil {
 		fmt.Println("请求失败")
-		return 0
+		return 0.0		
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println("读取body失败")
-		return 0
+		return 0.0
 	}
 	scan := new(txResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		fmt.Println("json转换失败")
-		return 0
+		return 0.0
 	}
 
 	if scan.Status != "1" || len(scan.Result) == 0 {
-		return 0
+		return 0.0
 	}
 
 	cnt := 0.0
@@ -290,13 +304,16 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 
 	for _, record := range scan.Result {
 		if record.TokenSymbol != "WETH" || !isNull(record.From) || !isNull(record.To) {
+			if _, ok := his[record.Hash]; ok {
+				continue
+			}
+
 			val := 0.0
-			if _, ok := his[record.Hash]; !ok {
-				his[record.Hash] = struct{}{}
-				val = t.getEthByHash(record.Hash)
-				if val == 0 {
-					continue
-				}
+
+			his[record.Hash] = struct{}{}
+			val = t.getEthByHash(record.Hash)
+			if val == 0.0 {
+				continue
 			}
 			
 			if strings.EqualFold(record.From, addr) {
@@ -319,6 +336,10 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 					if err == nil {
 						if _, ok := detail[record.ContractAddress]; !ok {
 							detail[record.ContractAddress] = new(txs)
+							ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+							if err == nil {
+								detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("0102150405")
+							}
 						}
 						if strings.EqualFold(record.From, addr) {
 							detail[record.ContractAddress].Sell += cnt
@@ -349,9 +370,9 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 		unsold := ""
 		if v.Sell == 0.0 {
-			unsold = "*[unsold]*"
+			unsold = "*[UNSOLE]*"
 		}
-		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n%s*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth | *P:* %0.5f eth\n", v.Scam, v.Symbol, k, k, unsold, v.Buy, v.Sell, v.Pay, v.Profit)
+		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n%s*%s* *B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n", v.Scam, v.Symbol, k, k, unsold, v.Time, v.Buy, v.Sell, v.Pay, v.Profit)
 	}
 
 	t.C <- msg
@@ -504,7 +525,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 				msg = "*------裁剪后的另外部分------*"
 			}
 			if !(v.Pay == 0.0 || v.Profit < 0.0) {
-				msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.5f | *P:* %0.5f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
+				msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.3f | *P:* %0.3f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
 			}
 		}
 		t.C <- msg
