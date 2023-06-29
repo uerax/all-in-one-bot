@@ -74,6 +74,7 @@ func (t *Track) recover() {
 }
 
 func (t *Track) CronTracking(addr string) {
+	addr = strings.ToLower(addr)
 	if _, ok := t.Task[addr]; !ok {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
@@ -85,6 +86,7 @@ func (t *Track) CronTracking(addr string) {
 }
 
 func (t *Track) StopTracking(addr string) {
+	addr = strings.ToLower(addr)
 	if v, ok := t.Task[addr]; ok {
 		v()
 		delete(t.Task, addr)
@@ -159,9 +161,10 @@ func (t *Track) WalletTracking(addr string) {
 		return
 	}
 
+	newest := ""
+
 	sb := strings.Builder{}
 	his := make(map[string]struct{})
-	newest := ""
 	for _, record := range scan.Result {
 		if record.Hash == t.Newest[addr] {
 			break
@@ -175,10 +178,16 @@ func (t *Track) WalletTracking(addr string) {
 			balance := 0.0
 
 			his[record.Hash] = struct{}{}
-			balance = t.getEthByHash(record.Hash)
+			if strings.EqualFold(record.From, addr) {
+				balance = t.getSellEthByHash(record.Hash, addr)
+			} else {
+				balance = t.getBuyEthByHash(record.Hash)
+			}
+			
 			if balance == 0.0 {
 				continue
 			}
+
 			if newest == "" {
 				newest = record.Hash
 			}
@@ -210,7 +219,9 @@ func (t *Track) WalletTracking(addr string) {
 		}
 	}
 	
-	t.Newest[addr] = scan.Result[0].Hash
+	if newest != "" {
+		t.Newest[addr] = newest
+	}
 
 	if sb.Len() > 0 {
 		t.C <- "`" + addr + "`*执行操作:*" + sb.String()
@@ -218,7 +229,7 @@ func (t *Track) WalletTracking(addr string) {
 
 }
 
-func (t *Track) getEthByHash(hash string) float64 {
+func (t *Track) getBuyEthByHash(hash string) float64 {
 	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
 	if err != nil {
@@ -245,8 +256,8 @@ func (t *Track) getEthByHash(hash string) float64 {
 	cnt := 0.0
 	for _, v := range scan.Result {
 		tmp := ""
-		// 内部交易可能会出现多轮交易,该步骤用于过滤 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2为WETH
-		if !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.From) && !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.To) {
+		// 暂时认定买入操作只会有一轮内部交易
+		if !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.To) {
 			continue
 		}
 		if len(v.Value) > 18 {
@@ -263,6 +274,50 @@ func (t *Track) getEthByHash(hash string) float64 {
 	}
 	return cnt
 
+}
+
+func (t *Track) getSellEthByHash(hash, addr string) float64 {
+	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
+	if err != nil {
+		fmt.Println("请求失败")
+		return 0.0		
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("读取body失败")
+		return 0.0
+	}
+	scan := new(txResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		fmt.Println("json转换失败")
+		return 0.0
+	}
+
+	if scan.Status != "1" || len(scan.Result) == 0 {
+		return 0.0
+	}
+
+	cnt := 0.0
+	for _, v := range scan.Result {
+		if strings.EqualFold(v.To, addr) {
+			tmp := ""
+			if len(v.Value) > 18 {
+				tmp = v.Value[:len(v.Value)-18] + "." + v.Value[len(v.Value)-18:]
+			} else if len(v.Value) == 18 {
+				tmp = "0." + v.Value
+			} else {
+				tmp = "0." + strings.Repeat("0", 18-len(v.Value)) + v.Value
+			}
+			f, err := strconv.ParseFloat(tmp, 64)
+			if err == nil {
+				cnt += f
+			}
+		}
+	}
+	return cnt
 }
 
 func (t *Track) WalletTxAnalyze(addr string, offset string) {
@@ -311,7 +366,11 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			val := 0.0
 
 			his[record.Hash] = struct{}{}
-			val = t.getEthByHash(record.Hash)
+			if strings.EqualFold(record.From, addr) {
+				val = t.getSellEthByHash(record.Hash, addr)
+			} else {
+				val = t.getBuyEthByHash(record.Hash)
+			}
 			if val == 0.0 {
 				continue
 			}
@@ -336,10 +395,6 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 					if err == nil {
 						if _, ok := detail[record.ContractAddress]; !ok {
 							detail[record.ContractAddress] = new(txs)
-							ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
-							if err == nil {
-								detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("0102150405")
-							}
 						}
 						if strings.EqualFold(record.From, addr) {
 							detail[record.ContractAddress].Sell += cnt
@@ -349,10 +404,14 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 							detail[record.ContractAddress].Profit -= val
 							detail[record.ContractAddress].Pay += val
 						}
+						ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+						if err == nil {
+							detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("01/02 15:04:05")
+						}
 						detail[record.ContractAddress].Symbol = record.TokenSymbol
 						isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
 						if isHoneypot {
-							detail[record.ContractAddress].Scam = "*[SCAM]*"
+							detail[record.ContractAddress].Scam = "SCAM"
 						}
 					}
 				}
@@ -370,9 +429,9 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 		unsold := ""
 		if v.Sell == 0.0 {
-			unsold = "*[UNSOLE]*"
+			unsold = "UNSOLE"
 		}
-		msg += fmt.Sprintf("%s[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n%s*%s* *B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n", v.Scam, v.Symbol, k, k, unsold, v.Time, v.Buy, v.Sell, v.Pay, v.Profit)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*%s* | *Detect:%s* | *Status:%s*\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n", v.Symbol, k, k, v.Time, v.Scam, unsold, v.Buy, v.Sell, v.Pay, v.Profit)
 	}
 
 	t.C <- msg
@@ -481,7 +540,12 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 			if len(list) != 0 {
 				analyze[address] = new(txs)
 				for _, tx := range list {
-					val := t.getEthByHash(tx.Hash)
+					val := 0.0
+					if strings.EqualFold(tx.From, address) {
+						val = t.getSellEthByHash(tx.Hash, address)
+					} else {
+						val = t.getBuyEthByHash(tx.Hash)
+					}
 					cnt := 0.0
 					dec, err := strconv.Atoi(tx.Decimal)
 					if err == nil {
@@ -495,7 +559,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 						cnt, _ = strconv.ParseFloat(tmp, 64)
 					}
 					
-					if address == tx.From {
+					if strings.EqualFold(address, tx.From) {
 						// sell
 						analyze[address].Profit += val
 						analyze[address].Sell += cnt
