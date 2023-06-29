@@ -8,6 +8,16 @@ import (
 )
 
 // Crypto Start
+func analyzeAddrTokenProfit(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 2 {
+		fmt.Printf("analyzeAddrTokenProfit 参数有误: %s", args)
+		go api.SendMessage("参数有误")
+		return
+	}
+	go api.Track.AnalyzeAddrTokenProfit(arg[0], arg[1])
+}
+
 func smartAddrFinder(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) == 1 {
