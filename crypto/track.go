@@ -74,6 +74,7 @@ func (t *Track) recover() {
 }
 
 func (t *Track) CronTracking(addr string) {
+	addr = strings.ToLower(addr)
 	if _, ok := t.Task[addr]; !ok {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
@@ -85,6 +86,7 @@ func (t *Track) CronTracking(addr string) {
 }
 
 func (t *Track) StopTracking(addr string) {
+	addr = strings.ToLower(addr)
 	if v, ok := t.Task[addr]; ok {
 		v()
 		delete(t.Task, addr)
@@ -159,6 +161,8 @@ func (t *Track) WalletTracking(addr string) {
 		return
 	}
 
+	newest := ""
+
 	sb := strings.Builder{}
 	his := make(map[string]struct{})
 	for _, record := range scan.Result {
@@ -177,6 +181,10 @@ func (t *Track) WalletTracking(addr string) {
 			balance = t.getEthByHash(record.Hash)
 			if balance == 0.0 {
 				continue
+			}
+
+			if newest == "" {
+				newest = record.Hash
 			}
 
 			sb.WriteString("\n")
@@ -206,7 +214,9 @@ func (t *Track) WalletTracking(addr string) {
 		}
 	}
 	
-	t.Newest[addr] = scan.Result[0].Hash
+	if newest != "" {
+		t.Newest[addr] = newest
+	}
 
 	if sb.Len() > 0 {
 		t.C <- "`" + addr + "`*执行操作:*" + sb.String()
