@@ -178,7 +178,12 @@ func (t *Track) WalletTracking(addr string) {
 			balance := 0.0
 
 			his[record.Hash] = struct{}{}
-			balance = t.getEthByHash(record.Hash)
+			if strings.EqualFold(record.From, addr) {
+				balance = t.getSellEthByHash(record.Hash, addr)
+			} else {
+				balance = t.getBuyEthByHash(record.Hash)
+			}
+			
 			if balance == 0.0 {
 				continue
 			}
@@ -224,7 +229,7 @@ func (t *Track) WalletTracking(addr string) {
 
 }
 
-func (t *Track) getEthByHash(hash string) float64 {
+func (t *Track) getBuyEthByHash(hash string) float64 {
 	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
 	if err != nil {
@@ -251,8 +256,8 @@ func (t *Track) getEthByHash(hash string) float64 {
 	cnt := 0.0
 	for _, v := range scan.Result {
 		tmp := ""
-		// 内部交易可能会出现多轮交易,该步骤用于过滤 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2为WETH
-		if !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.From) && !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.To) {
+		// 暂时认定买入操作只会有一轮内部交易
+		if !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.To) {
 			continue
 		}
 		if len(v.Value) > 18 {
@@ -269,6 +274,50 @@ func (t *Track) getEthByHash(hash string) float64 {
 	}
 	return cnt
 
+}
+
+func (t *Track) getSellEthByHash(hash, addr string) float64 {
+	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
+	if err != nil {
+		fmt.Println("请求失败")
+		return 0.0		
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("读取body失败")
+		return 0.0
+	}
+	scan := new(txResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		fmt.Println("json转换失败")
+		return 0.0
+	}
+
+	if scan.Status != "1" || len(scan.Result) == 0 {
+		return 0.0
+	}
+
+	cnt := 0.0
+	for _, v := range scan.Result {
+		if strings.EqualFold(v.To, addr) {
+			tmp := ""
+			if len(v.Value) > 18 {
+				tmp = v.Value[:len(v.Value)-18] + "." + v.Value[len(v.Value)-18:]
+			} else if len(v.Value) == 18 {
+				tmp = "0." + v.Value
+			} else {
+				tmp = "0." + strings.Repeat("0", 18-len(v.Value)) + v.Value
+			}
+			f, err := strconv.ParseFloat(tmp, 64)
+			if err == nil {
+				cnt += f
+			}
+		}
+	}
+	return cnt
 }
 
 func (t *Track) WalletTxAnalyze(addr string, offset string) {
@@ -317,7 +366,11 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			val := 0.0
 
 			his[record.Hash] = struct{}{}
-			val = t.getEthByHash(record.Hash)
+			if strings.EqualFold(record.From, addr) {
+				val = t.getSellEthByHash(record.Hash, addr)
+			} else {
+				val = t.getBuyEthByHash(record.Hash)
+			}
 			if val == 0.0 {
 				continue
 			}
@@ -487,7 +540,12 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 			if len(list) != 0 {
 				analyze[address] = new(txs)
 				for _, tx := range list {
-					val := t.getEthByHash(tx.Hash)
+					val := 0.0
+					if strings.EqualFold(tx.From, address) {
+						val = t.getSellEthByHash(tx.Hash, address)
+					} else {
+						val = t.getBuyEthByHash(tx.Hash)
+					}
 					cnt := 0.0
 					dec, err := strconv.Atoi(tx.Decimal)
 					if err == nil {
@@ -501,7 +559,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 						cnt, _ = strconv.ParseFloat(tmp, 64)
 					}
 					
-					if address == tx.From {
+					if strings.EqualFold(address, tx.From) {
 						// sell
 						analyze[address].Profit += val
 						analyze[address].Sell += cnt
