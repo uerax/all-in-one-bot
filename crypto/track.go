@@ -182,7 +182,7 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString("\n")
 			isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
 			if isHoneypot {
-				sb.WriteString("*[SCAM3]*")
+				sb.WriteString("*[SCAM]*")
 			}
 			if strings.EqualFold(record.From, addr) {
 				sb.WriteString("*Sell: *")
