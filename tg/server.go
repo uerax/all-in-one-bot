@@ -151,13 +151,13 @@ func Server() {
 			dumpTrackingList()
 		case "wallet_tx_analyze":
 			Cmd = "wallet_tx_analyze"
-			tips(update.Message.Chat.ID, "分析钱包近n条交易的利润 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30`")
+			tips(update.Message.Chat.ID, "分析钱包近n条交易的利润 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e 30`")
 		case "wallet_tracking":
 			Cmd = "wallet_tracking"
-			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
+			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e`")
 		case "stop_wallet_tracking":
 			Cmd = "stop_wallet_tracking"
-			stopWalletTrackingTip("停止追踪聪明钱包买卖动态 例: \n`0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E`")
+			stopWalletTrackingTip("停止追踪聪明钱包买卖动态 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e`")
 		// Crypto
 		case "set_smart_addr_probe_itv":
 			Cmd = "set_smart_addr_probe_itv"
