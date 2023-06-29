@@ -128,6 +128,7 @@ func (t *Track) WalletTracking(addr string) {
 		t.C <- "未读取到etherscan的apikey无法启动监控"
 		return
 	}
+	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, "30", addr, t.apiKey))
 	if err != nil {
@@ -157,7 +158,7 @@ func (t *Track) WalletTracking(addr string) {
 
 	// 首次不做探测
 	if t.Newest[addr] == "" {
-		t.Newest[addr] = scan.Result[0].Hash
+		t.Newest[addr] = strings.ToLower(scan.Result[0].Hash)
 		return
 	}
 
@@ -166,18 +167,20 @@ func (t *Track) WalletTracking(addr string) {
 	sb := strings.Builder{}
 	his := make(map[string]struct{})
 	for _, record := range scan.Result {
-		if record.Hash == t.Newest[addr] {
+		
+		if strings.EqualFold(record.Hash, t.Newest[addr]) {
 			break
 		}
-		if record.TokenSymbol != "WETH" || !isNull(record.From) || !isNull(record.To) {
+
+		if !strings.EqualFold(record.TokenSymbol, "WETH") || !isNull(record.From) || !isNull(record.To) {
 			
 			// 过滤掉重复记录
-			if _, ok := his[record.Hash]; ok {
+			if _, ok := his[strings.ToLower(record.Hash)]; ok {
 				continue
 			}
 			balance := 0.0
 
-			his[record.Hash] = struct{}{}
+			his[strings.ToLower(record.Hash)] = struct{}{}
 			if strings.EqualFold(record.From, addr) {
 				balance = t.getSellEthByHash(record.Hash, addr)
 			} else {
@@ -189,7 +192,7 @@ func (t *Track) WalletTracking(addr string) {
 			}
 
 			if newest == "" {
-				newest = record.Hash
+				newest = strings.ToLower(record.Hash)
 			}
 
 			sb.WriteString("\n")
@@ -220,13 +223,79 @@ func (t *Track) WalletTracking(addr string) {
 	}
 	
 	if newest != "" {
-		t.Newest[addr] = newest
+		t.Newest[addr] = strings.ToLower(newest)
 	}
 
 	if sb.Len() > 0 {
 		t.C <- "`" + addr + "`*执行操作:*" + sb.String()
 	}
 
+}
+
+func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
+	if t.apiKey == "" {
+		t.C <- "未读取到etherscan的apikey无法启动监控"
+		return
+	}
+	transferListUrl := "https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=%s&address=%s&apikey=%s"
+	tx := new(TokenTxResp)
+	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.apiKey), &tx)
+	if err != nil {
+		fmt.Println("请求失败: ", err)
+		return
+	}
+
+	if tx.Status != "1" {
+		return
+	}
+
+	his := make(map[string]struct{})
+	analyze := new(txs)
+
+	for _, record := range tx.Result {
+
+		if _, ok := his[strings.ToLower(record.Hash)]; ok {
+			continue
+		}
+		
+		analyze.Symbol = record.TokenSymbol
+
+		volume := 0.0
+		if record.Decimal != "" {
+			dec, err := strconv.Atoi(record.Decimal)
+			l := len(record.Value) - dec
+			if err == nil {
+				tmp := ""
+				if l <= 0 {
+					tmp = "0." + strings.Repeat("0", -l) + record.Value
+				} else {
+					tmp = record.Value[:l]
+				}
+				cnt, err := strconv.ParseFloat(tmp, 64)
+				if err == nil {
+					volume += cnt
+				}
+			}
+		}
+		val := 0.0
+		// Sell
+		if strings.EqualFold(record.From, addr) {
+			val = t.getSellEthByHash(record.Hash, addr)
+			analyze.Sell += volume
+			analyze.Profit += val
+		// Buy
+		} else {
+			val = t.getBuyEthByHash(record.Hash)
+			analyze.Buy += volume
+			analyze.Profit -= val
+			analyze.Pay += val
+		}
+
+		his[strings.ToLower(record.Hash)] = struct{}{}
+
+	}
+
+	t.C <- fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*总利润为: %0.5f eth: *\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f eth\n",analyze.Symbol, token, analyze.Profit, analyze.Buy, analyze.Sell, analyze.Pay)
 }
 
 func (t *Track) getBuyEthByHash(hash string) float64 {
@@ -358,14 +427,14 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 	his := make(map[string]struct{})
 
 	for _, record := range scan.Result {
-		if record.TokenSymbol != "WETH" || !isNull(record.From) || !isNull(record.To) {
-			if _, ok := his[record.Hash]; ok {
+		if !strings.EqualFold(record.TokenSymbol, "WETH") || !isNull(record.From) || !isNull(record.To) {
+			if _, ok := his[strings.ToLower(record.Hash)]; ok {
 				continue
 			}
-
+			
 			val := 0.0
 
-			his[record.Hash] = struct{}{}
+			his[strings.ToLower(record.Hash)] = struct{}{}
 			if strings.EqualFold(record.From, addr) {
 				val = t.getSellEthByHash(record.Hash, addr)
 			} else {
@@ -527,13 +596,14 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 		"0x0000000000000000000000000000000000000000": {},
 		"0x000000000000000000000000000000000000dead": {},
 		// uniswap router
-		"0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD": {},
-		"0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45": {},
+		"0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": {},
+		"0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": {},
 	}
 
 	analyze := make(map[string]*txs)
-
+	
 	handle := func (address string)  {
+		address = strings.ToLower(address)
 		if _, ok := recorded[address]; !ok {
 			recorded[address] = struct{}{}
 			list := t.TransferList(address, token)
