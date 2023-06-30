@@ -8,8 +8,11 @@ telegram:
 # 加密货币配置项
 crypto:
   etherscan:
-    # 追踪聪明地址需要添加apikey 前往 https://etherscan.io/myapikey 注册获取
-    apiKey:
+    # 追踪聪明地址需要添加keys 前往 https://etherscan.io/myapikey 注册获取
+    keys:
+      - fdafd
+      - erqqfg
+      - 
     # 探测间隔 默认30分钟
     interval: 15
     path: /usr/local/share/aio/
