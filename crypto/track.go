@@ -59,13 +59,6 @@ func NewTrack() *Track {
 		Keys: NewPollingKey(),
 	}
 
-	keys, err := goconf.VarArray("", "crypto", "etherscan", "keys")
-	if err == nil {
-		for k := range keys {
-			t.Keys.AddKeys(keys[k].(string))
-		}
-	}
-
 	go t.DumpCron()
 	go t.recover()
 

@@ -239,13 +239,12 @@ func (t *Probe) ListSmartAddr(tip bool) string {
 }
 
 func (t *Probe) SmartAddr(addr string, offset string) {
-	apiKey := goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey")
-	if apiKey == "" {
+	if t.Keys.IsNull() {
 		t.Meme <- "未读取到etherscan的apikey无法启动监控"
 		return
 	}
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, offset, addr, apiKey))
+	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
 		t.Meme <- "etherscan请求失败"
@@ -319,8 +318,7 @@ func (t *Probe) SetSmartAddrProbeItv(itv string) {
 }
 
 func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
-	apiKey := goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey")
-	if apiKey == "" {
+	if t.Keys.IsNull() {
 		t.Meme <- "未读取到etherscan的apikey无法启动监控"
 		delete(t.smartAddr, addr)
 		return
@@ -340,7 +338,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 
 	monitor := func() {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=desc&address=%s&apikey=%s"
-		r, err := http.Get(fmt.Sprintf(url, addr, apiKey))
+		r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
 		if err != nil {
 			fmt.Println("请求失败")
 			return
