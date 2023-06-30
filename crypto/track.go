@@ -22,6 +22,7 @@ type Track struct {
 	Task   map[string]context.CancelFunc
 	api    *Crypto
 	dumpPath string
+	Keys   *PollingKey
 }
 
 type txResp struct {
@@ -55,6 +56,7 @@ func NewTrack() *Track {
 		Task:   make(map[string]context.CancelFunc),
 		api:    NewCrypto("", ""),
 		dumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
+		Keys: NewPollingKey(),
 	}
 
 	go t.DumpCron()
@@ -124,13 +126,13 @@ func (t *Track) TrackingList(tip bool) string {
 }
 
 func (t *Track) WalletTracking(addr string) {
-	if t.apiKey == "" {
+	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法启动监控"
 		return
 	}
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, "30", addr, t.apiKey))
+	r, err := http.Get(fmt.Sprintf(url, "30", addr, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
 		return
@@ -233,13 +235,13 @@ func (t *Track) WalletTracking(addr string) {
 }
 
 func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
-	if t.apiKey == "" {
+	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法启动监控"
 		return
 	}
 	transferListUrl := "https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=%s&address=%s&apikey=%s"
 	tx := new(TokenTxResp)
-	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.apiKey), &tx)
+	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.Keys.GetKey()), &tx)
 	if err != nil {
 		fmt.Println("请求失败: ", err)
 		return
@@ -300,7 +302,7 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 
 func (t *Track) getBuyEthByHash(hash string) float64 {
 	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
+	r, err := http.Get(fmt.Sprintf(url, hash, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
 		return 0.0		
@@ -355,7 +357,7 @@ func (t *Track) getBuyEthByHash(hash string) float64 {
 
 func (t *Track) getSellEthByHash(hash, addr string) float64 {
 	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, hash, t.apiKey))
+	r, err := http.Get(fmt.Sprintf(url, hash, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
 		return 0.0		
@@ -398,12 +400,12 @@ func (t *Track) getSellEthByHash(hash, addr string) float64 {
 }
 
 func (t *Track) WalletTxAnalyze(addr string, offset string) {
-	if t.apiKey == "" {
+	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法调用api"
 		return
 	}
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.apiKey))
+	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("etherscan请求失败")
 		t.C <- "etherscan请求失败"
@@ -580,7 +582,7 @@ func (t *Track) DumpCron() {
 // 3. 过滤掉买卖数超过 6 的地址, 此类一般为夹子机器人
 // 4. 对交易记录遍历查询内部交易, 对地址的买卖数收益记录
 func (t *Track) SmartAddrFinder(token, offset, page string) {
-	if t.apiKey == "" {
+	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法启动分析"
 		return
 	}
@@ -590,7 +592,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=%s&offset=%s&sort=asc&contractaddress=%s&apikey=%s"
 	scan := new(TokenTxResp)
-	err := common.HttpGet(fmt.Sprintf(url, page, offset, token, t.apiKey), &scan)
+	err := common.HttpGet(fmt.Sprintf(url, page, offset, token, t.Keys.GetKey()), &scan)
 	if err != nil {
 		fmt.Println("请求失败: ", err)
 		return
@@ -678,7 +680,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 func (t *Track) TransferList(addr, token string) []TokenTx {
 	transferListUrl := "https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=%s&address=%s&apikey=%s"
 	tx := new(TokenTxResp)
-	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.apiKey), &tx)
+	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.Keys.GetKey()), &tx)
 
 	if err != nil {
 		fmt.Println("请求失败: ", err)
