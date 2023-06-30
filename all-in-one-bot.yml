@@ -9,9 +9,8 @@ telegram:
 crypto:
   etherscan:
     # 追踪聪明地址需要添加keys 前往 https://etherscan.io/myapikey 注册获取
+    # 多注册点账号,每个账号的key每秒只能使用5次
     keys:
-      - fdafd
-      - erqqfg
       - 
     # 探测间隔 默认30分钟
     interval: 15
