@@ -72,6 +72,14 @@ func (t *Aio) SendMessage(msg string) {
 	t.bot.Send(mc)
 }
 
+func (t *Aio) DeleteAfterSendMessage(msg string) {
+	mc := tgbotapi.NewMessage(ChatId, msg)
+	m, err := t.bot.Send(mc)
+	if err == nil {
+		go t.deleteAfterMinute(ChatId, m.MessageID, 2)
+	}
+}
+
 func (t *Aio) SendMarkdown(id int64, msg string, preview bool) {
 	mc := tgbotapi.NewMessage(id, msg)
 	mc.ParseMode = "Markdown"
