@@ -323,10 +323,18 @@ func (t *Track) getBuyEthByHash(hash string) float64 {
 	}
 
 	cnt := 0.0
+	router := ""
+	for _, v := range scan.Result {
+		if strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.To) {
+			router = v.From
+			break
+		}
+	}
+
 	for _, v := range scan.Result {
 		tmp := ""
 		// 暂时认定买入操作只会有一轮内部交易
-		if !strings.EqualFold("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", v.To) {
+		if !strings.EqualFold(router, v.From) {
 			continue
 		}
 		if len(v.Value) > 18 {
