@@ -9,7 +9,7 @@ readme="$cmd - $tip"
 cfg="    - \"$cmd - $tip\""
 l="- [x] $cmd $tip"
 
-if["$(uname)"!="Darwin"];then
+if [ "$(uname)" != "Darwin" ]; then
 # Mac OS X 操作系统
     echo -e "1)  crypto"
     echo -e "2)  video"
