@@ -211,14 +211,23 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString(record.TokenSymbol)
 			sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 			sb.WriteString(record.ContractAddress)
-			sb.WriteString("): ")
-			sb.WriteString(fmt.Sprintf("%f", balance))
-			sb.WriteString(" ETH (")
+			sb.WriteString(") ")
 			i, err := strconv.ParseInt(record.TimeStamp, 10, 64)
 			if err == nil {
-				sb.WriteString(time.Unix(i, 0).Format("01-02 15:04:05"))
+				sb.WriteString("*(")
+				sb.WriteString(time.Unix(i, 0).Format("2006-01-02 15:04:05"))
+				sb.WriteString(")*")
 			}
-			sb.WriteString(")\n`")
+			sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?outputCurrency=")
+			sb.WriteString(record.ContractAddress)
+			sb.WriteString("&chain=ethereum)")
+			sb.WriteString("\n")
+			sb.WriteString(fmt.Sprintf("%f", balance))
+			sb.WriteString(" ETH / ")
+			sb.WriteString(record.Value)
+			sb.WriteString(" ")
+			sb.WriteString(record.TokenSymbol)
+			sb.WriteString("\n`")
 			sb.WriteString(record.ContractAddress)
 			sb.WriteString("`")
 		}
@@ -229,7 +238,7 @@ func (t *Track) WalletTracking(addr string) {
 	}
 
 	if sb.Len() > 0 {
-		t.C <- "`" + addr + "`*执行操作:*" + sb.String()
+		t.C <- "`" + addr + "` *执行操作:* " + sb.String()
 	}
 
 }
@@ -435,7 +444,8 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 	profit := 0.0
 	detail := make(map[string]*txs)
 	his := make(map[string]struct{})
-
+	// 最近一次交易时间
+	recent := ""
 	for _, record := range scan.Result {
 		if !strings.EqualFold(record.TokenSymbol, "WETH") || !isNull(record.From) || !isNull(record.To) {
 			if _, ok := his[strings.ToLower(record.Hash)]; ok {
@@ -485,7 +495,10 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 						}
 						ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
 						if err == nil {
-							detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("01/02 15:04:05")
+							if recent == "" {
+								recent = record.TimeStamp
+							}
+							detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("2006-01-02 15:04:05")
 						}
 						detail[record.ContractAddress].Symbol = record.TokenSymbol
 						isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
@@ -498,7 +511,18 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 	}
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)*近%s条交易总利润为: %0.5f eth: *\n", addr, offset, profit)
+	warn := ""
+
+	if recent != "" {
+		ts, err := strconv.ParseInt(recent, 10, 64)
+		if err == nil {
+			if time.Unix(ts, 0).Add(10 * 24 * time.Hour).Before(time.Now()) {
+				warn = "*该地址已超过十天未交易,最后一次:" + time.Unix(ts, 0).Format("2006-01-02 15:04:05") + "*\n"
+			}
+		}
+	}
+
+	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*近%s条交易总利润为: %0.5f eth: *\n", warn,  addr, offset, profit)
 	for k, v := range detail {
 		if len(msg) > 3500 {
 			msg += "*------内容过长进行裁剪------*"
