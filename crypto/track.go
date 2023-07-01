@@ -77,8 +77,7 @@ func (t *Track) recover() {
 }
 
 func (t *Track) clearInactiveAddr() {
-	//c := time.NewTicker(24 * time.Hour)
-	c := time.NewTicker(time.Minute)
+	c := time.NewTicker(24 * time.Hour)
 	defer c.Stop()
 
 	handle := func (addr string, cl context.CancelFunc)  {
@@ -117,7 +116,9 @@ func (t *Track) clearInactiveAddr() {
 		if err == nil {
 			if time.Unix(ts, 0).Add(10 * 24 * time.Hour).Before(time.Now()) {
 				cl()
-				t.C <- fmt.Sprintf("`%s` 地址超过10天没有进行交易, 已停止追踪", addr)
+				delete(t.Newest, addr)
+				delete(t.Task, addr)
+				t.C <- fmt.Sprintf("`%s` 超过10天没有进行交易, 已停止追踪", addr)
 			}
 		}
 	}
