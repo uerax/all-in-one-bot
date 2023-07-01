@@ -37,6 +37,8 @@ func NewPollingKey() *PollingKey {
 }
 
 func (t *PollingKey) IsNull() bool {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	return len(t.Keys) == 0
 }
 
