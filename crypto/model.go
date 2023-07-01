@@ -167,3 +167,16 @@ type ContractCreation struct {
 	Address string `json:"contractAddress"`
 	Creator string `json:"contractCreator"`
 }
+
+type GasOracleResp struct {
+	Status  string    `json:"status"`
+	Message string    `json:"message"`
+	Result  []GasOracle `json:"result"`
+}
+
+type GasOracle struct {
+	SafeGasPrice string `json:"SafeGasPrice"`
+	ProposeGasPrice string `json:"ProposeGasPrice"`
+	FastGasPrice string `json:"FastGasPrice"`
+	SuggestBaseFee string `json:"suggestBaseFee"`
+}
