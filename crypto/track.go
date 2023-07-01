@@ -61,6 +61,7 @@ func NewTrack() *Track {
 
 	go t.DumpCron()
 	go t.recover()
+	go t.clearInactiveAddr()
 
 	return t
 }
@@ -72,6 +73,59 @@ func (t *Track) recover() {
 		go t.Tracking(k, ctx)
 		// 免费api一秒可调用次数有限,分散请求防止达到阈值
 		time.Sleep(time.Second)
+	}
+}
+
+func (t *Track) clearInactiveAddr() {
+	//c := time.NewTicker(24 * time.Hour)
+	c := time.NewTicker(time.Minute)
+	defer c.Stop()
+
+	handle := func (addr string, cl context.CancelFunc)  {
+		if t.Keys.IsNull() {
+			return
+		}
+		addr = strings.ToLower(addr)
+		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=1&sort=desc&address=%s&apikey=%s"
+		r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
+		if err != nil {
+			fmt.Println("请求失败")
+			return
+		}
+		defer r.Body.Close()
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println("读取body失败")
+			return
+		}
+		scan := new(TokenTxResp)
+		err = json.Unmarshal(b, &scan)
+		if err != nil {
+			fmt.Println("WalletTracking: json转换失败")
+			return
+		}
+	
+		if scan.Status != "1" {
+			return
+		}
+	
+		if len(scan.Result) == 0 {
+			return
+		}
+
+		ts, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
+		if err == nil {
+			if time.Unix(ts, 0).Add(10 * 24 * time.Hour).Before(time.Now()) {
+				cl()
+				t.C <- fmt.Sprintf("`%s` 地址超过10天没有进行交易, 已停止追踪", addr)
+			}
+		}
+	}
+
+	for range c.C {
+		for addr, cl := range t.Task {
+			go handle(addr, cl)
+		}
 	}
 }
 

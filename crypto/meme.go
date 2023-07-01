@@ -458,6 +458,64 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 
 }
 
+func (t *Probe) GetGas() {
+	if t.Keys.IsNull() {
+		t.Meme <- "未读取到etherscan的apikey无法调用api"
+		return
+	}
+
+	url := "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, t.Keys.GetKey()))
+	if err != nil {
+		fmt.Println("请求失败")
+		return
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("读取body失败")
+		return
+	}
+	scan := new(GasOracleResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		fmt.Println("json转换失败")
+		return
+	}
+
+	if scan.Status != "1" {
+		return
+	}
+
+	gwei2eth := func (gwei string) float64 {
+		tmp := ""
+		if len(gwei) <= 9 {
+			tmp =  "0." + strings.Repeat("0", 9 - len(gwei)) + gwei
+		} else {
+			tmp = gwei[:len(gwei) - 9] + "." + gwei[len(gwei) - 9:]
+		}
+		f, _ := strconv.ParseFloat(tmp, 64)
+		return f
+	}
+
+	fast := gwei2eth(scan.Result[0].FastGasPrice)
+	propose := gwei2eth(scan.Result[0].ProposeGasPrice)
+	safe := gwei2eth(scan.Result[0].SafeGasPrice)
+	fee := gwei2eth(scan.Result[0].SuggestBaseFee)
+
+	eth := t.api.Price("eth")
+	if price, ok := eth["eth"]; ok {
+		p, err := strconv.ParseFloat(price, 64)
+		if err == nil {
+			fast *= p
+			propose *= p
+			safe *= p
+			fee *= p
+		}
+	}
+
+	t.Meme <- fmt.Sprintf("FastGasPrice: %0.5f\nProposeGasPrice: %0.5f\nSafeGasPrice: %0.5f\nFee: %0.5f", fast, propose, safe, fee)
+}
 
 func recoverSmartAddrList() map[string]map[string]struct{} {
 	dump := make(map[string]map[string]struct{})
