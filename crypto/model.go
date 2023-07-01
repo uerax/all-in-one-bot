@@ -171,7 +171,7 @@ type ContractCreation struct {
 type GasOracleResp struct {
 	Status  string    `json:"status"`
 	Message string    `json:"message"`
-	Result  []GasOracle `json:"result"`
+	Result  GasOracle `json:"result"`
 }
 
 type GasOracle struct {
