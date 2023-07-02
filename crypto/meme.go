@@ -458,7 +458,6 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 
 }
 
-
 func recoverSmartAddrList() map[string]map[string]struct{} {
 	dump := make(map[string]map[string]struct{})
 	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "smart_dump.json")
