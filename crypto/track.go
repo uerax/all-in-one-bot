@@ -640,16 +640,11 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 		address = strings.ToLower(address)
 		if _, ok := recorded[address]; !ok {
 			recorded[address] = struct{}{}
+			his := make(map[string]struct{})
 			list := t.TransferList(address, token)
 			if len(list) != 0 {
 				analyze[address] = new(txs)
 				for _, tx := range list {
-					val := 0.0
-					if strings.EqualFold(tx.From, address) {
-						val = t.getSellEthByHash(tx.Hash, address)
-					} else {
-						val = t.getBuyEthByHash(tx.Hash)
-					}
 					cnt := 0.0
 					dec, err := strconv.Atoi(tx.Decimal)
 					if err == nil {
@@ -663,6 +658,16 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 						cnt, _ = strconv.ParseFloat(tmp, 64)
 					}
 					
+					val := 0.0
+					if _, ok := his[tx.Hash]; !ok {
+						his[tx.Hash] = struct{}{}
+						if strings.EqualFold(tx.From, address) {
+							val = t.getSellEthByHash(tx.Hash, address)
+						} else {
+							val = t.getBuyEthByHash(tx.Hash)
+						}
+					}
+
 					if strings.EqualFold(address, tx.From) {
 						// sell
 						analyze[address].Profit += val
