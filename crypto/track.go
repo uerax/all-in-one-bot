@@ -577,7 +577,15 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 	}
 
-	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*近%s条交易总利润为: %0.5f eth: *\n", warn,  addr, offset, profit)
+	netMargin := profit
+
+	for _, v := range detail {
+		if v.Buy == 0.0 || v.Sell == 0.0 {
+			netMargin -= v.Profit
+		}
+	}
+
+	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*总利润: %0.5f | 净利润: %0.5f :*\n", warn,  addr, profit, netMargin)
 	for k, v := range detail {
 		if len(msg) > 3500 {
 			msg += "*------内容过长进行裁剪------*"
