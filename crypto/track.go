@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/uerax/all-in-one-bot/common"
@@ -23,6 +24,7 @@ type Track struct {
 	api    *Crypto
 	dumpPath string
 	Keys   *PollingKey
+	trackingLock sync.Mutex
 }
 
 type txResp struct {
@@ -57,6 +59,7 @@ func NewTrack() *Track {
 		api:    NewCrypto("", ""),
 		dumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 		Keys: NewPollingKey(),
+		trackingLock: sync.Mutex{},
 	}
 
 	go t.DumpCron()
@@ -218,6 +221,10 @@ func (t *Track) WalletTracking(addr string) {
 		t.Newest[addr] = strings.ToLower(scan.Result[0].Hash)
 		return
 	}
+
+	// 防止网络波动导致的newest错误
+	t.trackingLock.Lock()
+	defer t.trackingLock.Unlock()
 
 	newest := ""
 
@@ -577,7 +584,15 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 	}
 
-	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*近%s条交易总利润为: %0.5f eth: *\n", warn,  addr, offset, profit)
+	netMargin := profit
+
+	for _, v := range detail {
+		if v.Buy == 0.0 || v.Sell == 0.0 {
+			netMargin -= v.Profit
+		}
+	}
+
+	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*总利润: %0.5f | 净利润: %0.5f :*\n", warn,  addr, profit, netMargin)
 	for k, v := range detail {
 		if len(msg) > 3500 {
 			msg += "*------内容过长进行裁剪------*"
