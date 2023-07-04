@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/uerax/all-in-one-bot/common"
@@ -23,6 +24,7 @@ type Track struct {
 	api    *Crypto
 	dumpPath string
 	Keys   *PollingKey
+	trackingLock sync.Mutex
 }
 
 type txResp struct {
@@ -57,6 +59,7 @@ func NewTrack() *Track {
 		api:    NewCrypto("", ""),
 		dumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 		Keys: NewPollingKey(),
+		trackingLock: sync.Mutex{},
 	}
 
 	go t.DumpCron()
@@ -218,6 +221,10 @@ func (t *Track) WalletTracking(addr string) {
 		t.Newest[addr] = strings.ToLower(scan.Result[0].Hash)
 		return
 	}
+
+	// 防止网络波动导致的newest错误
+	t.trackingLock.Lock()
+	defer t.trackingLock.Unlock()
 
 	newest := ""
 
