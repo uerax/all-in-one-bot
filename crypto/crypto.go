@@ -16,6 +16,7 @@ var (
 	memeUrl      = "https://api.dexscreener.com/latest/dex/search/?q="	
 	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
 	honeypotUrl  = "https://api.honeypot.is/v2/IsHoneypot?address="
+	dextoolsUrl  = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
 )
 
 type Crypto struct {
@@ -276,4 +277,40 @@ func (t *Crypto) WhetherHoneypot(addr string) bool {
 	}
 
 	return res.Honeypot.Is
+}
+
+func (t *Crypto) DexTools(pair, chain string) *Datum {
+	c := strings.ToLower(chain)
+	if c == "eth" {
+		c = "ether"
+	}
+
+	url := fmt.Sprintf(dextoolsUrl, chain, pair)
+
+	r, err := http.Get(url)
+	if err != nil {
+		fmt.Println("请求失败：", err)
+		return nil
+	}
+
+	meme := &DextoolsResp{}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		fmt.Println("Body读取失败", err)
+		return nil
+	}
+
+	err = json.Unmarshal(b, &meme)
+	if err != nil {
+		fmt.Println("json转换失败", err)
+		return nil
+	}
+	
+	if len(meme.Data) < 1 {
+		return nil
+	}
+
+	return &meme.Data[0]
 }

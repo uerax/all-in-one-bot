@@ -17,13 +17,13 @@ import (
 )
 
 type Track struct {
-	C      chan string
-	Newest map[string]string
-	apiKey string
-	Task   map[string]context.CancelFunc
-	api    *Crypto
-	dumpPath string
-	Keys   *PollingKey
+	C            chan string
+	Newest       map[string]string
+	apiKey       string
+	Task         map[string]context.CancelFunc
+	api          *Crypto
+	dumpPath     string
+	Keys         *PollingKey
 	trackingLock sync.Mutex
 }
 
@@ -35,8 +35,8 @@ type txResp struct {
 
 type tx struct {
 	Value string `json:"value"`
-	From string `json:"from"`
-	To string `json:"To"`
+	From  string `json:"from"`
+	To    string `json:"To"`
 }
 
 type txs struct {
@@ -52,13 +52,13 @@ type txs struct {
 func NewTrack() *Track {
 
 	t := &Track{
-		C:      make(chan string, 5),
-		Newest: recoverTrackingList(),
-		apiKey: goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey"),
-		Task:   make(map[string]context.CancelFunc),
-		api:    NewCrypto("", ""),
-		dumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
-		Keys: NewPollingKey(),
+		C:            make(chan string, 5),
+		Newest:       recoverTrackingList(),
+		apiKey:       goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey"),
+		Task:         make(map[string]context.CancelFunc),
+		api:          NewCrypto("", ""),
+		dumpPath:     goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
+		Keys:         NewPollingKey(),
 		trackingLock: sync.Mutex{},
 	}
 
@@ -83,7 +83,7 @@ func (t *Track) clearInactiveAddr() {
 	c := time.NewTicker(24 * time.Hour)
 	defer c.Stop()
 
-	handle := func (addr string, cl context.CancelFunc)  {
+	handle := func(addr string, cl context.CancelFunc) {
 		if t.Keys.IsNull() {
 			return
 		}
@@ -106,11 +106,11 @@ func (t *Track) clearInactiveAddr() {
 			fmt.Println("WalletTracking: json转换失败")
 			return
 		}
-	
+
 		if scan.Status != "1" {
 			return
 		}
-	
+
 		if len(scan.Result) == 0 {
 			return
 		}
@@ -157,13 +157,13 @@ func (t *Track) StopTracking(addr string) {
 }
 
 func (t *Track) Tracking(addr string, ctx context.Context) {
-	tick := time.NewTicker(time.Second * 10)
+	tick := time.NewTicker(time.Second * 5)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-tick.C:
-			go t.WalletTracking(addr)
+			go t.WalletTrackingV2(addr)
 		}
 	}
 }
@@ -190,7 +190,7 @@ func (t *Track) WalletTracking(addr string) {
 	}
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, "30", addr, t.Keys.GetKey()))
+	r, err := http.Get(fmt.Sprintf(url, "3", addr, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
 		return
@@ -231,13 +231,13 @@ func (t *Track) WalletTracking(addr string) {
 	sb := strings.Builder{}
 	his := make(map[string]struct{})
 	for _, record := range scan.Result {
-		
+
 		if strings.EqualFold(record.Hash, t.Newest[addr]) {
 			break
 		}
 
 		if !strings.EqualFold(record.TokenSymbol, "WETH") || !isNull(record.From) || !isNull(record.To) {
-			
+
 			// 过滤掉重复记录
 			if _, ok := his[strings.ToLower(record.Hash)]; ok {
 				continue
@@ -250,7 +250,7 @@ func (t *Track) WalletTracking(addr string) {
 			} else {
 				balance = t.getBuyEthByHash(record.Hash)
 			}
-			
+
 			if balance == 0.0 {
 				continue
 			}
@@ -294,7 +294,7 @@ func (t *Track) WalletTracking(addr string) {
 			sb.WriteString("`")
 		}
 	}
-	
+
 	if newest != "" {
 		t.Newest[addr] = strings.ToLower(newest)
 	}
@@ -330,7 +330,7 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 		if _, ok := his[strings.ToLower(record.Hash)]; ok {
 			continue
 		}
-		
+
 		analyze.Symbol = record.TokenSymbol
 
 		volume := 0.0
@@ -356,7 +356,7 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 			val = t.getSellEthByHash(record.Hash, addr)
 			analyze.Sell += volume
 			analyze.Profit += val
-		// Buy
+			// Buy
 		} else {
 			val = t.getBuyEthByHash(record.Hash)
 			analyze.Buy += volume
@@ -368,7 +368,7 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 
 	}
 
-	t.C <- fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*总利润为: %0.5f eth: *\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f eth\n",analyze.Symbol, token, analyze.Profit, analyze.Buy, analyze.Sell, analyze.Pay)
+	t.C <- fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*总利润为: %0.5f eth: *\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f eth\n", analyze.Symbol, token, analyze.Profit, analyze.Buy, analyze.Sell, analyze.Pay)
 }
 
 func (t *Track) getBuyEthByHash(hash string) float64 {
@@ -376,7 +376,7 @@ func (t *Track) getBuyEthByHash(hash string) float64 {
 	r, err := http.Get(fmt.Sprintf(url, hash, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
-		return 0.0		
+		return 0.0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
@@ -431,7 +431,7 @@ func (t *Track) getSellEthByHash(hash, addr string) float64 {
 	r, err := http.Get(fmt.Sprintf(url, hash, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
-		return 0.0		
+		return 0.0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
@@ -502,7 +502,6 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		return
 	}
 
-	
 	profit := 0.0
 	detail := make(map[string]*txs)
 	his := make(map[string]struct{})
@@ -513,7 +512,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			if _, ok := his[strings.ToLower(record.Hash)]; ok {
 				continue
 			}
-			
+
 			val := 0.0
 
 			his[strings.ToLower(record.Hash)] = struct{}{}
@@ -525,7 +524,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			if val == 0.0 {
 				continue
 			}
-			
+
 			if strings.EqualFold(record.From, addr) {
 				profit += val
 			} else {
@@ -592,7 +591,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 		}
 	}
 
-	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*总利润: %0.5f | 净利润: %0.5f :*\n", warn,  addr, profit, netMargin)
+	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*总利润: %0.5f | 净利润: %0.5f :*\n", warn, addr, profit, netMargin)
 	for k, v := range detail {
 		if len(msg) > 3500 {
 			msg += "*------内容过长进行裁剪------*"
@@ -650,7 +649,6 @@ func recoverTrackingList() map[string]string {
 	dump := make(map[string]string)
 	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "tracking.json")
 	if err != nil {
-		fmt.Println("dump文件读取失败:", err)
 		return dump
 	}
 
@@ -705,8 +703,8 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 	}
 
 	analyze := make(map[string]*txs)
-	
-	handle := func (address string)  {
+
+	handle := func(address string) {
 		address = strings.ToLower(address)
 		if _, ok := recorded[address]; !ok {
 			recorded[address] = struct{}{}
@@ -727,7 +725,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 						}
 						cnt, _ = strconv.ParseFloat(tmp, 64)
 					}
-					
+
 					val := 0.0
 					if _, ok := his[tx.Hash]; !ok {
 						his[tx.Hash] = struct{}{}
@@ -773,7 +771,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 		}
 		t.C <- msg
 	}
-	
+
 }
 
 func (t *Track) TransferList(addr, token string) []TokenTx {
@@ -792,6 +790,135 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 	return tx.Result
 }
 
+func (t *Track) WalletTrackingV2(addr string) {
+	if t.Keys.IsNull() {
+		t.C <- "未读取到etherscan的apikey无法启动监控"
+		return
+	}
+	addr = strings.ToLower(addr)
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=1&sort=desc&address=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
+	if err != nil {
+		fmt.Println("请求失败")
+		return
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("读取body失败")
+		return
+	}
+	scan := new(TokenTxResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		fmt.Println("WalletTracking: json转换失败")
+		return
+	}
+
+	if scan.Status != "1" || len(scan.Result) == 0 {
+		return
+	}
+	now := time.Now()
+	wg := sync.WaitGroup{}
+	sb := strings.Builder{}
+
+	record := scan.Result[0]
+
+	ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+	if err != nil {
+		return
+	}
+	if now.After(time.Unix(ts, 0).Add(10 * time.Second)) {
+		return
+	}
+
+	if !strings.EqualFold(record.TokenSymbol, "WETH") || !isNull(record.From) || !isNull(record.To) {
+
+		balance := 0.0
+		isHoneypot := ""
+		detail := ""
+		check := ""
+
+		getBalance := func() {
+			defer wg.Done()
+			if strings.EqualFold(record.From, addr) {
+				balance += t.getSellEthByHash(record.Hash, addr)
+			} else {
+				balance += t.getBuyEthByHash(record.Hash)
+			}
+		}
+
+		getHoneypot := func() {
+			defer wg.Done()
+			if t.api.WhetherHoneypot(record.ContractAddress) {
+				isHoneypot += "*[SCAM]*"
+			}
+		}
+
+		getDetail := func() {
+			defer wg.Done()
+			pair := t.api.MemePrice(record.ContractAddress, "eth")
+			if pair != nil {
+				detail += fmt.Sprintf("\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d\n", pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			}
+		}
+
+		getCheck := func() {
+			defer wg.Done()
+			ck := t.api.MemeCheck(record.ContractAddress, "eth")
+			if ck != nil {
+				check += fmt.Sprintf("*Buy Tax: %s | Sell Tax: %s*\n*Total Supply: %s*\n*Holder:* %s\n*Locked LP: %0.5f*\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent: %s | Balance: %s*", ck.BuyTax, ck.SellTax, ck.TotalSupply, ck.HolderCount, ck.LpLockedTotal, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent, ck.CreatorBalance)
+			}
+		}
+
+		wg.Add(4)
+
+		go getBalance()
+		go getHoneypot()
+		go getDetail()
+		go getCheck()
+
+		wg.Wait()
+
+		sb.WriteString("\n")
+		sb.WriteString(isHoneypot)
+		if strings.EqualFold(record.From, addr) {
+			sb.WriteString("*Sell: *")
+		} else {
+			sb.WriteString("*Buy: *")
+		}
+		sb.WriteString("[")
+		sb.WriteString(record.TokenSymbol)
+		sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
+		sb.WriteString(record.ContractAddress)
+		sb.WriteString(") ")
+		sb.WriteString("*(")
+		sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
+		sb.WriteString(")*")
+		sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=")
+		sb.WriteString(record.ContractAddress)
+		sb.WriteString("&chain=ethereum)")
+		sb.WriteString("\n\n")
+		sb.WriteString(fmt.Sprintf("%f", balance))
+		sb.WriteString(" ETH / ")
+		sb.WriteString(record.Value)
+		sb.WriteString(" ")
+		sb.WriteString(record.TokenSymbol)
+		sb.WriteString("\n\n`")
+		sb.WriteString(record.ContractAddress)
+		sb.WriteString("`")
+		sb.WriteString("\n")
+		sb.WriteString(detail)
+		sb.WriteString("\n")
+		sb.WriteString(check)
+	}
+
+	fmt.Println("查询总耗时: ", time.Since(now))
+
+	if sb.Len() > 0 {
+		t.C <- "`" + addr + "` *执行操作:* " + sb.String()
+	}
+}
 
 func isNull(addr string) bool {
 	return strings.EqualFold("0x0000000000000000000000000000000000000000", addr) || strings.EqualFold("0x000000000000000000000000000000000000dead", addr)
