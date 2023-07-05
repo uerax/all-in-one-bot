@@ -183,6 +183,127 @@ func (t *Track) TrackingList(tip bool) string {
 
 }
 
+func (t *Track) WalletTrackingV2(addr string) {
+	if t.Keys.IsNull() {
+		t.C <- "未读取到etherscan的apikey无法启动监控"
+		return
+	}
+	addr = strings.ToLower(addr)
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, "3", addr, t.Keys.GetKey()))
+	if err != nil {
+		fmt.Println("请求失败")
+		return
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("读取body失败")
+		return
+	}
+	scan := new(TokenTxResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		fmt.Println("WalletTracking: json转换失败")
+		return
+	}
+
+	if scan.Status != "1" {
+		return
+	}
+
+	if len(scan.Result) == 0 || strings.EqualFold(scan.Result[0].Hash, t.Newest[addr]) {
+		return
+	}
+
+	// 首次不做探测
+	if t.Newest[addr] == "" {
+		t.Newest[addr] = strings.ToLower(scan.Result[0].Hash)
+		return
+	}
+
+	// 防止网络波动导致的newest错误
+	t.trackingLock.Lock()
+	defer t.trackingLock.Unlock()
+
+	newest := ""
+
+	sb := strings.Builder{}
+	his := make(map[string]struct{})
+	for _, record := range scan.Result {
+		
+		if strings.EqualFold(record.Hash, t.Newest[addr]) {
+			break
+		}
+
+		if !strings.EqualFold(record.TokenSymbol, "WETH") || !isNull(record.From) || !isNull(record.To) {
+			
+			// 过滤掉重复记录
+			if _, ok := his[strings.ToLower(record.Hash)]; ok {
+				continue
+			}
+			balance := 0.0
+
+			his[strings.ToLower(record.Hash)] = struct{}{}
+			if strings.EqualFold(record.From, addr) {
+				balance = t.getSellEthByHash(record.Hash, addr)
+			} else {
+				balance = t.getBuyEthByHash(record.Hash)
+			}
+			
+			if balance == 0.0 {
+				continue
+			}
+
+			if newest == "" {
+				newest = strings.ToLower(record.Hash)
+			}
+
+			sb.WriteString("\n")
+			isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
+			if isHoneypot {
+				sb.WriteString("*[SCAM]*")
+			}
+			if strings.EqualFold(record.From, addr) {
+				sb.WriteString("*Sell: *")
+			} else {
+				sb.WriteString("*Buy: *")
+			}
+			sb.WriteString("[")
+			sb.WriteString(record.TokenSymbol)
+			sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
+			sb.WriteString(record.ContractAddress)
+			sb.WriteString(") ")
+			i, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+			if err == nil {
+				sb.WriteString("*(")
+				sb.WriteString(time.Unix(i, 0).Format("2006-01-02 15:04:05"))
+				sb.WriteString(")*")
+			}
+			sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?outputCurrency=")
+			sb.WriteString(record.ContractAddress)
+			sb.WriteString("&chain=ethereum)")
+			sb.WriteString("\n")
+			sb.WriteString(fmt.Sprintf("%f", balance))
+			sb.WriteString(" ETH / ")
+			sb.WriteString(record.Value)
+			sb.WriteString(" ")
+			sb.WriteString(record.TokenSymbol)
+			sb.WriteString("\n`")
+			sb.WriteString(record.ContractAddress)
+			sb.WriteString("`")
+		}
+	}
+	
+	if newest != "" {
+		t.Newest[addr] = strings.ToLower(newest)
+	}
+
+	if sb.Len() > 0 {
+		t.C <- "`" + addr + "` *执行操作:* " + sb.String()
+	}
+}
+
 func (t *Track) WalletTracking(addr string) {
 	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法启动监控"
@@ -190,7 +311,7 @@ func (t *Track) WalletTracking(addr string) {
 	}
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
-	r, err := http.Get(fmt.Sprintf(url, "30", addr, t.Keys.GetKey()))
+	r, err := http.Get(fmt.Sprintf(url, "3", addr, t.Keys.GetKey()))
 	if err != nil {
 		fmt.Println("请求失败")
 		return
