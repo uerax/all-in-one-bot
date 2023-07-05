@@ -157,7 +157,7 @@ func (t *Track) StopTracking(addr string) {
 }
 
 func (t *Track) Tracking(addr string, ctx context.Context) {
-	tick := time.NewTicker(time.Second * 10)
+	tick := time.NewTicker(time.Second * 5)
 	for {
 		select {
 		case <-ctx.Done():
@@ -512,7 +512,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 			if _, ok := his[strings.ToLower(record.Hash)]; ok {
 				continue
 			}
-			
+
 			val := 0.0
 
 			his[strings.ToLower(record.Hash)] = struct{}{}
@@ -649,7 +649,6 @@ func recoverTrackingList() map[string]string {
 	dump := make(map[string]string)
 	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "tracking.json")
 	if err != nil {
-		fmt.Println("dump文件读取失败:", err)
 		return dump
 	}
 
@@ -819,7 +818,6 @@ func (t *Track) WalletTrackingV2(addr string) {
 	if scan.Status != "1" || len(scan.Result) == 0 {
 		return
 	}
-
 	now := time.Now()
 	wg := sync.WaitGroup{}
 	sb := strings.Builder{}
@@ -830,7 +828,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	if err != nil {
 		return
 	}
-	if now.Before(time.Unix(ts, 0).Add(5 * time.Minute)) {
+	if now.After(time.Unix(ts, 0).Add(10 * time.Second)) {
 		return
 	}
 
@@ -861,15 +859,15 @@ func (t *Track) WalletTrackingV2(addr string) {
 			defer wg.Done()
 			pair := t.api.MemePrice(record.ContractAddress, "eth")
 			if pair != nil {
-				detail += fmt.Sprintf("\n*5M:*    %0.2f%%    $%0.2f    %d/%d\n*1H:*    %0.2f%%    $%0.2f    %d/%d\n*6H:*    %0.2f%%    $%0.2f    %d/%d\n*1D:*    %0.2f%%    $%0.2f    %d/%d\n\n", pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+				detail += fmt.Sprintf("\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d\n", pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 			}
 		}
 
 		getCheck := func() {
 			defer wg.Done()
-			ck := t.api.MemeCheck(addr, "eth")
+			ck := t.api.MemeCheck(record.ContractAddress, "eth")
 			if ck != nil {
-				check += fmt.Sprintf("*Buy Tax:* %s | *Sell Tax:* %s\n*Total Supply:* %s\n*Holder:* %s\n*Locked LP:* %0.5f\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent:* %s | *Balance:* %s\n", ck.BuyTax, ck.SellTax, ck.TotalSupply, ck.HolderCount,ck.LpLockedTotal, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent, ck.CreatorBalance)
+				check += fmt.Sprintf("*Buy Tax: %s | Sell Tax: %s*\n*Total Supply: %s*\n*Holder:* %s\n*Locked LP: %0.5f*\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent: %s | Balance: %s*", ck.BuyTax, ck.SellTax, ck.TotalSupply, ck.HolderCount, ck.LpLockedTotal, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent, ck.CreatorBalance)
 			}
 		}
 
@@ -900,13 +898,13 @@ func (t *Track) WalletTrackingV2(addr string) {
 		sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=")
 		sb.WriteString(record.ContractAddress)
 		sb.WriteString("&chain=ethereum)")
-		sb.WriteString("\n")
+		sb.WriteString("\n\n")
 		sb.WriteString(fmt.Sprintf("%f", balance))
 		sb.WriteString(" ETH / ")
 		sb.WriteString(record.Value)
 		sb.WriteString(" ")
 		sb.WriteString(record.TokenSymbol)
-		sb.WriteString("\n`")
+		sb.WriteString("\n\n`")
 		sb.WriteString(record.ContractAddress)
 		sb.WriteString("`")
 		sb.WriteString("\n")
@@ -914,6 +912,8 @@ func (t *Track) WalletTrackingV2(addr string) {
 		sb.WriteString("\n")
 		sb.WriteString(check)
 	}
+
+	fmt.Println("查询总耗时: ", time.Since(now))
 
 	if sb.Len() > 0 {
 		t.C <- "`" + addr + "` *执行操作:* " + sb.String()
