@@ -876,12 +876,17 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	wg.Add(4)
 
+	// 并发减少等待时间
 	go getBalance()
 	go getHoneypot()
 	go getDetail()
 	go getCheck()
 
 	wg.Wait()
+
+	if balance == 0.0 {
+		return
+	}
 
 	sb.WriteString("\n")
 	sb.WriteString(isHoneypot)
@@ -898,7 +903,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString("*(")
 	sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
 	sb.WriteString(")*")
-	sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=")
+	sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?exactField=input&exactAmount=0.02&inputCurrency=ETH&outputCurrency=")
 	sb.WriteString(record.ContractAddress)
 	sb.WriteString("&chain=ethereum)")
 	sb.WriteString("\n\n")
