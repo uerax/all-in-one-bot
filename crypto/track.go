@@ -791,10 +791,12 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 }
 
 func (t *Track) WalletTrackingV2(addr string) {
+	now := time.Now()
 	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法启动监控"
 		return
 	}
+
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=1&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
@@ -818,7 +820,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	if scan.Status != "1" || len(scan.Result) == 0 {
 		return
 	}
-	now := time.Now()
+
 	wg := sync.WaitGroup{}
 	sb := strings.Builder{}
 
