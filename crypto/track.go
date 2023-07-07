@@ -866,7 +866,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("\n*Price: $%s | FDV: $%d*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, pair.Fdv, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			detail += fmt.Sprintf("\n*Price: $%s (%d) | FDV: $%d*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Fdv, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 		}
 	}
 
@@ -933,4 +933,17 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 func isNull(addr string) bool {
 	return strings.EqualFold("0x0000000000000000000000000000000000000000", addr) || strings.EqualFold("0x000000000000000000000000000000000000dead", addr)
+}
+
+func zeroCal(str string) (zero int) {
+	if !strings.Contains(str, ".") {
+		return zero
+	}
+	for i := strings.Index(str, ".") + 1; i < len(str) - 1; i++ {
+		if str[i] != '0' {
+			break
+		}
+		zero++
+	}
+	return zero
 }
