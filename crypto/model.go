@@ -20,6 +20,7 @@ type Pair struct {
 	Volume      *Volume      `json:"volume"`
 	Txns        *Txn         `json:"txns"`
 	Lp          *Liquidity   `json:"liquidity"`
+	Fdv         int64        `json:"fdv"`
 }
 
 type Liquidity struct {
@@ -144,8 +145,8 @@ type TokenTx struct {
 	To              string `json:"to"`
 	Value           string `json:"value"`
 	Decimal         string `json:"tokenDecimal"`
-	TimeStamp		string `json:"timeStamp"`
-	Block			string `json:"blockNumber"`
+	TimeStamp       string `json:"timeStamp"`
+	Block           string `json:"blockNumber"`
 }
 
 type HoneypotResp struct {
@@ -156,10 +157,9 @@ type Honeypot struct {
 	Is bool `json:"isHoneypot"`
 }
 
-
 type ContractCreationResp struct {
-	Status  string    `json:"status"`
-	Message string    `json:"message"`
+	Status  string             `json:"status"`
+	Message string             `json:"message"`
 	Result  []ContractCreation `json:"result"`
 }
 
@@ -175,12 +175,11 @@ type GasOracleResp struct {
 }
 
 type GasOracle struct {
-	SafeGasPrice string `json:"SafeGasPrice"`
+	SafeGasPrice    string `json:"SafeGasPrice"`
 	ProposeGasPrice string `json:"ProposeGasPrice"`
-	FastGasPrice string `json:"FastGasPrice"`
-	SuggestBaseFee string `json:"suggestBaseFee"`
+	FastGasPrice    string `json:"FastGasPrice"`
+	SuggestBaseFee  string `json:"suggestBaseFee"`
 }
-
 
 // DextoolsResp Start
 type DextoolsResp struct {
@@ -189,87 +188,87 @@ type DextoolsResp struct {
 }
 
 type Datum struct {
-	ID            DatumID       `json:"id"`           
+	ID            DatumID       `json:"id"`
 	CreationBlock int64         `json:"creationBlock"`
-	CreationTime  string        `json:"creationTime"` 
-	DextScore     DextScore     `json:"dextScore"`    
-	Metrics       DatumMetrics  `json:"metrics"`      
-	Name          string        `json:"name"`         
-	NameRef       string        `json:"nameRef"`      
-	Symbol        string        `json:"symbol"`       
-	SymbolRef     string        `json:"symbolRef"`    
-	Type          string        `json:"type"`         
-	Locks         []interface{} `json:"locks"`        
-	Votes         Votes         `json:"votes"`        
-	Token         Token         `json:"token"`        
-	Price         float64       `json:"price"`        
-	Price5M       Price         `json:"price5m"`      
-	Price1H       Price         `json:"price1h"`      
-	Price6H       Price         `json:"price6h"`      
-	Price24H      Price         `json:"price24h"`     
+	CreationTime  string        `json:"creationTime"`
+	DextScore     DextScore     `json:"dextScore"`
+	Metrics       DatumMetrics  `json:"metrics"`
+	Name          string        `json:"name"`
+	NameRef       string        `json:"nameRef"`
+	Symbol        string        `json:"symbol"`
+	SymbolRef     string        `json:"symbolRef"`
+	Type          string        `json:"type"`
+	Locks         []interface{} `json:"locks"`
+	Votes         Votes         `json:"votes"`
+	Token         Token         `json:"token"`
+	Price         float64       `json:"price"`
+	Price5M       Price         `json:"price5m"`
+	Price1H       Price         `json:"price1h"`
+	Price6H       Price         `json:"price6h"`
+	Price24H      Price         `json:"price24h"`
 }
 
 type DextScore struct {
-	Information  int64 `json:"information"` 
-	Holders      int64 `json:"holders"`     
-	Pool         int64 `json:"pool"`        
+	Information  int64 `json:"information"`
+	Holders      int64 `json:"holders"`
+	Pool         int64 `json:"pool"`
 	Transactions int64 `json:"transactions"`
-	Creation     int64 `json:"creation"`    
-	Total        int64 `json:"total"`       
+	Creation     int64 `json:"creation"`
+	Total        int64 `json:"total"`
 }
 
 type DatumID struct {
-	Chain    string `json:"chain"`   
+	Chain    string `json:"chain"`
 	Exchange string `json:"exchange"`
-	Pair     string `json:"pair"`    
-	Token    string `json:"token"`   
+	Pair     string `json:"pair"`
+	Token    string `json:"token"`
 	TokenRef string `json:"tokenRef"`
 }
 
 type DatumMetrics struct {
-	Liquidity          float64 `json:"liquidity"`         
-	InitialLiquidity   float64 `json:"initialLiquidity"`  
+	Liquidity          float64 `json:"liquidity"`
+	InitialLiquidity   float64 `json:"initialLiquidity"`
 	LiquidityUpdatedAt string  `json:"liquidityUpdatedAt"`
-	Reserve            float64 `json:"reserve"`           
-	ReserveRef         float64 `json:"reserveRef"`        
+	Reserve            float64 `json:"reserve"`
+	ReserveRef         float64 `json:"reserveRef"`
 }
 
 type Price struct {
-	Volume     float64 `json:"volume"`    
-	Swaps      int64   `json:"swaps"`     
-	Price      float64 `json:"price"`     
+	Volume     float64 `json:"volume"`
+	Swaps      int64   `json:"swaps"`
+	Price      float64 `json:"price"`
 	PriceChain float64 `json:"priceChain"`
-	Buys       int64   `json:"buys"`      
-	Sells      int64   `json:"sells"`     
+	Buys       int64   `json:"buys"`
+	Sells      int64   `json:"sells"`
 }
 
 type Token struct {
-	ID            TokenID           `json:"id"`           
-	Audit         Audit             `json:"audit"`        
-	Decimals      int64             `json:"decimals"`     
-	Info          Info              `json:"info"`         
-	Links         map[string]string `json:"links"`        
-	Logo          string            `json:"logo"`         
-	Metrics       TokenMetrics      `json:"metrics"`      
-	Name          string            `json:"name"`         
-	Symbol        string            `json:"symbol"`       
-	TotalSupply   string            `json:"totalSupply"`  
-	ReprPair      ReprPair          `json:"reprPair"`     
+	ID            TokenID           `json:"id"`
+	Audit         Audit             `json:"audit"`
+	Decimals      int64             `json:"decimals"`
+	Info          Info              `json:"info"`
+	Links         map[string]string `json:"links"`
+	Logo          string            `json:"logo"`
+	Metrics       TokenMetrics      `json:"metrics"`
+	Name          string            `json:"name"`
+	Symbol        string            `json:"symbol"`
+	TotalSupply   string            `json:"totalSupply"`
+	ReprPair      ReprPair          `json:"reprPair"`
 	CreationBlock int64             `json:"creationBlock"`
-	CreationTime  string            `json:"creationTime"` 
+	CreationTime  string            `json:"creationTime"`
 }
 
 type Audit struct {
 	IsContractRenounced bool   `json:"is_contract_renounced"`
-	CodeVerified        bool   `json:"codeVerified"`         
-	Date                string `json:"date"`                 
-	LockTransactions    bool   `json:"lockTransactions"`     
-	Mint                bool   `json:"mint"`                 
-	Provider            string `json:"provider"`             
-	Proxy               bool   `json:"proxy"`                
-	Status              string `json:"status"`               
-	UnlimitedFees       bool   `json:"unlimitedFees"`        
-	Version             int64  `json:"version"`              
+	CodeVerified        bool   `json:"codeVerified"`
+	Date                string `json:"date"`
+	LockTransactions    bool   `json:"lockTransactions"`
+	Mint                bool   `json:"mint"`
+	Provider            string `json:"provider"`
+	Proxy               bool   `json:"proxy"`
+	Status              string `json:"status"`
+	UnlimitedFees       bool   `json:"unlimitedFees"`
+	Version             int64  `json:"version"`
 }
 
 type TokenID struct {
@@ -278,35 +277,35 @@ type TokenID struct {
 }
 
 type Info struct {
-	Cmc           string `json:"cmc"`          
-	Coingecko     string `json:"coingecko"`    
-	Description   string `json:"description"`  
-	Dextools      bool   `json:"dextools"`     
-	Email         string `json:"email"`        
-	ExtraInfo     string `json:"extraInfo"`    
+	Cmc           string `json:"cmc"`
+	Coingecko     string `json:"coingecko"`
+	Description   string `json:"description"`
+	Dextools      bool   `json:"dextools"`
+	Email         string `json:"email"`
+	ExtraInfo     string `json:"extraInfo"`
 	NftCollection string `json:"nftCollection"`
-	Ventures      bool   `json:"ventures"`     
+	Ventures      bool   `json:"ventures"`
 }
 
 type TokenMetrics struct {
-	MaxSupply        float64     `json:"maxSupply"`       
-	TotalSupply      float64     `json:"totalSupply"`     
-	Holders          int64       `json:"holders"`         
+	MaxSupply        float64     `json:"maxSupply"`
+	TotalSupply      float64     `json:"totalSupply"`
+	Holders          int64       `json:"holders"`
 	HoldersUpdatedAt string      `json:"holdersUpdatedAt"`
-	TxCount          int64       `json:"txCount"`         
-	Mcap             interface{} `json:"mcap"`            
-	Fdv              float64     `json:"fdv"`             
+	TxCount          int64       `json:"txCount"`
+	Mcap             interface{} `json:"mcap"`
+	Fdv              float64     `json:"fdv"`
 }
 
 type ReprPair struct {
-	ID        DatumID `json:"id"`       
+	ID        DatumID `json:"id"`
 	UpdatedAt string  `json:"updatedAt"`
 }
 
 type Votes struct {
-	Warning   int64 `json:"_warning"` 
+	Warning   int64 `json:"_warning"`
 	Downvotes int64 `json:"downvotes"`
-	Upvotes   int64 `json:"upvotes"`  
+	Upvotes   int64 `json:"upvotes"`
 }
 
 // DextoolsResp End

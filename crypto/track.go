@@ -821,18 +821,16 @@ func (t *Track) WalletTrackingV2(addr string) {
 		return
 	}
 
+	if strings.EqualFold(t.Newest[addr], scan.Result[0].Hash) {
+		return
+	}
+
+	t.Newest[addr] = scan.Result[0].Hash
+
 	wg := sync.WaitGroup{}
 	sb := strings.Builder{}
 
 	record := scan.Result[0]
-
-	ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
-	if err != nil {
-		return
-	}
-	if now.After(time.Unix(ts, 0).Add(10 * time.Second)) {
-		return
-	}
 
 	if strings.EqualFold(record.TokenSymbol, "WETH") || isNull(record.From) || isNull(record.To) {
 		return
@@ -862,7 +860,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			detail += fmt.Sprintf("\n*Price: $%s | FDV: $%d*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, pair.Fdv, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 		}
 	}
 
@@ -900,18 +898,18 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
 	sb.WriteString(record.ContractAddress)
 	sb.WriteString(") ")
-	sb.WriteString("*(")
-	sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
-	sb.WriteString(")*")
+	ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+	if err == nil {
+		sb.WriteString("*(")
+		sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
+		sb.WriteString(")*")
+	}
 	sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?exactField=input&exactAmount=0.02&inputCurrency=ETH&outputCurrency=")
 	sb.WriteString(record.ContractAddress)
 	sb.WriteString("&chain=ethereum)")
-	sb.WriteString("\n\n")
+	sb.WriteString("\n\n*Cost: ")
 	sb.WriteString(fmt.Sprintf("%f", balance))
-	sb.WriteString(" ETH / ")
-	sb.WriteString(record.Value)
-	sb.WriteString(" ")
-	sb.WriteString(record.TokenSymbol)
+	sb.WriteString(" ETH*")
 	sb.WriteString("\n\n`")
 	sb.WriteString(record.ContractAddress)
 	sb.WriteString("`")
