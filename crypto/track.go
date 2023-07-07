@@ -825,6 +825,12 @@ func (t *Track) WalletTrackingV2(addr string) {
 		return
 	}
 
+	// 首次加入探测忽略
+	if _, ok := t.Newest[addr]; !ok {
+		t.Newest[addr] = scan.Result[0].Hash
+		return 
+	}
+
 	t.Newest[addr] = scan.Result[0].Hash
 
 	wg := sync.WaitGroup{}
