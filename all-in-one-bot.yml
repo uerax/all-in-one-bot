@@ -1,5 +1,5 @@
 telegram:
-  # 必填
+  # Required
   token:
   chatId:
   # local telegram api地址,结尾必须包含/
@@ -8,10 +8,13 @@ telegram:
 # 加密货币配置项
 crypto:
   etherscan:
+    # Use the wallet tracking or analyze, keys required
     # 追踪聪明地址需要添加keys 前往 https://etherscan.io/myapikey 注册获取
-    # 多注册点账号,每个账号的key每秒只能使用5次
+    # 建议注册多个账号生成3个以上的key, 每个账号的key每秒只能调用5次api
     keys:
-      - 
+      - YOUR_KEY_1
+      - YOUR_KEY_2
+      - YOUR_KEY_3
     # 探测间隔 默认30分钟
     interval: 15
     path: /usr/local/share/aio/
@@ -41,6 +44,19 @@ vps:
       keyword: Out of Stock
       name: MIA Block Storage Slab - 256GB
       desc: $1.25 USD/mo
+
+# 智能抠图 配置项
+photo:
+  # 优先使用pixian
+  # 结尾必须带有 / 必须否者会报错! 必须否者会报错! 必须否者会报错!
+  # windows下调试需要改这个临时文件路径, 否则会出现报错,
+  path: /tmp/aio-tgbot/photo/
+  removebg:
+    # www.remove.bg 注册获取, 免费版每个月只能使用40次
+    apikey:
+  pixian:
+    # https://pixian.ai/api 注册获取
+    authorization:
 
 command:
   crypto:
@@ -98,19 +114,6 @@ command:
     - "image_cmd_list - 图片处理/下载功能列表"
     - "utils_cmd_list - 工具类功能列表"
     - "list_cmd_list - 功能分类列表"
-
-# 智能抠图 配置项
-photo:
-  # 优先使用pixian
-  # 结尾必须带有 / 必须否者会报错! 必须否者会报错! 必须否者会报错!
-  # windows下调试需要改这个临时文件路径, 否则会出现报错,
-  path: /tmp/aio-tgbot/photo/
-  removebg:
-    # www.remove.bg 注册获取, 免费版每个月只能使用40次
-    apikey:
-  pixian:
-    # https://pixian.ai/api 注册获取
-    authorization:
 
 video:
   # 结尾必须带有/
