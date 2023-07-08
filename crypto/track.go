@@ -826,7 +826,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	}
 
 	// 首次加入探测忽略
-	if _, ok := t.Newest[addr]; !ok {
+	if t.Newest[addr] == "" {
 		t.Newest[addr] = scan.Result[0].Hash
 		return 
 	}
@@ -853,20 +853,24 @@ func (t *Track) WalletTrackingV2(addr string) {
 		} else {
 			balance += t.getBuyEthByHash(record.Hash)
 		}
+		fmt.Println("getBalance耗时: ", time.Since(now))
 	}
 
-	getHoneypot := func() {
-		defer wg.Done()
-		if t.api.WhetherHoneypot(record.ContractAddress) {
-			isHoneypot += "*[SCAM]*"
-		}
-	}
+	// -1s
+	// getHoneypot := func() {
+	// 	defer wg.Done()
+	// 	if t.api.WhetherHoneypot(record.ContractAddress) {
+	// 		isHoneypot += "*[SCAM]*"
+	// 	}
+	// 	fmt.Println("getHoneypot耗时: ", time.Since(now))
+	// }
 
 	getDetail := func() {
 		defer wg.Done()
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("\n*Price: $%s (%d) | Pool: $%f*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Lp.Usd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			detail += fmt.Sprintf("\n*Price: $%s (%d)   |   Pool: $%f*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Lp.Usd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			fmt.Println("getDetail耗时: ", time.Since(now))
 		}
 	}
 
@@ -874,15 +878,16 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("*Buy Tax: %s | Sell Tax: %s*\n*Total Supply: %s*\n*Holder:* %s\n*Locked LP:* %0.5f\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent:* %s | *Balance:* %s", ck.BuyTax, ck.SellTax, ck.TotalSupply, ck.HolderCount, ck.LpLockedTotal, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent, ck.CreatorBalance)
+			check += fmt.Sprintf("*Buy Tax: %s   |   Sell Tax: %s*\n*Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal * 100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent, ck.CreatorBalance)
 		}
+		fmt.Println("getCheck耗时: ", time.Since(now))
 	}
 
-	wg.Add(4)
+	wg.Add(3)
 
 	// 并发减少等待时间
 	go getBalance()
-	go getHoneypot()
+	//go getHoneypot()
 	go getDetail()
 	go getCheck()
 
@@ -895,9 +900,9 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString("\n")
 	sb.WriteString(isHoneypot)
 	if strings.EqualFold(record.From, addr) {
-		sb.WriteString("*Sell: *")
+		sb.WriteString("*SELL: *")
 	} else {
-		sb.WriteString("*Buy: *")
+		sb.WriteString("*BUY: *")
 	}
 	sb.WriteString("[")
 	sb.WriteString(record.TokenSymbol)
@@ -926,9 +931,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	fmt.Println("查询总耗时: ", time.Since(now))
 
-	if sb.Len() > 0 {
-		t.C <- "`" + addr + "` *执行操作:* " + sb.String()
-	}
+	t.C <- "`" + addr + "` *执行操作:* " + sb.String()
 }
 
 func isNull(addr string) bool {
