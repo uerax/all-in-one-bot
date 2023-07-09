@@ -8,6 +8,10 @@ import (
 )
 
 // Crypto Start
+func trackingLastestTx() {
+	go api.Track.WalletLastTransaction()
+}
+
 func analyzeAddrTokenProfit(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
