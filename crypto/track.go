@@ -873,7 +873,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("   |   *Price: $%s (%d)*\n\n*Pool: $%0.2f  |  CreationTime: %s*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Lp.Usd, pair.CreateTime, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			detail += fmt.Sprintf("   |   *Price: $%s (%d)*\n\n*Pool: $%0.f  |  CreationTime: %s*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Lp.Usd, pair.CreateTime, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 			t.log.Println("getDetail耗时: ", time.Since(now))
 		}
 	}
