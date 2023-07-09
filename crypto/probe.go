@@ -3,6 +3,7 @@ package crypto
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -92,7 +93,7 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 	now := time.Now()
 	p := now.Minute() / 15
 	instance := 15*(p+1)*60 - now.Minute()*60 - now.Second() - 60
-	fmt.Printf("距离15分钟系数还有%d", now.Add(time.Duration(instance*int(time.Second))).Unix())
+	log.Printf("距离15分钟系数还有%d", now.Add(time.Duration(instance*int(time.Second))).Unix())
 	time.Sleep(time.Duration(instance) * time.Second)
 
 	do := func() {

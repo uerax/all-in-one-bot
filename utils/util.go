@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 )
@@ -32,7 +33,7 @@ func (t *Utils) Base64Encode(str string) {
 func (t *Utils) Base64Decode(str string) {
 	decoded, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "解码失败"
 		return
 	}
@@ -42,7 +43,7 @@ func (t *Utils) Base64Decode(str string) {
 func (t *Utils) TimestampConvert(Timestamp string) {
 	ts, err := strconv.ParseInt(Timestamp, 10, 64)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "时间戳格式有误"
 		return
 	}
@@ -55,7 +56,7 @@ func (t *Utils) TimeConvert(date string) {
 
 	ts, err := time.Parse(t.format, date)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "时间格式有误"
 		return
 	}
@@ -69,7 +70,7 @@ func (t *Utils) JsonFormat(str string) {
 	var out bytes.Buffer
 	err := json.Indent(&out, []byte(str), "", "    ")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "格式化失败"
 		return
 	}

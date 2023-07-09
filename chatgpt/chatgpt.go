@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/uerax/goconf"
@@ -63,13 +64,13 @@ func (t *ChatGPT) Ask(id int64, msg string) {
 		},
 	})
 	if err != nil {
-		fmt.Println("请求转换成结构体异常")
+		log.Println("请求转换成结构体异常")
 		return
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
-		fmt.Println("请求生成异常")
+		log.Println("请求生成异常")
 		return
 	}
 
@@ -78,21 +79,21 @@ func (t *ChatGPT) Ask(id int64, msg string) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("请求发送失败")
+		log.Println("请求发送失败")
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		fmt.Println("响应body读取异常")
+		log.Println("响应body读取异常")
 		return
 	}
 
 	var respBody *ChatGPTResponse
 	err = json.Unmarshal(body, &respBody)
 	if err != nil {
-		fmt.Println("响应转换成结构体异常")
+		log.Println("响应转换成结构体异常")
 		return
 	}
 

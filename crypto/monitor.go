@@ -2,7 +2,7 @@ package crypto
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -90,7 +90,7 @@ func (t *CryptoMonitor) Start() {
 	interval := goconf.VarIntOrDefault(10, "crypto", "monitor", "interval")
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
-	fmt.Println("[开始执行定时探测]")
+	log.Println("[开始执行定时探测]")
 	for {
 		select {
 		case <-ticker.C:
@@ -103,7 +103,7 @@ func (t *CryptoMonitor) Start() {
 			t.clearNotify()
 		case <-t.ctx.Done():
 			// 当收到ctx的完成信号时，停止探测
-			fmt.Println("[定时探测结束]")
+			log.Println("[定时探测结束]")
 			return
 		}
 	}

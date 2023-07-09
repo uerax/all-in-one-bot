@@ -3,6 +3,7 @@ package tg
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -34,14 +35,14 @@ func (t *Sticker) StickerDownload(fileId string) {
 	}
 	file, err := api.bot.GetFile(fileConfig)
 	if err != nil {
-		fmt.Printf("无法获取贴纸文件：%s\n", err.Error())
+		log.Printf("无法获取贴纸文件：%s\n", err.Error())
 		t.MsgC <- "无法获取贴纸文件"
 		return
 	}
 
 	token, err := goconf.VarString("telegram", "token")
 	if err != nil {
-		fmt.Printf("无法获取token：%s\n", err.Error())
+		log.Printf("无法获取token：%s\n", err.Error())
 		t.MsgC <- "无法获取token"
 		return
 	}
@@ -51,7 +52,7 @@ func (t *Sticker) StickerDownload(fileId string) {
 	// 发送HTTP GET请求以下载贴纸文件
 	resp, err := http.Get(downloadURL)
 	if err != nil {
-		fmt.Printf("无法下载贴纸文件：%s\n", err.Error())
+		log.Printf("无法下载贴纸文件：%s\n", err.Error())
 		t.MsgC <- "无法下载贴纸文件"
 		return
 	}
@@ -68,14 +69,14 @@ func (t *Sticker) StickerDownload(fileId string) {
 		if _, err := os.Stat(t.path); os.IsNotExist(err) { // 检查目录是否存在
 			err := os.MkdirAll(t.path, os.ModePerm) // 创建目录
 			if err != nil {
-				fmt.Println("创建本地临时文件夹失败")
+				log.Println("创建本地临时文件夹失败")
 				t.MsgC <- "创建本地临时文件夹失败"
 				return
 			}
 		}
 		fileLocal, err := os.Create(filePath)
 		if err != nil {
-			fmt.Printf("无法创建本地文件：%s\n", err.Error())
+			log.Printf("无法创建本地文件：%s\n", err.Error())
 			t.MsgC <- "无法创建本地文件"
 			return
 		}
@@ -84,7 +85,7 @@ func (t *Sticker) StickerDownload(fileId string) {
 		// 将下载的贴纸写入本地文件
 		_, err = io.Copy(fileLocal, resp.Body)
 		if err != nil {
-			fmt.Printf("无法写入本地文件：%s\n", err.Error())
+			log.Printf("无法写入本地文件：%s\n", err.Error())
 			t.MsgC <- "无法写入本地文件"
 			return
 		}
@@ -92,7 +93,7 @@ func (t *Sticker) StickerDownload(fileId string) {
 
 		fileLocal, err := os.Create(filePath + ".webm")
 		if err != nil {
-			fmt.Printf("无法创建本地文件：%s\n", err.Error())
+			log.Printf("无法创建本地文件：%s\n", err.Error())
 			t.MsgC <- "无法创建本地文件"
 			return
 		}
@@ -101,7 +102,7 @@ func (t *Sticker) StickerDownload(fileId string) {
 		// 将下载的贴纸写入本地文件
 		_, err = io.Copy(fileLocal, resp.Body)
 		if err != nil {
-			fmt.Printf("无法写入本地文件：%s\n", err.Error())
+			log.Printf("无法写入本地文件：%s\n", err.Error())
 			t.MsgC <- "无法写入本地文件"
 			return
 		}
@@ -110,14 +111,14 @@ func (t *Sticker) StickerDownload(fileId string) {
 
 		cmd := exec.Command("ffmpeg", args...)
 		if err = cmd.Run(); err != nil {
-			fmt.Printf("sticker转gif失败：%s\n", err.Error())
+			log.Printf("sticker转gif失败：%s\n", err.Error())
 			t.MsgC <- "sticker转gif失败, 检查是否安装ffmpeg"
 			return
 		}
 
 		err = common.Zip(filePath+".gif", filePath+".zip")
 		if err != nil {
-			fmt.Printf("创建压缩包失败%s\n", err.Error())
+			log.Printf("创建压缩包失败%s\n", err.Error())
 			t.MsgC <- "创建压缩包失败"
 			return
 		}

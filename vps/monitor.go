@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -52,7 +53,7 @@ func NewVpsMonitor() *VpsMonitor {
 
 func (t *VpsMonitor) AddMonitor(id int64, url string) {
 	if _, ok := t.valid[url]; !ok {
-		fmt.Println("添加监控的VPS链接不支持")
+		log.Println("添加监控的VPS链接不支持")
 		return
 	}
 	vtu, _ := t.VTU.LoadOrStore(url, make(map[int64]struct{}))
@@ -85,19 +86,19 @@ func (t *VpsMonitor) probe(url, keyword string) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Printf("%s 访问失败\n", url)
+		log.Printf("%s 访问失败\n", url)
 		return
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("body解析失败")
+		log.Println("body解析失败")
 		return
 	}
 	now := time.Now().Unix()
 	frequency := goconf.VarIntOrDefault(600, "vps", "frequency")
 	if !strings.Contains(string(b), keyword) {
-		fmt.Println(string(b))
+		log.Println(string(b))
 		s := make(map[int64]string)
 		if value, ok := t.VTU.Load(url); ok {
 			for k := range value.(map[int64]struct{}) {

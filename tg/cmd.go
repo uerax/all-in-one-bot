@@ -2,6 +2,7 @@ package tg
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,7 +16,7 @@ func trackingLastestTx() {
 func analyzeAddrTokenProfit(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
-		fmt.Printf("analyzeAddrTokenProfit 参数有误: %s", args)
+		log.Printf("analyzeAddrTokenProfit 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -30,7 +31,7 @@ func smartAddrFinder(args string) {
 	}
 
 	if len(arg) != 3 {
-		fmt.Printf("smartAddrFinder 参数有误: %s", args)
+		log.Printf("smartAddrFinder 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -55,7 +56,7 @@ func dumpTrackingList() {
 func walletAnalyze(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) < 1 {
-		fmt.Printf("walletAnalyze 参数有误: %s", args)
+		log.Printf("walletAnalyze 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -90,7 +91,7 @@ func dumpSmartAddrList() {
 func smartAddrTx(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) < 1 {
-		fmt.Printf("smartAddrTx 参数有误: %s", args)
+		log.Printf("smartAddrTx 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -116,7 +117,7 @@ func addSmartAddrProbe(args string) {
 func addKlineStrategyProbe(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("addKlineStrategyProbe 参数有误: %s", args)
+		log.Printf("addKlineStrategyProbe 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -126,7 +127,7 @@ func addKlineStrategyProbe(args string) {
 func deleteKlineStrategyProbe(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("deleteKlineStrategyProbe 参数有误: %s", args)
+		log.Printf("deleteKlineStrategyProbe 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -146,7 +147,7 @@ func listKlineStrategyProbe() {
 func addCryptoGrowthMonitor(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
-		fmt.Printf("addCryptoGrowthMonitor 参数有误: %s", args)
+		log.Printf("addCryptoGrowthMonitor 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -158,7 +159,7 @@ func addCryptoGrowthMonitor(id int64, args string) {
 func addCryptoDeclineMonitor(id int64, args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
-		fmt.Printf("addCryptoDeclineMonitor 参数有误: %s", args)
+		log.Printf("addCryptoDeclineMonitor 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -208,7 +209,7 @@ func getUFuturesCryptoPrice(id int64, args string) {
 func addMemeGrowthMonitor(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 3 {
-		fmt.Printf("addMemeGrowthMonitor 参数有误: %s", args)
+		log.Printf("addMemeGrowthMonitor 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -219,7 +220,7 @@ func addMemeGrowthMonitor(args string) {
 func addMemeDeclineMonitor(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 3 {
-		fmt.Printf("addMemeDeclineMonitor 参数有误: %s", args)
+		log.Printf("addMemeDeclineMonitor 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -230,7 +231,7 @@ func addMemeDeclineMonitor(args string) {
 func deleteMemeMonitor(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
-		fmt.Printf("deleteMemeMonitor 参数有误: %s", args)
+		log.Printf("deleteMemeMonitor 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -290,7 +291,7 @@ func cutouts(id int64, photos []tgbotapi.PhotoSize) {
 	fileID := photo.FileID
 	file, err := api.bot.GetFileDirectURL(fileID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		go api.DeleteAfterSendMessage("图片读取失败,请重新发送")
 		return
 	}
@@ -307,7 +308,7 @@ func chatid(id int64) {
 func addCron(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {
-		fmt.Printf("addCron 参数有误: %s", args)
+		log.Printf("addCron 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -317,7 +318,7 @@ func addCron(args string) {
 func deleteCron(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("deleteCron 参数有误: %s", args)
+		log.Printf("deleteCron 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -328,7 +329,7 @@ func deleteCron(args string) {
 func ytbDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("ytbDownload 参数有误: %s", args)
+		log.Printf("ytbDownload 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -339,7 +340,7 @@ func ytbDownload(args string) {
 func ytbAudioDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("ytbAudioDownload 参数有误: %s", args)
+		log.Printf("ytbAudioDownload 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -350,7 +351,7 @@ func ytbAudioDownload(args string) {
 func ytbDownloadCut(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 3 {
-		fmt.Printf("ytbDownloadCut 参数有误: %s", args)
+		log.Printf("ytbDownloadCut 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -361,7 +362,7 @@ func ytbDownloadCut(args string) {
 func ytbAudioDownloadCut(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 3 {
-		fmt.Printf("ytbAudioDownloadCut 参数有误: %s", args)
+		log.Printf("ytbAudioDownloadCut 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -372,7 +373,7 @@ func ytbAudioDownloadCut(args string) {
 func bilibiliDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("bilibiliDownload 参数有误: %s", args)
+		log.Printf("bilibiliDownload 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -383,7 +384,7 @@ func bilibiliDownload(args string) {
 func douyinDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("douyinDownload 参数有误: %s", args)
+		log.Printf("douyinDownload 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
@@ -394,7 +395,7 @@ func douyinDownload(args string) {
 func twitterDownload(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 1 {
-		fmt.Printf("twitterDownload 参数有误: %s", args)
+		log.Printf("twitterDownload 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
