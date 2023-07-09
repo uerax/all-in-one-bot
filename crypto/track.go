@@ -25,7 +25,7 @@ type Track struct {
 	api          *Crypto
 	dumpPath     string
 	Keys         *PollingKey
-	trackingLock sync.Mutex
+	trackingLock sync.RWMutex
 }
 
 type txResp struct {
@@ -60,7 +60,7 @@ func NewTrack() *Track {
 		api:          NewCrypto("", ""),
 		dumpPath:     goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 		Keys:         NewPollingKey(),
-		trackingLock: sync.Mutex{},
+		trackingLock: sync.RWMutex{},
 	}
 
 	go t.DumpCron()
@@ -828,12 +828,15 @@ func (t *Track) WalletTrackingV2(addr string) {
 	}
 
 	// 首次加入探测忽略
+	t.trackingLock.Lock()
 	if t.Newest[addr] == "" {
 		t.Newest[addr] = scan.Result[0].Hash
+		t.trackingLock.Unlock()
 		return
 	}
 
 	t.Newest[addr] = scan.Result[0].Hash
+	t.trackingLock.Unlock()
 
 	wg := sync.WaitGroup{}
 	sb := strings.Builder{}
