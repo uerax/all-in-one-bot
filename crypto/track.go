@@ -893,10 +893,6 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	wg.Wait()
 
-	if balance == 0.0 {
-		return
-	}
-
 	sb.WriteString("\n")
 	sb.WriteString(isHoneypot)
 	if strings.EqualFold(record.From, addr) {
