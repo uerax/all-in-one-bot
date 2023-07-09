@@ -142,6 +142,8 @@ func Server() {
 
 		switch update.Message.Command() {
 		// Track
+		case "tracking_last_tx":
+			trackingLastestTx()
 		case "analyze_addr_token_profit":
 			Cmd = "analyze_addr_token_profit"
 			tips(update.Message.Chat.ID, "分析钱包的指定加密货币总收益情况(钱包地址 加加密货币合约地址) 例:\n`0x1c8075cfc18cd17f5fb7743fba811603b819234c 0x808a57ef754c18e1d2cea5d6cf30f00eeeaa1273`")

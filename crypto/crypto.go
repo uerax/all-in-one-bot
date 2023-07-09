@@ -173,7 +173,7 @@ func (t *Crypto) MemePrice(query string, chain string) *Pair {
 	}
 
 	for _, v := range meme.Pairs {
-		if v.ChainId == c {
+		if v.DexId == "uniswap" {
 			v.CreateTime = time.Unix(v.CreateAt/1000, 0).Format("2006-01-02 15:04:05")
 			return v
 		}

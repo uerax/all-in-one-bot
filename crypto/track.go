@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -25,6 +26,7 @@ type Track struct {
 	dumpPath     string
 	Keys         *PollingKey
 	trackingLock sync.Mutex
+	log          log.Logger
 }
 
 type txResp struct {
@@ -60,6 +62,7 @@ func NewTrack() *Track {
 		dumpPath:     goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 		Keys:         NewPollingKey(),
 		trackingLock: sync.Mutex{},
+		log:          *log.Default(),
 	}
 
 	go t.DumpCron()
@@ -70,6 +73,10 @@ func NewTrack() *Track {
 }
 
 func (t *Track) recover() {
+	if t.Keys.IsNull() {
+		t.log.Println("未读取到etherscan的apikey无法启动监控")
+		return
+	}
 	for k := range t.Newest {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[k] = cf
@@ -91,19 +98,19 @@ func (t *Track) clearInactiveAddr() {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=1&sort=desc&address=%s&apikey=%s"
 		r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
 		if err != nil {
-			fmt.Println("请求失败")
+			t.log.Println("请求失败")
 			return
 		}
 		defer r.Body.Close()
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
-			fmt.Println("读取body失败")
+			t.log.Println("读取body失败")
 			return
 		}
 		scan := new(TokenTxResp)
 		err = json.Unmarshal(b, &scan)
 		if err != nil {
-			fmt.Println("WalletTracking: json转换失败")
+			t.log.Println("WalletTracking: json转换失败")
 			return
 		}
 
@@ -117,11 +124,11 @@ func (t *Track) clearInactiveAddr() {
 
 		ts, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
 		if err == nil {
-			if time.Unix(ts, 0).Add(10 * 24 * time.Hour).Before(time.Now()) {
+			if time.Unix(ts, 0).Add(3 * 24 * time.Hour).Before(time.Now()) {
 				cl()
 				delete(t.Newest, addr)
 				delete(t.Task, addr)
-				t.C <- fmt.Sprintf("`%s` 超过10天没有进行交易, 已停止追踪", addr)
+				t.C <- fmt.Sprintf("`%s` 超过3天没有进行交易, 已停止追踪", addr)
 			}
 		}
 	}
@@ -134,13 +141,18 @@ func (t *Track) clearInactiveAddr() {
 }
 
 func (t *Track) CronTracking(addr string) {
+	if t.Keys.IsNull() {
+		t.log.Println("未读取到etherscan的apikey无法启动监控")
+		t.C <- "未读取到etherscan的apikey无法启动监控"
+		return
+	}
 	addr = strings.ToLower(addr)
 	if _, ok := t.Task[addr]; !ok {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
 		t.Newest[addr] = ""
 		go t.Tracking(addr, ctx)
-		fmt.Println("开始追踪: ", addr)
+		t.log.Println("开始追踪: ", addr)
 		t.C <- "*开始追踪* " + addr
 	}
 }
@@ -151,7 +163,7 @@ func (t *Track) StopTracking(addr string) {
 		v()
 		delete(t.Task, addr)
 		delete(t.Newest, addr)
-		fmt.Println("已停止追踪: ", addr)
+		t.log.Println("已停止追踪: ", addr)
 		t.C <- "*已停止追踪* " + addr
 	}
 }
@@ -192,19 +204,19 @@ func (t *Track) WalletTracking(addr string) {
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, "3", addr, t.Keys.GetKey()))
 	if err != nil {
-		fmt.Println("请求失败")
+		t.log.Println("请求失败")
 		return
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("读取body失败")
+		t.log.Println("读取body失败")
 		return
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("WalletTracking: json转换失败")
+		t.log.Println("WalletTracking: json转换失败")
 		return
 	}
 
@@ -314,7 +326,7 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 	tx := new(TokenTxResp)
 	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.Keys.GetKey()), &tx)
 	if err != nil {
-		fmt.Println("请求失败: ", err)
+		t.log.Println("请求失败: ", err)
 		return
 	}
 
@@ -375,19 +387,19 @@ func (t *Track) getBuyEthByHash(hash string) float64 {
 	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, hash, t.Keys.GetKey()))
 	if err != nil {
-		fmt.Println("请求失败")
+		t.log.Println("请求失败")
 		return 0.0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("读取body失败")
+		t.log.Println("读取body失败")
 		return 0.0
 	}
 	scan := new(txResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("json转换失败")
+		t.log.Println("json转换失败")
 		return 0.0
 	}
 
@@ -430,19 +442,19 @@ func (t *Track) getSellEthByHash(hash, addr string) float64 {
 	url := "https://api.etherscan.io/api?module=account&action=txlistinternal&txhash=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, hash, t.Keys.GetKey()))
 	if err != nil {
-		fmt.Println("请求失败")
+		t.log.Println("请求失败")
 		return 0.0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("读取body失败")
+		t.log.Println("读取body失败")
 		return 0.0
 	}
 	scan := new(txResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("json转换失败")
+		t.log.Println("json转换失败")
 		return 0.0
 	}
 
@@ -478,21 +490,21 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
-		fmt.Println("etherscan请求失败")
+		t.log.Println("etherscan请求失败")
 		t.C <- "etherscan请求失败"
 		return
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("读取body失败")
+		t.log.Println("读取body失败")
 		t.C <- "读取body失败"
 		return
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("json转换失败")
+		t.log.Println("json转换失败")
 		t.C <- "json转换失败"
 		return
 	}
@@ -613,7 +625,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 func (t *Track) DumpTrackingList(tip bool) {
 	b, err := json.Marshal(t.Newest)
 	if err != nil {
-		fmt.Println("序列化失败:", err)
+		t.log.Println("序列化失败:", err)
 		if tip {
 			t.C <- "dump失败: list序列化报错"
 		}
@@ -623,7 +635,7 @@ func (t *Track) DumpTrackingList(tip bool) {
 	if _, err := os.Stat(t.dumpPath); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(t.dumpPath, os.ModePerm) // 创建目录
 		if err != nil {
-			fmt.Println("创建本地文件夹失败")
+			t.log.Println("创建本地文件夹失败")
 			if tip {
 				t.C <- "dump失败: 创建本地文件夹失败"
 			}
@@ -632,7 +644,7 @@ func (t *Track) DumpTrackingList(tip bool) {
 	}
 	err = os.WriteFile(t.dumpPath+"tracking.json", b, 0644)
 	if err != nil {
-		fmt.Println("dump文件创建/写入失败")
+		t.log.Println("dump文件创建/写入失败")
 		if tip {
 			t.C <- "dump失败: dump文件创建/写入失败"
 		}
@@ -652,11 +664,7 @@ func recoverTrackingList() map[string]string {
 		return dump
 	}
 
-	err = json.Unmarshal(b, &dump)
-	if err != nil {
-		fmt.Println("TrackingList数据读取失败:", err)
-		return dump
-	}
+	json.Unmarshal(b, &dump)
 
 	return dump
 
@@ -686,7 +694,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 	scan := new(TokenTxResp)
 	err := common.HttpGet(fmt.Sprintf(url, page, offset, token, t.Keys.GetKey()), &scan)
 	if err != nil {
-		fmt.Println("请求失败: ", err)
+		t.log.Println("请求失败: ", err)
 		return
 	}
 
@@ -780,7 +788,7 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.Keys.GetKey()), &tx)
 
 	if err != nil {
-		fmt.Println("请求失败: ", err)
+		t.log.Println("请求失败: ", err)
 		return nil
 	}
 	if len(tx.Result) > 6 {
@@ -792,28 +800,24 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 
 func (t *Track) WalletTrackingV2(addr string) {
 	now := time.Now()
-	if t.Keys.IsNull() {
-		t.C <- "未读取到etherscan的apikey无法启动监控"
-		return
-	}
 
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=1&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
 	if err != nil {
-		fmt.Println("请求失败")
+		t.log.Println("请求失败")
 		return
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("读取body失败")
+		t.log.Println("读取body失败")
 		return
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("WalletTracking: json转换失败")
+		t.log.Println("WalletTracking: json转换失败")
 		return
 	}
 
@@ -828,7 +832,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	// 首次加入探测忽略
 	if t.Newest[addr] == "" {
 		t.Newest[addr] = scan.Result[0].Hash
-		return 
+		return
 	}
 
 	t.Newest[addr] = scan.Result[0].Hash
@@ -853,7 +857,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		} else {
 			balance += t.getBuyEthByHash(record.Hash)
 		}
-		fmt.Println("getBalance耗时: ", time.Since(now))
+		t.log.Println("getBalance耗时: ", time.Since(now))
 	}
 
 	// -1s
@@ -862,15 +866,15 @@ func (t *Track) WalletTrackingV2(addr string) {
 	// 	if t.api.WhetherHoneypot(record.ContractAddress) {
 	// 		isHoneypot += "*[SCAM]*"
 	// 	}
-	// 	fmt.Println("getHoneypot耗时: ", time.Since(now))
+	// 	t.log.Println("getHoneypot耗时: ", time.Since(now))
 	// }
 
 	getDetail := func() {
 		defer wg.Done()
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("\n*Price: $%s (%d)*\n*CreationTime: %s   |   Pool: $%0.2f*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.CreateTime, pair.Lp.Usd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
-			fmt.Println("getDetail耗时: ", time.Since(now))
+			detail += fmt.Sprintf("   |   *Price: $%s (%d)*\n\n*Pool: $%0.2f  |  CreationTime: %s*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Lp.Usd, pair.CreateTime, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			t.log.Println("getDetail耗时: ", time.Since(now))
 		}
 	}
 
@@ -878,9 +882,9 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal * 100.0, ck.OwnerAddress, ck.CreatorPercent, ck.CreatorBalance)
+			check += fmt.Sprintf("*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorPercent, ck.CreatorBalance)
 		}
-		fmt.Println("getCheck耗时: ", time.Since(now))
+		t.log.Println("getCheck耗时: ", time.Since(now))
 	}
 
 	wg.Add(3)
@@ -920,14 +924,13 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString("\n\n*Cost: ")
 	sb.WriteString(fmt.Sprintf("%f", balance))
 	sb.WriteString(" ETH*")
-	sb.WriteString("\n")
 	sb.WriteString(detail)
 	sb.WriteString("\n")
 	sb.WriteString(check)
 
-	fmt.Println("查询总耗时: ", time.Since(now))
+	t.log.Println("查询总耗时: ", time.Since(now))
 
-	t.C <- "`" + addr + "` *执行操作:* " + sb.String()
+	t.C <- "`" + addr + "` *监控:*" + sb.String()
 }
 
 func isNull(addr string) bool {
@@ -938,11 +941,48 @@ func zeroCal(str string) (zero int) {
 	if !strings.Contains(str, ".") {
 		return zero
 	}
-	for i := strings.Index(str, ".") + 1; i < len(str) - 1; i++ {
+	for i := strings.Index(str, ".") + 1; i < len(str)-1; i++ {
 		if str[i] != '0' {
 			break
 		}
 		zero++
 	}
 	return zero
+}
+
+func (t *Track) WalletLastTransaction() {
+	if t.Keys.IsNull() {
+		t.C <- "未读取到etherscan的apikey无法启动监控"
+		return
+	}
+
+	sb := strings.Builder{}
+	sb.WriteString("*当前监控的钱包最后交易时间:*")
+	getErc20 := func(addr string) {
+		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=1&sort=desc&address=%s&apikey=%s"
+		scan := new(TokenTxResp)
+		err := common.HttpGet(fmt.Sprintf(url, addr, t.Keys.GetKey()), &scan)
+		if err != nil {
+			t.log.Println("请求失败: ", err)
+			return
+		}
+
+		if scan.Status != "1" || len(scan.Result) == 0 {
+			t.log.Println("响应码为1或者结果长度为0")
+			return
+		}
+
+		ts, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
+		if err == nil {
+			sb.WriteString(fmt.Sprintf("\n`%s`*: %s*", addr, time.Unix(ts, 0).Format("2006-01-02 15:04:05")))
+		}
+
+	}
+
+	for addr := range t.Task {
+		getErc20(addr)
+	}
+
+	t.C <- sb.String()
+
 }
