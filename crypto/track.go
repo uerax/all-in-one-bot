@@ -869,7 +869,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("\n*Price: $%s (%d)   |   Pool: $%f*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Lp.Usd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			detail += fmt.Sprintf("\n*Price: $%s (%d)*\n*CreationTime: %s   |   Pool: $%0.2f*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.CreateTime, pair.Lp.Usd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 			fmt.Println("getDetail耗时: ", time.Since(now))
 		}
 	}
@@ -878,7 +878,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("*Buy Tax: %s   |   Sell Tax: %s*\n*Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal * 100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent, ck.CreatorBalance)
+			check += fmt.Sprintf("*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal * 100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent, ck.CreatorBalance)
 		}
 		fmt.Println("getCheck耗时: ", time.Since(now))
 	}
@@ -914,12 +914,12 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?exactField=input&exactAmount=0.02&inputCurrency=ETH&outputCurrency=")
 	sb.WriteString(record.ContractAddress)
 	sb.WriteString("&chain=ethereum)")
-	sb.WriteString("\n\n*Cost: ")
-	sb.WriteString(fmt.Sprintf("%f", balance))
-	sb.WriteString(" ETH*")
 	sb.WriteString("\n\n`")
 	sb.WriteString(record.ContractAddress)
 	sb.WriteString("`")
+	sb.WriteString("\n\n*Cost: ")
+	sb.WriteString(fmt.Sprintf("%f", balance))
+	sb.WriteString(" ETH*")
 	sb.WriteString("\n")
 	sb.WriteString(detail)
 	sb.WriteString("\n")
