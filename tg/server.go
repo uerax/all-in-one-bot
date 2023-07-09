@@ -142,7 +142,7 @@ func Server() {
 
 		switch update.Message.Command() {
 		// Track
-		case "tracking_last_tx":
+		case "tracking_lastest_tx":
 			trackingLastestTx()
 		case "analyze_addr_token_profit":
 			Cmd = "analyze_addr_token_profit"
