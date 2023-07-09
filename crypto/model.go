@@ -12,6 +12,7 @@ type Meme struct {
 type Pair struct {
 	URL         string       `json:"url"`
 	ChainId     string       `json:"chainId"`
+	DexId       string       `json:"dexId"`
 	PairAddress string       `json:"pairAddress"`
 	PriceNative string       `json:"priceNative"`
 	PriceUsd    string       `json:"priceUsd"`
@@ -21,8 +22,8 @@ type Pair struct {
 	Txns        *Txn         `json:"txns"`
 	Lp          *Liquidity   `json:"liquidity"`
 	Fdv         int64        `json:"fdv"`
-	CreateAt	int64		 `json:"pairCreatedAt"`
-	CreateTime	string
+	CreateAt    int64        `json:"pairCreatedAt"`
+	CreateTime  string
 }
 
 type Liquidity struct {
