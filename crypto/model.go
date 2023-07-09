@@ -21,6 +21,8 @@ type Pair struct {
 	Txns        *Txn         `json:"txns"`
 	Lp          *Liquidity   `json:"liquidity"`
 	Fdv         int64        `json:"fdv"`
+	CreateAt	int64		 `json:"pairCreatedAt"`
+	CreateTime	string
 }
 
 type Liquidity struct {
