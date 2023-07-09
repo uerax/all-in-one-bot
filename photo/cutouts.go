@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -45,14 +46,14 @@ func (t *Cutouts) pixian(id int64, uri string) {
 	writer := multipart.NewWriter(form)
 	formField, err := writer.CreateFormField("image.url")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "创建表单参数失败"
 		return
 	}
 
 	_, err = formField.Write([]byte(uri))
 	if err != nil {
-		fmt.Println("表单填充异常")
+		log.Println("表单填充异常")
 		t.ErrC <- "表单填充参数失败"
 		return
 	}
@@ -63,7 +64,7 @@ func (t *Cutouts) pixian(id int64, uri string) {
 	if _, err := os.Stat(t.path); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(t.path, os.ModePerm) // 创建目录
 		if err != nil {
-			fmt.Println("创建本地临时文件失败")
+			log.Println("创建本地临时文件失败")
 			t.ErrC <- "创建本地临时文件失败"
 			return
 		}
@@ -71,7 +72,7 @@ func (t *Cutouts) pixian(id int64, uri string) {
 
 	r, err := http.NewRequest(http.MethodPost, "https://api.pixian.ai/api/v1/remove-background", form)
 	if err != nil {
-		fmt.Println("Remove Background请求生成失败")
+		log.Println("Remove Background请求生成失败")
 		t.ErrC <- "Remove Background请求生成失败"
 		return
 	}
@@ -81,7 +82,7 @@ func (t *Cutouts) pixian(id int64, uri string) {
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		fmt.Println("Remove Background请求发送失败")
+		log.Println("Remove Background请求发送失败")
 		t.ErrC <- "Remove Background请求发送失败"
 		return
 	}
@@ -118,27 +119,27 @@ func (t *Cutouts) removebg(id int64, uri string) {
 	writer := multipart.NewWriter(form)
 	formField, err := writer.CreateFormField("image_url")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "创建本地临时文件失败"
 		return
 	}
 	_, err = formField.Write([]byte(uri))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "表单填充参数失败"
 		return
 	}
 
 	formField, err = writer.CreateFormField("size")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "创建表单失败"
 		return
 	}
 
 	_, err = formField.Write([]byte("auto"))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		t.ErrC <- "表单填充参数失败"
 		return
 	}
@@ -149,7 +150,7 @@ func (t *Cutouts) removebg(id int64, uri string) {
 	if _, err := os.Stat(t.path); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(t.path, os.ModePerm) // 创建目录
 		if err != nil {
-			fmt.Println("创建本地临时文件失败")
+			log.Println("创建本地临时文件失败")
 			t.ErrC <- "创建本地临时文件失败"
 			return
 		}
@@ -157,7 +158,7 @@ func (t *Cutouts) removebg(id int64, uri string) {
 
 	r, err := http.NewRequest(http.MethodPost, "https://api.remove.bg/v1.0/removebg", form)
 	if err != nil {
-		fmt.Println("Remove Background请求生成失败")
+		log.Println("Remove Background请求生成失败")
 		t.ErrC <- "Remove Background请求生成失败"
 		return
 	}
@@ -167,7 +168,7 @@ func (t *Cutouts) removebg(id int64, uri string) {
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		fmt.Println("Remove Background请求发送失败")
+		log.Println("Remove Background请求发送失败")
 		t.ErrC <- "Remove Background请求发送失败"
 		return
 	}

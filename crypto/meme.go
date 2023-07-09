@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -109,7 +110,7 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 			line, err := strconv.ParseFloat(price, 64)
 			if err != nil {
 				p.Meme <- "输入的价格有误,无法识别"
-				fmt.Println("价格转换异常：", err)
+				log.Println("价格转换异常：", err)
 				delete(p.memeHighTask, query+" "+chain)
 				return
 			}
@@ -120,7 +121,7 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
 				p.Meme <- "价格转换异常,请检查日志"
-				fmt.Println("价格转换异常：", err)
+				log.Println("价格转换异常：", err)
 				delete(p.memeHighTask, query+" "+chain)
 				return
 			}
@@ -166,7 +167,7 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 			line, err := strconv.ParseFloat(price, 64)
 			if err != nil {
 				p.Meme <- "输入的价格有误,无法识别"
-				fmt.Println("价格转换异常：", err)
+				log.Println("价格转换异常：", err)
 				delete(p.memeLowTask, query+" "+chain)
 				return
 			}
@@ -177,7 +178,7 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
 				p.Meme <- "价格转换异常,请检查日志"
-				fmt.Println("价格转换异常：", err)
+				log.Println("价格转换异常：", err)
 				delete(p.memeLowTask, query+" "+chain)
 				return
 			}
@@ -246,21 +247,21 @@ func (t *Probe) SmartAddr(addr string, offset string) {
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
-		fmt.Println("请求失败")
+		log.Println("请求失败")
 		t.Meme <- "etherscan请求失败"
 		return
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("读取body失败")
+		log.Println("读取body失败")
 		t.Meme <- "读取body失败"
 		return
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
-		fmt.Println("json转换失败")
+		log.Println("json转换失败")
 		t.Meme <- "json转换失败"
 		return
 	}
@@ -340,19 +341,19 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=50&sort=desc&address=%s&apikey=%s"
 		r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
 		if err != nil {
-			fmt.Println("请求失败")
+			log.Println("请求失败")
 			return
 		}
 		defer r.Body.Close()
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
-			fmt.Println("读取body失败")
+			log.Println("读取body失败")
 			return
 		}
 		scan := new(TokenTxResp)
 		err = json.Unmarshal(b, &scan)
 		if err != nil {
-			fmt.Println("json转换失败")
+			log.Println("json转换失败")
 			return
 		}
 
@@ -426,7 +427,7 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 	}
 	b, err := json.Marshal(t.smartBuys)
 	if err != nil {
-		fmt.Println("序列化失败:", err)
+		log.Println("序列化失败:", err)
 		if tip {
 			t.Meme <- "dump失败: list序列化报错"
 		}
@@ -436,7 +437,7 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 	if _, err := os.Stat(t.smartDumpPath); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(t.smartDumpPath, os.ModePerm) // 创建目录
 		if err != nil {
-			fmt.Println("创建本地文件夹失败")
+			log.Println("创建本地文件夹失败")
 			if tip {
 				t.Meme <- "dump失败: 创建本地文件夹失败"
 			}
@@ -445,7 +446,7 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 	}
 	err = os.WriteFile(t.smartDumpPath+"smart_dump.json", b, 0644)
 	if err != nil {
-		fmt.Println("dump文件创建/写入失败")
+		log.Println("dump文件创建/写入失败")
 		if tip {
 			t.Meme <- "dump失败: dump文件创建/写入失败"
 		}
@@ -467,7 +468,7 @@ func recoverSmartAddrList() map[string]map[string]struct{} {
 
 	err = json.Unmarshal(b, &dump)
 	if err != nil {
-		fmt.Println("SmartAddrList数据读取失败:", err)
+		log.Println("SmartAddrList数据读取失败:", err)
 		return dump
 	}
 

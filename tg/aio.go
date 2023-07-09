@@ -139,7 +139,7 @@ func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
 
 	_, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 	}
 }
 

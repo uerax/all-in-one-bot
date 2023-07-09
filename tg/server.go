@@ -1,7 +1,7 @@
 package tg
 
 import (
-	"fmt"
+	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/uerax/goconf"
@@ -11,12 +11,11 @@ var Cmd string
 var ChatId int64
 
 func Server() {
-
 	// Create a new bot instance
 	token, err := goconf.VarString("telegram", "token")
 	if err != nil {
-		fmt.Println("启动失败: 没有填写bot的token")
-		panic(err)
+		log.Println("启动失败: 没有填写bot的token")
+		return
 	}
 	id := goconf.VarIntOrDefault(0, "telegram", "chatId")
 
@@ -34,7 +33,7 @@ func Server() {
 		if update.Message == nil { // ignore non-Message updates
 			continue
 		}
-		fmt.Println("receive msg : " + update.Message.Text)
+		log.Println("receive msg : " + update.Message.Text)
 
 		if ChatId != 0 && update.Message.Chat.ID != ChatId {
 			continue

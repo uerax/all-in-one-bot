@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -83,26 +84,26 @@ func (t *Crypto) FuturesPrice(name string) (prices string) {
 	symbols := fmt.Sprintf(`/fapi/v1/ticker/price?symbol=%s`, name)
 	res, err := http.NewRequest(http.MethodGet, fapiUrl+symbols, nil)
 	if err != nil {
-		fmt.Println("请求失败：", err)
+		log.Println("请求失败：", err)
 		return
 	}
 
 	resp, err := http.DefaultClient.Do(res)
 	if err != nil {
-		fmt.Println("请求失败：", err)
+		log.Println("请求失败：", err)
 		return
 	}
 
 	resBody, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		fmt.Println("body读取失败：", err)
+		log.Println("body读取失败：", err)
 		return
 	}
 
 	price := priceResp{}
 	if err = json.Unmarshal(resBody, &price); err != nil {
-		fmt.Println("body转换为结构体失败", err)
+		log.Println("body转换为结构体失败", err)
 		return
 	}
 
@@ -118,7 +119,7 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 	// 发送HTTP请求
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println("请求失败：", err)
+		log.Println("请求失败：", err)
 		return nil
 	}
 	defer resp.Body.Close()
@@ -155,20 +156,20 @@ func (t *Crypto) MemePrice(query string, chain string) *Pair {
 
 	r, err := http.Get(memeUrl + query)
 	if err != nil {
-		fmt.Println("请求失败：", err)
+		log.Println("请求失败：", err)
 		return nil
 	}
 
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		fmt.Println("body读取失败：", err)
+		log.Println("body读取失败：", err)
 		return nil
 	}
 
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
-		fmt.Println("json转换失败: ", err)
+		log.Println("json转换失败: ", err)
 		return nil
 	}
 
@@ -193,7 +194,7 @@ func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
 
 	r, err := http.Get(url)
 	if err != nil {
-		fmt.Println("请求失败：", err)
+		log.Println("请求失败：", err)
 		return nil
 	}
 
@@ -202,13 +203,13 @@ func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		fmt.Println("Body读取失败", err)
+		log.Println("Body读取失败", err)
 		return nil
 	}
 
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
-		fmt.Println("json转换失败", err)
+		log.Println("json转换失败", err)
 		return nil
 	}
 
@@ -231,21 +232,21 @@ func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
 func (t *Crypto) HoneypotCheck(addr string) string {
 	r, err := http.Get(honeypotUrl + addr)
 	if err != nil {
-		fmt.Println("honeypotUrl请求失败", err)
+		log.Println("honeypotUrl请求失败", err)
 		return "Do your own research"
 	}
 
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		fmt.Println("body读取失败", err)
+		log.Println("body读取失败", err)
 		return "Do your own research"
 	}
 
 	res := new(HoneypotResp)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
-		fmt.Println("json序列化失败", err)
+		log.Println("json序列化失败", err)
 		return "Do your own research"
 	}
 
@@ -260,21 +261,21 @@ func (t *Crypto) HoneypotCheck(addr string) string {
 func (t *Crypto) WhetherHoneypot(addr string) bool {
 	r, err := http.Get(honeypotUrl + addr)
 	if err != nil {
-		fmt.Println("honeypotUrl请求失败", err)
+		log.Println("honeypotUrl请求失败", err)
 		return false
 	}
 
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		fmt.Println("body读取失败", err)
+		log.Println("body读取失败", err)
 		return false
 	}
 
 	res := new(HoneypotResp)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
-		fmt.Println("json序列化失败", err)
+		log.Println("json序列化失败", err)
 		return false
 	}
 
@@ -291,7 +292,7 @@ func (t *Crypto) DexTools(pair, chain string) *Datum {
 
 	r, err := http.Get(url)
 	if err != nil {
-		fmt.Println("请求失败：", err)
+		log.Println("请求失败：", err)
 		return nil
 	}
 
@@ -300,13 +301,13 @@ func (t *Crypto) DexTools(pair, chain string) *Datum {
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		fmt.Println("Body读取失败", err)
+		log.Println("Body读取失败", err)
 		return nil
 	}
 
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
-		fmt.Println("json转换失败", err)
+		log.Println("json转换失败", err)
 		return nil
 	}
 	
