@@ -52,10 +52,6 @@ func (t *PollingKey) GetKey() string {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	if t.idx == len(t.Keys) - 1 {
-		t.idx = 0
-	} else {
-		t.idx++
-	}
-	return t.Keys[t.idx]
+	t.idx++
+	return t.Keys[t.idx % (len(t.Keys) - 1)]
 }

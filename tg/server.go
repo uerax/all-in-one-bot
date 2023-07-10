@@ -29,7 +29,6 @@ func Server() {
 	// Start listening for updates
 	updates := api.bot.GetUpdatesChan(u)
 	notice("System Notification: Aio 服务已启动")
-	defer notice("System Notification: Aio 服务已关闭")
 	for update := range updates {
 		if update.Message == nil { // ignore non-Message updates
 			continue
