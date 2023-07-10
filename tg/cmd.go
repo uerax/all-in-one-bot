@@ -457,3 +457,7 @@ func allList() {
 func tips(id int64, msg string) {
 	go api.DeleteAfterSendMarkdown(id, msg, false)
 }
+
+func notice(msg string) {
+	go api.SendMessage(msg)
+}

@@ -828,15 +828,12 @@ func (t *Track) WalletTrackingV2(addr string) {
 	}
 
 	// 首次加入探测忽略
-	t.trackingLock.Lock()
 	if t.Newest[addr] == "" {
 		t.Newest[addr] = scan.Result[0].Hash
-		t.trackingLock.Unlock()
 		return
 	}
 
 	t.Newest[addr] = scan.Result[0].Hash
-	t.trackingLock.Unlock()
 
 	wg := sync.WaitGroup{}
 	sb := strings.Builder{}
