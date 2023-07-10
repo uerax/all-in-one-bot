@@ -932,7 +932,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	log.Println("查询总耗时: ", time.Since(now))
 
-	t.C <- "`" + addr + "` *监控:*" + sb.String()
+	t.C <- "`" + addr + "` *监控* [TX](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 }
 
 func isNull(addr string) bool {
