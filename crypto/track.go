@@ -402,6 +402,8 @@ func (t *Track) getBuyEthByHash(hash string) float64 {
 	}
 
 	if scan.Status != "1" || len(scan.Result) == 0 {
+		fmt.Printf(url, hash, t.Keys.GetKey())
+		log.Printf("\n%+v\n", scan)
 		return 0.0
 	}
 
@@ -457,6 +459,8 @@ func (t *Track) getSellEthByHash(hash, addr string) float64 {
 	}
 
 	if scan.Status != "1" || len(scan.Result) == 0 {
+		fmt.Printf(url, hash, t.Keys.GetKey())
+		log.Printf("\n%+v\n", scan)
 		return 0.0
 	}
 
