@@ -1,10 +1,10 @@
 ---
 name: Feature request
 about: Suggest an idea for this project
-title: "[FEATURE]"
+title: "[feature] "
 labels: enhancement
 assignees: uerax
-
+projects: all-in-one-bot
 ---
 
 **Is your feature request related to a problem? Please describe.**
