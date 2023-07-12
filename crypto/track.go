@@ -802,6 +802,12 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 
 func (t *Track) WalletTrackingV2(addr string) {
 	now := time.Now()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered from panic:", r)
+			log.Println("Panic Addr:", addr)
+        }
+	}()
 
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=1&sort=desc&address=%s&apikey=%s"
@@ -834,7 +840,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	// 首次加入探测忽略
 	if t.Newest[addr] == "" {
 		t.Newest[addr] = scan.Result[0].Hash
-		return
+		// return
 	}
 
 	t.Newest[addr] = scan.Result[0].Hash
@@ -847,6 +853,11 @@ func (t *Track) WalletTrackingV2(addr string) {
 	if strings.EqualFold(record.TokenSymbol, "WETH") || isNull(record.From) || isNull(record.To) {
 		return
 	}
+
+	if strings.EqualFold(record.From, addr) {
+		log.Println("买单不做提示") 
+	}
+
 	balance := 0.0
 	isHoneypot := ""
 	detail := ""
@@ -873,9 +884,21 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	getDetail := func() {
 		defer wg.Done()
+		defer func() {
+            if r := recover(); r != nil {
+                log.Println("Recovered from panic:", r)
+				log.Println("Panic Addr:", addr)
+            }
+        }()
+
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("   |   *Price: $%s (%d)*\n\n*Pool: $%0.f  |  CreationTime: %s*\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*\n", pair.PriceUsd, zeroCal(pair.PriceUsd), pair.Lp.Usd, pair.CreateTime, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
+			detail += fmt.Sprintf("   |   *Price: $%s (%d)*", pair.PriceUsd, zeroCal(pair.PriceUsd))
+			if pair.Lp != nil {
+				detail += fmt.Sprintf("\n\n*Pool: $%0.5f*", pair.Lp.Usd)
+			}
+			detail += fmt.Sprintf("\n*CreationTime: %s*", pair.CreateTime)
+			detail += fmt.Sprintf("\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*", pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 			log.Println("getDetail耗时: ", time.Since(now))
 		}
 	}
@@ -884,7 +907,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorPercent, ck.CreatorBalance)
+			check += fmt.Sprintf("\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorPercent, ck.CreatorBalance)
 		}
 		log.Println("getCheck耗时: ", time.Since(now))
 	}
@@ -901,11 +924,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	sb.WriteString("\n")
 	sb.WriteString(isHoneypot)
-	if strings.EqualFold(record.From, addr) {
-		sb.WriteString("*SELL: *")
-	} else {
-		sb.WriteString("*BUY: *")
-	}
+	sb.WriteString("*BUY: *")
 	sb.WriteString("[")
 	sb.WriteString(record.TokenSymbol)
 	sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
