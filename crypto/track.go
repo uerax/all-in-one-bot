@@ -840,7 +840,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	// 首次加入探测忽略
 	if t.Newest[addr] == "" {
 		t.Newest[addr] = scan.Result[0].Hash
-		// return
+		return
 	}
 
 	t.Newest[addr] = scan.Result[0].Hash
