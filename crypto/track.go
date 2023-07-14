@@ -756,6 +756,12 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 						analyze[address].Buy += cnt
 						analyze[address].Pay += val
 					}
+					if analyze[address].Time == "" {
+						ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
+						if err == nil {
+							analyze[address].Time = time.Unix(ts, 0).Format("01-02 15:04:05")
+						}
+					}
 				}
 			}
 		}
@@ -776,12 +782,11 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 				msg = "*------裁剪后的另外部分------*"
 			}
 			if !(v.Pay == 0.0 || v.Profit < 0.0) {
-				msg += fmt.Sprintf("\n`%s`\n*B:* %0.3f | *S:* %0.3f | *C:* %0.3f | *P:* %0.3f ETH", k, v.Buy, v.Sell, v.Pay, v.Profit)
+				msg += fmt.Sprintf("\n`%s`*: %s*\n*B:* %0.3f | *S:* %0.3f | *C:* %0.3f | *P:* %0.3f ETH", k, v.Time, v.Buy, v.Sell, v.Pay, v.Profit)
 			}
 		}
 		t.C <- msg
 	}
-
 }
 
 func (t *Track) TransferList(addr, token string) []TokenTx {
@@ -806,7 +811,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		if r := recover(); r != nil {
 			log.Println("Recovered from panic:", r)
 			log.Println("Panic Addr:", addr)
-        }
+		}
 	}()
 
 	addr = strings.ToLower(addr)
@@ -855,7 +860,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	}
 
 	if strings.EqualFold(record.From, addr) {
-		log.Println("买单不做提示") 
+		log.Println("买单不做提示")
 	}
 
 	balance := 0.0
@@ -885,11 +890,11 @@ func (t *Track) WalletTrackingV2(addr string) {
 	getDetail := func() {
 		defer wg.Done()
 		defer func() {
-            if r := recover(); r != nil {
-                log.Println("Recovered from panic:", r)
+			if r := recover(); r != nil {
+				log.Println("Recovered from panic:", r)
 				log.Println("Panic Addr:", addr)
-            }
-        }()
+			}
+		}()
 
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
@@ -1005,5 +1010,83 @@ func (t *Track) WalletLastTransaction() {
 	}
 
 	t.C <- sb.String()
+
+}
+
+func (t *Track) BotAddrFinder(token, offset, page string) {
+	if t.Keys.IsNull() {
+		t.C <- "未读取到etherscan的apikey无法启动分析"
+		return
+	}
+
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=%s&offset=%s&sort=asc&contractaddress=%s&apikey=%s"
+	scan := new(TokenTxResp)
+	err := common.HttpGet(fmt.Sprintf(url, page, offset, token, t.Keys.GetKey()), &scan)
+	if err != nil {
+		log.Println("请求失败: ", err)
+		return
+	}
+
+	if scan.Status != "1" {
+		return
+	}
+
+	recorded := map[string]struct{}{
+		"0x0000000000000000000000000000000000000000": {},
+		"0x000000000000000000000000000000000000dead": {},
+		// uniswap router
+		"0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": {},
+		"0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": {},
+	}
+
+	sb := strings.Builder{}
+
+	handle := func(address string) {
+		address = strings.ToLower(address)
+		if _, ok := recorded[address]; !ok {
+			recorded[address] = struct{}{}
+			transferListUrl := "https://api.etherscan.io/api?module=account&action=tokentx&address=%s&apikey=%s&sort=desc"
+			tx := new(TokenTxResp)
+			err := common.HttpGet(fmt.Sprintf(transferListUrl, address, t.Keys.GetKey()), &tx)
+
+			if err != nil {
+				log.Println("请求失败: ", err)
+				return
+			}
+			
+			if tx.Status != "1" {
+				return
+			}
+
+			if len(tx.Result) < 1 {
+				return
+			}
+
+			now := time.Now()
+			index := 0
+			for _, v := range tx.Result {
+				ts, err := strconv.ParseInt(v.TimeStamp, 10, 64)
+				if err == nil {
+					if now.After(time.Unix(ts, 0).Add(3*24*time.Hour)) {
+						break
+					}
+					index++
+				}
+			}
+
+			if index > 0 {
+				sb.WriteString(fmt.Sprintf("`%s`*:* %d\n", address, index))
+			}
+
+			log.Println(index)
+
+		}
+	}
+
+	for _, v := range scan.Result {
+		handle(v.To)
+	}
+
+	t.C <- fmt.Sprintf("*合约地址:* `%s`\n *------------三日内交易数分析完毕:------------*\n", token) + sb.String()
 
 }
