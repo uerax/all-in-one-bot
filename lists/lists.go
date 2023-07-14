@@ -36,9 +36,9 @@ func NewLists() *Lists {
 func (t *Lists) Crypto() {
 	b := strings.Builder{}
 	b.WriteString("加密货币相关命令:")
-	for _, v := range t.crypto {
+	for i := len(t.crypto) - 1; i >= 0 ; i-- {
 		b.WriteString("\n`/")
-		b.WriteString(strings.ReplaceAll(v.(string), " -", "` -"))
+		b.WriteString(strings.ReplaceAll(t.crypto[i].(string), " -", "` -"))
 	}
 	t.C <- b.String()
 }
@@ -46,27 +46,27 @@ func (t *Lists) Crypto() {
 func (t *Lists) Image() {
 	b := strings.Builder{}
 	b.WriteString("图片处理相关命令:")
-	for _, v := range t.image {
+	for i := len(t.image) - 1; i >= 0 ; i-- {
 		b.WriteString("\n`/")
-		b.WriteString(strings.ReplaceAll(v.(string), " -", "` -"))
+		b.WriteString(strings.ReplaceAll(t.image[i].(string), " -", "` -"))
 	}
 	t.C <- b.String()
 }
 func (t *Lists) List() {
 	b := strings.Builder{}
 	b.WriteString("命令列表相关命令:")
-	for _, v := range t.list {
+	for i := len(t.list) - 1; i >= 0 ; i-- {
 		b.WriteString("\n`/")
-		b.WriteString(strings.ReplaceAll(v.(string), " -", "` -"))
+		b.WriteString(strings.ReplaceAll(t.list[i].(string), " -", "` -"))
 	}
 	t.C <- b.String()
 }
 func (t *Lists) Utils() {
 	b := strings.Builder{}
 	b.WriteString("工具类相关命令:")
-	for _, v := range t.utils {
+	for i := len(t.utils) - 1; i >= 0 ; i-- {
 		b.WriteString("\n`/")
-		b.WriteString(strings.ReplaceAll(v.(string), " -", "` -"))
+		b.WriteString(strings.ReplaceAll(t.utils[i].(string), " -", "` -"))
 	}
 	t.C <- b.String()
 }
@@ -74,9 +74,9 @@ func (t *Lists) Utils() {
 func (t *Lists) Video() {
 	b := strings.Builder{}
 	b.WriteString("视频相关命令:")
-	for _, v := range t.video {
+	for i := len(t.video) - 1; i >= 0 ; i-- {
 		b.WriteString("\n`/")
-		b.WriteString(strings.ReplaceAll(v.(string), " -", "` -"))
+		b.WriteString(strings.ReplaceAll(t.video[i].(string), " -", "` -"))
 	}
 	t.C <- b.String()
 }
