@@ -42,6 +42,8 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Track
+			case "bot_addr_finder":
+				botAddrFinder(update.Message.Text)
 			case "analyze_addr_token_profit":
 				analyzeAddrTokenProfit(update.Message.Text)
 			case "smart_addr_finder":
@@ -141,6 +143,9 @@ func Server() {
 
 		switch update.Message.Command() {
 		// Track
+		case "bot_addr_finder":
+			Cmd = "bot_addr_finder"
+			tips(update.Message.Chat.ID, "分析高涨幅度币的早期买入地址 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1`")
 		case "tracking_lastest_tx":
 			trackingLastestTx()
 		case "analyze_addr_token_profit":

@@ -41,6 +41,21 @@ func smartAddrFinder(args string) {
 	go api.DeleteAfterSendMessage("分析一般需要1-2分钟, 数量越多时间越长, 请耐心等待")
 }
 
+func botAddrFinder(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) == 1 {
+		arg = append(arg, "50")
+		arg = append(arg, "1")
+	}
+
+	if len(arg) != 3 {
+		log.Printf("smartAddrFinder 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+	go api.Track.BotAddrFinder(arg[0], arg[1], arg[2])
+}
+
 func listWalletTracking() {
 	go api.Track.TrackingList(false)
 }
