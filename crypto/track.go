@@ -127,7 +127,7 @@ func (t *Track) clearInactiveAddr() {
 				cl()
 				delete(t.Newest, addr)
 				delete(t.Task, addr)
-				t.C <- fmt.Sprintf("`%s` 超过3天没有进行交易, 已停止追踪", addr)
+				t.C <- fmt.Sprintf("`%s` 超过3天没有进行交易, 已停止追踪。[详情](https://etherscan.io/address/%s#tokentxns)", addr, addr)
 			}
 		}
 	}
