@@ -17,8 +17,8 @@ func InSlice(slice, val any) bool {
 	}
 	for i := 0; i < v.Len(); i++ {
 		if reflect.DeepEqual(val, v.Index(i).Interface()) {
-            return true
-        }
+			return true
+		}
 	}
 	return false
 }
@@ -82,7 +82,7 @@ func TimeIntervalSecond(start string, end string) int {
 
 func ImmediateTicker(sec int, do func()) {
 	do()
-	t := time.NewTicker(time.Duration(sec)*time.Second)
+	t := time.NewTicker(time.Duration(sec) * time.Second)
 	defer t.Stop()
 
 	for range t.C {
@@ -91,15 +91,15 @@ func ImmediateTicker(sec int, do func()) {
 }
 
 func HttpGet(url string, v any) error {
-		r, err := http.Get(url)
-		if err != nil {
-			return err
-		}
-		defer r.Body.Close()
-		b, err := io.ReadAll(r.Body)
-		if err != nil {
-			return err
-		}
-		return json.Unmarshal(b, &v)
+	r, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, &v)
 
 }
