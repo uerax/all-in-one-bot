@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -867,6 +868,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	isHoneypot := ""
 	detail := ""
 	check := ""
+	link := ""
 
 	getBalance := func() {
 		defer wg.Done()
@@ -879,13 +881,13 @@ func (t *Track) WalletTrackingV2(addr string) {
 	}
 
 	// -1s
-	// getHoneypot := func() {
-	// 	defer wg.Done()
-	// 	if t.api.WhetherHoneypot(record.ContractAddress) {
-	// 		isHoneypot += "*[SCAM]*"
-	// 	}
-	// 	log.Println("getHoneypot耗时: ", time.Since(now))
-	// }
+	getHoneypot := func() {
+		defer wg.Done()
+		if t.api.WhetherHoneypot(record.ContractAddress) {
+			isHoneypot += "*[SCAM]*"
+		}
+		log.Println("getHoneypot耗时: ", time.Since(now))
+	}
 
 	getDetail := func() {
 		defer wg.Done()
@@ -917,13 +919,29 @@ func (t *Track) WalletTrackingV2(addr string) {
 		log.Println("getCheck耗时: ", time.Since(now))
 	}
 
-	wg.Add(3)
+	getLink := func ()  {
+		defer wg.Done()
+		links := getLinks(t.getSourceCode(record.ContractAddress))
+		if v, ok := links["Website"]; ok {
+			link += fmt.Sprintf("[%s](%s)", " WEB ", v)
+		}
+		if v, ok := links["Telegram"]; ok {
+			link += fmt.Sprintf("[%s](%s)", " Telegram ", v)
+		}
+		if v, ok := links["Twitter"]; ok {
+			link += fmt.Sprintf("[%s](%s)", " Twitter ", v)
+		}
+		log.Println("getLink耗时: ", time.Since(now))
+	}
+
+	wg.Add(5)
 
 	// 并发减少等待时间
 	go getBalance()
-	//go getHoneypot()
+	go getHoneypot()
 	go getDetail()
 	go getCheck()
+	go getLink()
 
 	wg.Wait()
 
@@ -951,8 +969,13 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString(fmt.Sprintf("%f", balance))
 	sb.WriteString(" ETH*")
 	sb.WriteString(detail)
+	if link != "" {
+		sb.WriteString("\n\n")
+		sb.WriteString(link)
+	}
 	sb.WriteString("\n")
 	sb.WriteString(check)
+
 
 	log.Println("查询总耗时: ", time.Since(now))
 
@@ -1089,4 +1112,44 @@ func (t *Track) BotAddrFinder(token, offset, page string) {
 
 	t.C <- fmt.Sprintf("*合约地址:* `%s`\n *------------三日内交易数分析完毕:------------*\n", token) + sb.String()
 
+}
+
+func (t *Track) getSourceCode(addr string) string {
+	if t.Keys.IsNull() {
+		return ""
+	}
+
+	url := "https://api.etherscan.io/api?module=contract&action=getsourcecode&address=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, addr, t.Keys.GetKey()))
+	if err != nil {
+		return ""
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		return ""
+	}
+	
+	return string(b)
+}
+
+func getLinks(code string) map[string]string {
+	// 定义正则表达式
+    re := regexp.MustCompile(`https://[\w\./]+`)
+
+    // 在字符串中查找匹配项
+    matchs := re.FindAllString(code, -1)
+
+	link := make(map[string]string)
+
+	for _, v := range matchs {
+		if strings.Contains(strings.ToLower(v), "t.me") {
+			link["Telegram"] = v
+		} else if strings.Contains(strings.ToLower(v), "twitter") {
+			link["Twitter"] = v
+		} else {
+			link["Website"] = v
+		}
+	}
+	return link
 }
