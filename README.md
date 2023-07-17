@@ -2,6 +2,12 @@
 
 __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图, Youtube视频/音频下载和剪切, Telegram贴纸Sticker下载, Telegram的gif图片下载, Bilibili视频下载, Douyin视频下载, 土狗币查询, 通用工具箱(base64,json格式化,时间戳转换)__
 
+![image](https://user-images.githubusercontent.com/44748971/254056978-b03cfaa2-9307-4c9b-bf8c-0d65e13c4b26.png)
+
+![image](https://user-images.githubusercontent.com/44748971/254057566-e2e5f89c-d095-4e54-89c1-af9471d85398.png)
+
+![image](https://user-images.githubusercontent.com/44748971/254058491-1393c9fc-71c7-430d-8bce-dcabaed7b288.png)
+
 ## 二. Usage
 
 `安装`
