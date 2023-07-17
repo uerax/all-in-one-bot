@@ -914,7 +914,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n*Creator Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorPercent, ck.CreatorBalance)
+			check += fmt.Sprintf("\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s   |   Balance: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorAddress , ck.CreatorPercent, ck.CreatorBalance)
 		}
 		log.Println("getCheck耗时: ", time.Since(now))
 	}

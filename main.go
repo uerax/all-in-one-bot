@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	version = "aio version: aio/1.1.1"
+	version = "aio version: aio/1.4.1"
 )
 
 func main() {
