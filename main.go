@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/uerax/all-in-one-bot/config"
@@ -10,7 +12,7 @@ import (
 )
 
 var (
-	version = "aio version: aio/1.4.1"
+	version = "aio version: aio/1.4.2"
 )
 
 func main() {
@@ -27,6 +29,9 @@ func main() {
 		if err := recover(); err != nil {
 			log.Printf("Runtime panic caught: %v\n", err)
 		}
+	}()
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
 	}()
 	config.Load(*path)
 	tg.Server()
