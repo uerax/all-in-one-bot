@@ -1137,7 +1137,7 @@ func (t *Track) getSourceCode(addr string) string {
 
 func getLinks(code string) map[string]string {
 	// 定义正则表达式
-    re := regexp.MustCompile(`https://[\w\./]+`)
+    re := regexp.MustCompile(`(https|http)://[\w\./@#-\[\]]+`)
 
     // 在字符串中查找匹配项
     matchs := re.FindAllString(code, -1)
