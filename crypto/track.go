@@ -1149,6 +1149,8 @@ func getLinks(code string) map[string]string {
 			link["Telegram"] = v
 		} else if strings.Contains(strings.ToLower(v), "twitter") {
 			link["Twitter"] = v
+		} else if strings.Contains(strings.ToLower(v), "zeppelin.solutions") {
+		} else if strings.Contains(strings.ToLower(v), "github.com/ethereum") {	
 		} else {
 			link["Website"] = v
 		}
