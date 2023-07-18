@@ -1145,15 +1145,16 @@ func getLinks(code string) map[string]string {
 	link := make(map[string]string)
 
 	for _, v := range matchs {
-		if strings.Contains(strings.ToLower(v), "t.me") {
+		tmp := strings.ToLower(v)
+		if strings.Contains(tmp, "t.me") {
 			link["Telegram"] = v
-		} else if strings.Contains(strings.ToLower(v), "twitter") {
+		} else if strings.Contains(tmp, "twitter") {
 			link["Twitter"] = v
-		} else if strings.Contains(strings.ToLower(v), "zeppelin") {
-		} else if strings.Contains(strings.ToLower(v), "ethereum") {	
-		} else if strings.Contains(strings.ToLower(v), "openzeppelin") {
-		} else if strings.Contains(strings.ToLower(v), "hardhat.org") {
-		} else if strings.Contains(strings.ToLower(v), "firstbloodio") {
+		} else if strings.Contains(tmp, "zeppelin") {
+		} else if strings.Contains(tmp, "ethereum") {	
+		} else if strings.Contains(tmp, "openzeppelin") {
+		} else if strings.Contains(tmp, "hardhat.org") {
+		} else if strings.Contains(tmp, "firstbloodio") {
 		} else {
 			link["Website"] = v
 		}
