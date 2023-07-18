@@ -861,7 +861,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	}
 
 	if strings.EqualFold(record.From, addr) {
-		log.Println("买单不做提示")
+		log.Println("卖单不做提示")
 	}
 
 	balance := 0.0
@@ -947,7 +947,9 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	sb.WriteString("\n")
 	sb.WriteString(isHoneypot)
-	sb.WriteString("*BUY: *")
+	sb.WriteString("*")
+	sb.WriteString(record.TokenName)
+	sb.WriteString(": *")
 	sb.WriteString("[")
 	sb.WriteString(record.TokenSymbol)
 	sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
@@ -979,7 +981,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	log.Println("查询总耗时: ", time.Since(now))
 
-	t.C <- "`" + addr + "` *监控* [TX](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+	t.C <- "`" + addr + "` *买入* [TX](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 }
 
 func isNull(addr string) bool {
