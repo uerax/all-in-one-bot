@@ -923,13 +923,13 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		links := getLinks(t.getSourceCode(record.ContractAddress))
 		if v, ok := links["Website"]; ok {
-			link += fmt.Sprintf("[%s](%s)    ", "Web", v)
+			link += fmt.Sprintf("[%s](%s)   ", "Web", v)
 		}
 		if v, ok := links["Telegram"]; ok {
-			link += fmt.Sprintf("[%s](%s)    ", "Telegram", v)
+			link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
 		}
 		if v, ok := links["Twitter"]; ok {
-			link += fmt.Sprintf("[%s](%s)    ", "Twitter", v)
+			link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
 		}
 		log.Println("getLink耗时: ", time.Since(now))
 	}
@@ -981,7 +981,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	log.Println("查询总耗时: ", time.Since(now))
 
-	t.C <- "`" + addr + "` *买入* [TX](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+	t.C <- "`" + addr + "` [监控买入](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 }
 
 func isNull(addr string) bool {
