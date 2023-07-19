@@ -74,13 +74,13 @@ func (p *Probe) MemePrice(query string, chain string) {
 					links := getLinks(string(b))
 					link := "*Link:* "
 					if v, ok := links["Website"]; ok {
-						link += fmt.Sprintf("[%s](%s)   ", "Web", v)
-					}
-					if v, ok := links["Telegram"]; ok {
-						link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
+						link += fmt.Sprintf("[%s](%s)   ", "Website", v)
 					}
 					if v, ok := links["Twitter"]; ok {
 						link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
+					}
+					if v, ok := links["Telegram"]; ok {
+						link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
 					}
 					s += link + "\n"
 				}
