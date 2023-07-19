@@ -10,13 +10,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/uerax/goconf"
 )
 
 func (p *Probe) MemePrice(query string, chain string) {
-
+	now := time.Now()
 	pair := new(Pair)
 	if chain == "" {
 		chain = "eth"
@@ -38,40 +39,57 @@ func (p *Probe) MemePrice(query string, chain string) {
 	}
 
 	s := fmt.Sprintf("*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*    %0.2f%%    $%0.2f    %d/%d\n*1H:*    %0.2f%%    $%0.2f    %d/%d\n*6H:*    %0.2f%%    $%0.2f    %d/%d\n*1D:*    %0.2f%%    $%0.2f    %d/%d\n\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
-	isHoneypot := p.api.HoneypotCheck(query)
-	check := p.api.MemeCheck(query, chain)
-	if check != nil {
-		if strings.Contains(check.TotalSupply, ".") {
-			check.TotalSupply = check.TotalSupply[:strings.Index(check.TotalSupply, ".")]
+	isHoneypot := ""
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	check := new(MemeChecker)
+	go func ()  {
+		defer wg.Done()
+		isHoneypot = p.api.HoneypotCheck(query)
+		log.Println("GetPrice Honeypot耗时: ",time.Since(now))
+	}()
+	go func() {
+		defer wg.Done()
+		check = p.api.MemeCheck(query, chain)
+		if check != nil {
+			if strings.Contains(check.TotalSupply, ".") {
+				check.TotalSupply = check.TotalSupply[:strings.Index(check.TotalSupply, ".")]
+			}
+			if strings.Contains(check.LpTotalSupply, ".") {
+				check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
+			}
+			s += fmt.Sprintf("*Honeypot:* %s\n*Buy Tax:* %s | *Sell Tax:* %s\n*Total Supply:* %s\n*Total LP:* %0.2f\n*Holder:* %s\n*Locked LP:* %0.5f\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent:* %s | *Balance:* %s\n", isHoneypot, check.BuyTax, check.SellTax, check.TotalSupply, pair.Lp.Usd, check.HolderCount, check.LpLockedTotal, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent, check.CreatorBalance)
+			log.Println("GetPrice MemeCheck耗时: ",time.Since(now))
 		}
-		if strings.Contains(check.LpTotalSupply, ".") {
-			check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
-		}
-		s += fmt.Sprintf("*Honeypot:* %s\n*Buy Tax:* %s | *Sell Tax:* %s\n*Total Supply:* %s\n*Total LP:* %0.2f\n*Holder:* %s\n*Locked LP:* %0.5f\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent:* %s | *Balance:* %s\n",isHoneypot, check.BuyTax, check.SellTax, check.TotalSupply, pair.Lp.Usd, check.HolderCount,check.LpLockedTotal, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent, check.CreatorBalance)
-	}
-
-	if !p.Keys.IsNull() && chain == "eth" {
-		url := "https://api.etherscan.io/api?module=contract&action=getsourcecode&address=%s&apikey=%s"
-		r, err := http.Get(fmt.Sprintf(url, query, p.Keys.GetKey()))
-		if err == nil {
-			defer r.Body.Close()
-			b, err := io.ReadAll(r.Body)
+	}()
+	go func() {
+		defer wg.Done()
+		if !p.Keys.IsNull() && chain == "eth" {
+			url := "https://api.etherscan.io/api?module=contract&action=getsourcecode&address=%s&apikey=%s"
+			r, err := http.Get(fmt.Sprintf(url, query, p.Keys.GetKey()))
 			if err == nil {
-				links := getLinks(string(b))
-				link := "*Link:* "
-				if v, ok := links["Website"]; ok {
-					link += fmt.Sprintf("[%s](%s)   ", "Web", v)
+				defer r.Body.Close()
+				b, err := io.ReadAll(r.Body)
+				if err == nil {
+					links := getLinks(string(b))
+					link := "*Link:* "
+					if v, ok := links["Website"]; ok {
+						link += fmt.Sprintf("[%s](%s)   ", "Web", v)
+					}
+					if v, ok := links["Telegram"]; ok {
+						link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
+					}
+					if v, ok := links["Twitter"]; ok {
+						link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
+					}
+					s += link + "\n"
 				}
-				if v, ok := links["Telegram"]; ok {
-					link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
-				}
-				if v, ok := links["Twitter"]; ok {
-					link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
-				}
-				s += link + "\n"
 			}
 		}
-	}
+		log.Println("GetPrice getsourcecode耗时: ",time.Since(now))
+	}()
+
+	wg.Wait()
 
 	chainScan := ""
 	honeypot := ""
@@ -313,7 +331,7 @@ func (t *Probe) SmartAddr(addr string, offset string) {
 				msg.WriteString("): `")
 				msg.WriteString(v.ContractAddress)
 				msg.WriteString("`")
-				
+
 			}
 		}
 	}
