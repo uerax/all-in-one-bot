@@ -50,6 +50,29 @@ func (p *Probe) MemePrice(query string, chain string) {
 		s += fmt.Sprintf("*Honeypot:* %s\n*Buy Tax:* %s | *Sell Tax:* %s\n*Total Supply:* %s\n*Total LP:* %0.2f\n*Holder:* %s\n*Locked LP:* %0.5f\n*Owner:* `%s`\n*Creator:* `%s`\n*Percent:* %s | *Balance:* %s\n",isHoneypot, check.BuyTax, check.SellTax, check.TotalSupply, pair.Lp.Usd, check.HolderCount,check.LpLockedTotal, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent, check.CreatorBalance)
 	}
 
+	if !p.Keys.IsNull() && chain == "eth" {
+		url := "https://api.etherscan.io/api?module=contract&action=getsourcecode&address=%s&apikey=%s"
+		r, err := http.Get(fmt.Sprintf(url, query, p.Keys.GetKey()))
+		if err == nil {
+			defer r.Body.Close()
+			b, err := io.ReadAll(r.Body)
+			if err == nil {
+				links := getLinks(string(b))
+				link := "*Link:* "
+				if v, ok := links["Website"]; ok {
+					link += fmt.Sprintf("[%s](%s)   ", "Web", v)
+				}
+				if v, ok := links["Telegram"]; ok {
+					link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
+				}
+				if v, ok := links["Twitter"]; ok {
+					link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
+				}
+				s += link + "\n"
+			}
+		}
+	}
+
 	chainScan := ""
 	honeypot := ""
 	moonarch := ""
