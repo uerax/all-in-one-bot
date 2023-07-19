@@ -904,7 +904,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 			if pair.Lp != nil {
 				detail += fmt.Sprintf("\n\n*Pool: $%0.5f*", pair.Lp.Usd)
 			}
-			detail += fmt.Sprintf("\n*CreationTime: %s*", pair.CreateTime)
+			//detail += fmt.Sprintf("\n*CreationTime: %s*", pair.CreateTime)
 			detail += fmt.Sprintf("\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*", pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
 			log.Println("getDetail耗时: ", time.Since(now))
 		}
@@ -923,13 +923,13 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		links := getLinks(t.getSourceCode(record.ContractAddress))
 		if v, ok := links["Website"]; ok {
-			link += fmt.Sprintf("[%s](%s)   ", "Web", v)
-		}
-		if v, ok := links["Telegram"]; ok {
-			link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
+			link += fmt.Sprintf("[%s](%s)   ", "Website", v)
 		}
 		if v, ok := links["Twitter"]; ok {
 			link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
+		}
+		if v, ok := links["Telegram"]; ok {
+			link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
 		}
 		log.Println("getLink耗时: ", time.Since(now))
 	}
