@@ -1190,6 +1190,7 @@ func getLinks(code string) map[string]string {
 		} else if strings.Contains(tmp, "hardhat.org") {
 		} else if strings.Contains(tmp, "firstbloodio") {
 		} else if strings.Contains(tmp, "consensys") {
+		} else if strings.Contains(tmp, "wikipedia") {
 		} else if strings.Contains(tmp, "readthedocs") {
 		} else {
 			link["Website"] = v
