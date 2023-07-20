@@ -165,7 +165,7 @@ func Server() {
 			tips(update.Message.Chat.ID, "分析钱包近n条交易的利润 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e 30`")
 		case "wallet_tracking":
 			Cmd = "wallet_tracking"
-			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e`")
+			tips(update.Message.Chat.ID, "追踪聪明钱包买卖动态 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e bot`")
 		case "stop_wallet_tracking":
 			Cmd = "stop_wallet_tracking"
 			stopWalletTrackingTip("停止追踪聪明钱包买卖动态 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e`")

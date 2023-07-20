@@ -83,7 +83,11 @@ func walletAnalyze(args string) {
 }
 
 func walletTracking(args string) {
-	go api.Track.CronTracking(args)
+	arg := strings.Split(args, " ")
+	if len(arg) == 1 {
+		arg = append(arg, "bot")
+	}
+	go api.Track.CronTracking(arg[0], arg[1])
 }
 
 func stopWalletTracking(args string) {

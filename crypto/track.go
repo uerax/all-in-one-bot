@@ -144,7 +144,7 @@ func (t *Track) clearInactiveAddr() {
 	}
 }
 
-func (t *Track) CronTracking(addr string) {
+func (t *Track) CronTracking(addr, remark string) {
 	if t.Keys.IsNull() {
 		log.Println("未读取到etherscan的apikey无法启动监控")
 		t.C <- "未读取到etherscan的apikey无法启动监控"
@@ -154,7 +154,9 @@ func (t *Track) CronTracking(addr string) {
 	if _, ok := t.Task[addr]; !ok {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
-		t.Newest[addr] = new(newest)
+		t.Newest[addr] = &newest{
+			Remark: remark,
+		}
 		go t.Tracking(addr, ctx)
 		log.Println("开始追踪: ", addr)
 		t.C <- "*开始追踪* " + addr
@@ -190,6 +192,10 @@ func (t *Track) TrackingList(tip bool) string {
 		sb.WriteString("\n`")
 		sb.WriteString(k)
 		sb.WriteString("`")
+		sb.WriteString("*: ")
+		sb.WriteString(t.Newest[k].Remark)
+		sb.WriteString("*")
+
 	}
 	if !tip {
 		t.C <- "*当前正在追踪的地址有:*" + sb.String()
