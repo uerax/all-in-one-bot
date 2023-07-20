@@ -133,10 +133,10 @@ func (t *Track) clearInactiveAddr() {
 		ts, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
 		if err == nil {
 			if time.Unix(ts, 0).Add(3 * 24 * time.Hour).Before(time.Now()) {
-				cl()
-				delete(t.Newest, addr)
-				delete(t.Task, addr)
-				t.C <- fmt.Sprintf("`%s` 超过3天没有进行交易, 已停止追踪。[详情](https://etherscan.io/address/%s#tokentxns)", addr, addr)
+				// cl()
+				// delete(t.Newest, addr)
+				// delete(t.Task, addr)
+				t.C <- fmt.Sprintf("`%s` 超过3天没有进行交易 [详情](https://etherscan.io/address/%s#tokentxns)", addr, addr)
 			}
 		}
 	}
