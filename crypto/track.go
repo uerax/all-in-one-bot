@@ -30,8 +30,9 @@ type Track struct {
 }
 
 type newest struct {
-	Hash string `json:"hash"`
+	Hash   string `json:"hash"`
 	Remark string `json:"remark"`
+	Latest string `json:"latest"`
 }
 
 type txResp struct {
@@ -81,7 +82,10 @@ func (t *Track) recover() {
 		log.Println("未读取到etherscan的apikey无法启动监控")
 		return
 	}
-	for k := range t.Newest {
+	for k, v := range t.Newest {
+		if v.Remark == "" {
+			v.Remark = "bot"
+		}
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[k] = cf
 		go t.Tracking(k, ctx)
@@ -189,19 +193,23 @@ func (t *Track) Tracking(addr string, ctx context.Context) {
 func (t *Track) TrackingList(tip bool) string {
 	var sb strings.Builder
 	for k := range t.Task {
-		sb.WriteString("\n`")
+		sb.WriteString("\n")
+		sb.WriteString("*")
+		sb.WriteString(t.Newest[k].Remark)
+		sb.WriteString(":* ")
+		sb.WriteString("`")
 		sb.WriteString(k)
 		sb.WriteString("`")
-		sb.WriteString("*: ")
-		sb.WriteString(t.Newest[k].Remark)
-		sb.WriteString("*")
+		sb.WriteString("\nLatest Tx: ")
+		sb.WriteString(t.Newest[k].Latest)
+		sb.WriteString("")
 
 	}
 	if !tip {
-		t.C <- "*当前正在追踪的地址有:*" + sb.String()
+		t.C <- "*当前正在追踪的地址有:*" + sb.String() + "\n\n*当前时间: " + time.Now().Format("2006-01-02 15:04:05") + "*"
 	}
 
-	return "*当前正在追踪的地址有:*" + sb.String()
+	return "*当前正在追踪的地址有:*" + sb.String() + "\n\n*当前时间: " + time.Now().Format("2006-01-02 15:04:05") + "*"
 
 }
 
@@ -241,6 +249,10 @@ func (t *Track) WalletTracking(addr string) {
 	// 首次不做探测
 	if t.Newest[addr].Hash == "" {
 		t.Newest[addr].Hash = strings.ToLower(scan.Result[0].Hash)
+		late, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
+		if err == nil {
+			t.Newest[addr].Latest = time.Unix(late, 0).Format("2006-01-02 15:04:05")
+		}
 		return
 	}
 
@@ -319,6 +331,10 @@ func (t *Track) WalletTracking(addr string) {
 
 	if newest != "" {
 		t.Newest[addr].Hash = strings.ToLower(newest)
+		latest, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
+		if err == nil {
+			t.Newest[addr].Latest = time.Unix(latest, 0).Format("2006-01-02 15:04:05")
+		}
 	}
 
 	if sb.Len() > 0 {
@@ -857,10 +873,18 @@ func (t *Track) WalletTrackingV2(addr string) {
 	// 首次加入探测忽略
 	if t.Newest[addr].Hash == "" {
 		t.Newest[addr].Hash = scan.Result[0].Hash
+		late, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
+		if err == nil {
+			t.Newest[addr].Latest = time.Unix(late, 0).Format("2006-01-02 15:04:05")
+		}
 		return
 	}
 
 	t.Newest[addr].Hash = scan.Result[0].Hash
+	late, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
+	if err == nil {
+		t.Newest[addr].Latest = time.Unix(late, 0).Format("2006-01-02 15:04:05")
+	}
 
 	wg := sync.WaitGroup{}
 	sb := strings.Builder{}
@@ -925,12 +949,12 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorAddress , ck.CreatorPercent)
+			check += fmt.Sprintf("\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent)
 		}
 		log.Println("getCheck耗时: ", time.Since(now))
 	}
 
-	getLink := func ()  {
+	getLink := func() {
 		defer wg.Done()
 		links := getLinks(t.getSourceCode(record.ContractAddress))
 		if v, ok := links["Website"]; ok {
@@ -989,10 +1013,9 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString("\n")
 	sb.WriteString(check)
 
-
 	log.Println("查询总耗时: ", time.Since(now))
 
-	t.C <- "`" + addr + "` [监控买入](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+	t.C <- "*" + t.Newest[addr].Remark + ":* `" + addr + "` [监控买入](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 }
 
 func isNull(addr string) bool {
@@ -1089,7 +1112,7 @@ func (t *Track) BotAddrFinder(token, offset, page string) {
 				log.Println("请求失败: ", err)
 				return
 			}
-			
+
 			if tx.Status != "1" {
 				return
 			}
@@ -1103,7 +1126,7 @@ func (t *Track) BotAddrFinder(token, offset, page string) {
 			for _, v := range tx.Result {
 				ts, err := strconv.ParseInt(v.TimeStamp, 10, 64)
 				if err == nil {
-					if now.After(time.Unix(ts, 0).Add(3*24*time.Hour)) {
+					if now.After(time.Unix(ts, 0).Add(3 * 24 * time.Hour)) {
 						break
 					}
 					index++
@@ -1142,16 +1165,16 @@ func (t *Track) getSourceCode(addr string) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	return string(b)
 }
 
 func getLinks(code string) map[string]string {
 	// 定义正则表达式
-    re := regexp.MustCompile(`(https|http)://[\w\./@#-\[\]]+`)
+	re := regexp.MustCompile(`(https|http)://[\w\./@#-\[\]]+`)
 
-    // 在字符串中查找匹配项
-    matchs := re.FindAllString(code, -1)
+	// 在字符串中查找匹配项
+	matchs := re.FindAllString(code, -1)
 
 	link := make(map[string]string)
 
@@ -1162,7 +1185,7 @@ func getLinks(code string) map[string]string {
 		} else if strings.Contains(tmp, "twitter") {
 			link["Twitter"] = v
 		} else if strings.Contains(tmp, "zeppelin") {
-		} else if strings.Contains(tmp, "ethereum") {	
+		} else if strings.Contains(tmp, "ethereum") {
 		} else if strings.Contains(tmp, "openzeppelin") {
 		} else if strings.Contains(tmp, "hardhat.org") {
 		} else if strings.Contains(tmp, "firstbloodio") {
