@@ -20,13 +20,18 @@ import (
 
 type Track struct {
 	C            chan string
-	Newest       map[string]string
+	Newest       map[string]*newest
 	apiKey       string
 	Task         map[string]context.CancelFunc
 	api          *Crypto
 	dumpPath     string
 	Keys         *PollingKey
 	trackingLock sync.RWMutex
+}
+
+type newest struct {
+	Hash string `json:"hash"`
+	Remark string `json:"remark"`
 }
 
 type txResp struct {
@@ -149,7 +154,7 @@ func (t *Track) CronTracking(addr string) {
 	if _, ok := t.Task[addr]; !ok {
 		ctx, cf := context.WithCancel(context.Background())
 		t.Task[addr] = cf
-		t.Newest[addr] = ""
+		t.Newest[addr] = new(newest)
 		go t.Tracking(addr, ctx)
 		log.Println("开始追踪: ", addr)
 		t.C <- "*开始追踪* " + addr
@@ -223,13 +228,13 @@ func (t *Track) WalletTracking(addr string) {
 		return
 	}
 
-	if len(scan.Result) == 0 || strings.EqualFold(scan.Result[0].Hash, t.Newest[addr]) {
+	if len(scan.Result) == 0 || strings.EqualFold(scan.Result[0].Hash, t.Newest[addr].Hash) {
 		return
 	}
 
 	// 首次不做探测
-	if t.Newest[addr] == "" {
-		t.Newest[addr] = strings.ToLower(scan.Result[0].Hash)
+	if t.Newest[addr].Hash == "" {
+		t.Newest[addr].Hash = strings.ToLower(scan.Result[0].Hash)
 		return
 	}
 
@@ -243,7 +248,7 @@ func (t *Track) WalletTracking(addr string) {
 	his := make(map[string]struct{})
 	for _, record := range scan.Result {
 
-		if strings.EqualFold(record.Hash, t.Newest[addr]) {
+		if strings.EqualFold(record.Hash, t.Newest[addr].Hash) {
 			break
 		}
 
@@ -307,7 +312,7 @@ func (t *Track) WalletTracking(addr string) {
 	}
 
 	if newest != "" {
-		t.Newest[addr] = strings.ToLower(newest)
+		t.Newest[addr].Hash = strings.ToLower(newest)
 	}
 
 	if sb.Len() > 0 {
@@ -660,8 +665,8 @@ func (t *Track) DumpTrackingList(tip bool) {
 
 }
 
-func recoverTrackingList() map[string]string {
-	dump := make(map[string]string)
+func recoverTrackingList() map[string]*newest {
+	dump := make(map[string]*newest)
 	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "tracking.json")
 	if err != nil {
 		return dump
@@ -839,17 +844,17 @@ func (t *Track) WalletTrackingV2(addr string) {
 		return
 	}
 
-	if strings.EqualFold(t.Newest[addr], scan.Result[0].Hash) {
+	if strings.EqualFold(t.Newest[addr].Hash, scan.Result[0].Hash) {
 		return
 	}
 
 	// 首次加入探测忽略
-	if t.Newest[addr] == "" {
-		t.Newest[addr] = scan.Result[0].Hash
+	if t.Newest[addr].Hash == "" {
+		t.Newest[addr].Hash = scan.Result[0].Hash
 		return
 	}
 
-	t.Newest[addr] = scan.Result[0].Hash
+	t.Newest[addr].Hash = scan.Result[0].Hash
 
 	wg := sync.WaitGroup{}
 	sb := strings.Builder{}
