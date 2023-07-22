@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -75,4 +76,26 @@ func (t *Utils) JsonFormat(str string) {
 		return
 	}
 	t.MsgC <- fmt.Sprintf("`%s`", out.String())
+}
+
+func (t *Utils) String2Hex(str string) {
+	t.MsgC <- hex.EncodeToString([]byte(str))
+}
+
+func (t *Utils) Hex2String(str string) {
+	s, err := hex.DecodeString(str)
+	if err != nil {
+		s = []byte("转换失败")
+	}
+	
+	t.MsgC <- string(s)
+}
+
+func (t *Utils) DecimalConv(str string, from, to int) {
+	num, err := strconv.ParseInt(str, from, 64)
+	if err != nil {
+		t.MsgC <- "转换失败"
+		return
+	}
+	t.MsgC <- strconv.FormatInt(num, to)
 }
