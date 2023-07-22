@@ -198,6 +198,10 @@ __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以�
 - [x] hex2binary 十六进制转换成二进制
 - [x] hex2string 十六进制转换成字符串
 - [x] string2hex 字符串转换成十六进制
+- [x] string2binary 字符串转换成二进制
+- [x] string2decimal 字符串转换成十进制
+- [x] decimal2string 十进制转换成字符串
+- [x] binary2string 二进制转换成字符串
 
 ## 五. 环境安装(可选)
 
@@ -308,6 +312,10 @@ hex2decimal - 十六进制转换成十进制
 hex2binary - 十六进制转换成二进制
 hex2string - 十六进制转换成字符串
 string2hex - 字符串转换成十六进制
+string2binary - 字符串转换成二进制
+string2decimal - 字符串转换成十进制
+decimal2string - 十进制转换成字符串
+binary2string - 二进制转换成字符串
 timestamp_convert - 时间戳转换为时间"2006-01-02 15:04:05"
 time_convert - 时间转换为时间戳"2006-01-02 15:04:05"
 json_format - 格式化json

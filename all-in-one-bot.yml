@@ -113,6 +113,10 @@ command:
 		- "hex2binary - 十六进制转换成二进制"
 		- "hex2string - 十六进制转换成字符串"
 		- "string2hex - 字符串转换成十六进制"
+    - "string2binary - 字符串转换成二进制"
+    - "string2decimal - 字符串转换成十进制"
+    - "decimal2string - 十进制转换成字符串"
+    - "binary2string - 二进制转换成字符串"
   image:
     - "cutout - 抠图功能"
     - "sticker_download - 下载贴纸表情"
