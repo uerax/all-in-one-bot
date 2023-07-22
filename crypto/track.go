@@ -881,7 +881,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		if err == nil {
 			t.Newest[addr].Latest = time.Unix(late, 0).Format("2006-01-02 15:04:05")
 		}
-		// return
+		return
 	}
 
 	t.Newest[addr].Hash = scan.Result[0].Hash
