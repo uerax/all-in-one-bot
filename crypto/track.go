@@ -194,10 +194,11 @@ func (t *Track) TrackingList(tip bool) string {
 	var sb strings.Builder
 	for k := range t.Task {
 		sb.WriteString("\n")
-		sb.WriteString("*")
+		sb.WriteString("[")
 		sb.WriteString(t.Newest[k].Remark)
-		sb.WriteString(":* ")
-		sb.WriteString("`")
+		sb.WriteString("](https://etherscan.io/address/")
+		sb.WriteString(k)
+		sb.WriteString("): `")
 		sb.WriteString(k)
 		sb.WriteString("`")
 		sb.WriteString("\nLatest Tx: ")
@@ -205,11 +206,14 @@ func (t *Track) TrackingList(tip bool) string {
 		sb.WriteString("")
 
 	}
+
+	msg := "*当前正在追踪的地址有:*" + sb.String() + "\n\n*当前时间: " + time.Now().Format("2006-01-02 15:04:05") + "*"
+
 	if !tip {
-		t.C <- "*当前正在追踪的地址有:*" + sb.String() + "\n\n*当前时间: " + time.Now().Format("2006-01-02 15:04:05") + "*"
+		t.C <- msg
 	}
 
-	return "*当前正在追踪的地址有:*" + sb.String() + "\n\n*当前时间: " + time.Now().Format("2006-01-02 15:04:05") + "*"
+	return msg
 
 }
 
