@@ -105,6 +105,14 @@ command:
     - 'timestamp_convert - 时间戳转换为时间"2006-01-02 15:04:05"'
     - 'time_convert - 时间转换为时间戳"2006-01-02 15:04:05"'
     - "json_format - 格式化json"
+		- "decimal2binary - 十进制转换成二进制"
+		- "decimal2hex - 十进制转换成十六进制"
+		- "binary2hex - 二进制转换成十六进制"
+		- "binary2decimal - 二进制转换成十进制"
+		- "hex2decimal - 十六进制转换成十进制"
+		- "hex2binary - 十六进制转换成二进制"
+		- "hex2string - 十六进制转换成字符串"
+		- "string2hex - 字符串转换成十六进制"
   image:
     - "cutout - 抠图功能"
     - "sticker_download - 下载贴纸表情"
