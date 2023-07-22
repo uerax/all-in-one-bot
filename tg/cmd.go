@@ -489,6 +489,22 @@ func string2Hex(args string) {
 	go api.Utils.String2Hex(args)
 }
 
+func string2binary(args string) {
+	go api.Utils.StrDecimalConv(args, 2)
+}
+
+func string2Decimal(args string) {
+	go api.Utils.StrDecimalConv(args, 10)
+}
+
+func decimal2string(args string) {
+	go api.Utils.DecimalStrConv(args, 10)
+}
+
+func binary2string(args string) {
+	go api.Utils.DecimalStrConv(args, 2)
+}
+
 // Lists
 func cryptoList() {
 	go api.Lists.Crypto()

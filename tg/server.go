@@ -153,6 +153,14 @@ func Server() {
 				hex2String(update.Message.Text)
 			case "string2hex":
 				string2Hex(update.Message.Text)
+			case "string2binary":
+				string2binary(update.Message.Text)
+			case "string2decimal":
+				string2Decimal(update.Message.Text)
+			case "decimal2string":
+				decimal2string(update.Message.Text)
+			case "binary2string":
+				binary2string(update.Message.Text)
 			}
 		}
 
