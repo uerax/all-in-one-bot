@@ -137,10 +137,26 @@ func Server() {
 				timeConvert(update.Message.Text)
 			case "json_format":
 				jsonFormat(update.Message.Text)
+			case "decimal2binary":
+				decimal2Binary(update.Message.Text)
+			case "decimal2hex":
+				decimal2Hex(update.Message.Text)
+			case "binary2hex":
+				binary2Hex(update.Message.Text)
+			case "binary2decimal":
+				binary2Decimal(update.Message.Text)
+			case "hex2decimal":
+				hex2Decimal(update.Message.Text)
+			case "hex2binary":
+				hex2Binary(update.Message.Text)
+			case "hex2string":
+				hex2String(update.Message.Text)
+			case "string2hex":
+				string2Hex(update.Message.Text)
 			}
-
 		}
 
+		// Cmd Tip
 		switch update.Message.Command() {
 		// Track
 		case "bot_addr_finder":
@@ -289,6 +305,30 @@ func Server() {
 		case "json_format":
 			Cmd = "json_format"
 			tips(update.Message.Chat.ID, "发送json内容")
+		case "decimal2binary":
+			Cmd = "decimal2binary"
+			tips(update.Message.Chat.ID, "发送十进制数")
+		case "decimal2hex":
+			Cmd = "decimal2hex"
+			tips(update.Message.Chat.ID, "发送十进制数")
+		case "binary2hex":
+			Cmd = "binary2hex"
+			tips(update.Message.Chat.ID, "发送二进制数")
+		case "binary2decimal":
+			Cmd = "binary2decimal"
+			tips(update.Message.Chat.ID, "发送二进制数")
+		case "hex2decimal":
+			Cmd = "hex2decimal"
+			tips(update.Message.Chat.ID, "发送十六进制数")
+		case "hex2binary":
+			Cmd = "hex2binary"
+			tips(update.Message.Chat.ID, "发送十六进制数")
+		case "hex2string":
+			Cmd = "hex2string"
+			tips(update.Message.Chat.ID, "发送十六进制数")
+		case "string2hex":
+			Cmd = "string2hex"
+			tips(update.Message.Chat.ID, "发送字符串")
 		// Lists
 		case "cmd_list":
 			allList()

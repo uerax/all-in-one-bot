@@ -83,6 +83,9 @@ func (t *Track) recover() {
 		return
 	}
 	for k, v := range t.Newest {
+		if k == "" {
+			continue
+		}
 		if v.Remark == "" {
 			v.Remark = "bot"
 		}
@@ -149,6 +152,11 @@ func (t *Track) clearInactiveAddr() {
 }
 
 func (t *Track) CronTracking(addr, remark string) {
+	if addr == "" || len(addr) != 42 {
+		log.Println("输入参数有误：", addr)
+		t.C <- "输入参数有误"
+		return
+	}
 	if t.Keys.IsNull() {
 		log.Println("未读取到etherscan的apikey无法启动监控")
 		t.C <- "未读取到etherscan的apikey无法启动监控"

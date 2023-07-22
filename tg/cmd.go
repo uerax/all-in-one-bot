@@ -83,6 +83,11 @@ func walletAnalyze(args string) {
 }
 
 func walletTracking(args string) {
+	if args == "" {
+		log.Printf("walletTracking 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
 	arg := strings.Split(args, " ")
 	if len(arg) == 1 {
 		arg = append(arg, "bot")
@@ -450,6 +455,38 @@ func timeConvert(args string) {
 
 func jsonFormat(args string) {
 	go api.Utils.JsonFormat(args)
+}
+
+func decimal2Binary(args string) {
+	go api.Utils.DecimalConv(args, 10, 2)
+}
+
+func decimal2Hex(args string) {
+	go api.Utils.DecimalConv(args, 10, 16)
+}
+
+func binary2Hex(args string) {
+	go api.Utils.DecimalConv(args, 2, 16)
+}
+
+func binary2Decimal(args string) {
+	go api.Utils.DecimalConv(args, 2, 10)
+}
+
+func hex2Decimal(args string) {
+	go api.Utils.DecimalConv(args, 16, 10)
+}
+
+func hex2Binary(args string) {
+	go api.Utils.DecimalConv(args, 16, 2)
+}
+
+func hex2String(args string) {
+	go api.Utils.Hex2String(args)
+}
+
+func string2Hex(args string) {
+	go api.Utils.String2Hex(args)
 }
 
 // Lists
