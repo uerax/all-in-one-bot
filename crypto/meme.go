@@ -38,10 +38,10 @@ func (p *Probe) MemePrice(query string, chain string) {
 		}
 	}
 
-	s := fmt.Sprintf("*%s:$%s* \n*Chain:* %s   |   *Price:* $%s\n\n*5M:*    %0.2f%%    $%0.2f    %d/%d\n*1H:*    %0.2f%%    $%0.2f    %d/%d\n*6H:*    %0.2f%%    $%0.2f    %d/%d\n*1D:*    %0.2f%%    $%0.2f    %d/%d\n\n*Pool: $%0.5f*\n\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S, pair.Lp.Usd)
+	s := fmt.Sprintf("*%s:$%s* \n\n*Chain:* %s   |   *Price:* $%s\n\n*5M:*    %0.2f%%    $%0.2f    %d/%d\n*1H:*    %0.2f%%    $%0.2f    %d/%d\n*6H:*    %0.2f%%    $%0.2f    %d/%d\n*1D:*    %0.2f%%    $%0.2f    %d/%d\n\n*Pool: $%0.5f*\n", pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S, pair.Lp.Usd)
 	isHoneypot := ""
 	wg := sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(2)
 	check := new(MemeChecker)
 	go func ()  {
 		defer wg.Done()
@@ -58,36 +58,36 @@ func (p *Probe) MemePrice(query string, chain string) {
 			if strings.Contains(check.LpTotalSupply, ".") {
 				check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
 			}
-			s += fmt.Sprintf("\n*Honeypot:* %s\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*", isHoneypot, check.BuyTax, check.SellTax, check.LpLockedTotal*100.0, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent)
+			s += fmt.Sprintf("\n*Honeypot:* %s\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*\n", isHoneypot, check.BuyTax, check.SellTax, check.LpLockedTotal*100.0, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent)
 			log.Println("GetPrice MemeCheck耗时: ",time.Since(now))
 		}
 	}()
-	go func() {
-		defer wg.Done()
-		if !p.Keys.IsNull() && chain == "eth" {
-			url := "https://api.etherscan.io/api?module=contract&action=getsourcecode&address=%s&apikey=%s"
-			r, err := http.Get(fmt.Sprintf(url, query, p.Keys.GetKey()))
-			if err == nil {
-				defer r.Body.Close()
-				b, err := io.ReadAll(r.Body)
-				if err == nil {
-					links := getLinks(string(b))
-					link := "*Link:* "
-					if v, ok := links["Website"]; ok {
-						link += fmt.Sprintf("[%s](%s)   ", "Website", v)
-					}
-					if v, ok := links["Twitter"]; ok {
-						link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
-					}
-					if v, ok := links["Telegram"]; ok {
-						link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
-					}
-					s += link + "\n"
-				}
-			}
-		}
-		log.Println("GetPrice getsourcecode耗时: ",time.Since(now))
-	}()
+	// go func() {
+	// 	defer wg.Done()
+	// 	if !p.Keys.IsNull() && chain == "eth" {
+	// 		url := "https://api.etherscan.io/api?module=contract&action=getsourcecode&address=%s&apikey=%s"
+	// 		r, err := http.Get(fmt.Sprintf(url, query, p.Keys.GetKey()))
+	// 		if err == nil {
+	// 			defer r.Body.Close()
+	// 			b, err := io.ReadAll(r.Body)
+	// 			if err == nil {
+	// 				links := getLinks(string(b))
+	// 				link := "*Link:* "
+	// 				if v, ok := links["Website"]; ok {
+	// 					link += fmt.Sprintf("[%s](%s)   ", "Website", v)
+	// 				}
+	// 				if v, ok := links["Twitter"]; ok {
+	// 					link += fmt.Sprintf("[%s](%s)   ", "Twitter", v)
+	// 				}
+	// 				if v, ok := links["Telegram"]; ok {
+	// 					link += fmt.Sprintf("[%s](%s)   ", "Telegram", v)
+	// 				}
+	// 				s += link + "\n"
+	// 			}
+	// 		}
+	// 	}
+	// 	log.Println("GetPrice getsourcecode耗时: ",time.Since(now))
+	// }()
 
 	wg.Wait()
 
@@ -106,7 +106,7 @@ func (p *Probe) MemePrice(query string, chain string) {
 		dextools = "https://www.dextools.io/app/cn/ether/pair-explorer/"
 	}
 
-	s += fmt.Sprintf("*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [Honeypot](%s%s)", dextools, pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
+	s += fmt.Sprintf("\n*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [Honeypot](%s%s)", dextools, pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 
 	p.Meme <- s
 }
