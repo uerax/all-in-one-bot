@@ -16,15 +16,15 @@ __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ install
 ```
 
-> 注: 配置文件token必须添加,否则会启动失败, chatId不添加的情况下只能执行 /chatid 命令获取chatid, 获取到后添加到配置文件并重启服务(可以通过`其他`脚本输出`8` -> `2`进行添加)
-* 在 all-in-one-bot.yml 添加你的 telegram token
+* 注: 配置文件token必须添加,否则会启动失败, chatId不添加的情况下只能执行 /chatid 命令获取chatid, 获取到后添加到配置文件并重启服务(可以通过`其他`脚本输出`8` -> `2`进行添加)
+> 在 all-in-one-bot.yml 添加你的 telegram token
 `telegram 搜索用户 @BotFather 发送 /newbot 获取`
-* 在 all-in-one-bot.yml 添加你的 telegram chatId
+> 在 all-in-one-bot.yml 添加你的 telegram chatId
 `添加token后启动应用,去你的bot发送 /chatid 即可获取`
 
-> 如果需要用到聪明钱的追踪和探测, 需要添加 Etherscan 的 Api Key。
-* 在 all-in-one-bot.yml 添加你的 crypto etherscan keys
-按照目前的探测频率, 聪明钱追踪每分钟会调用20次api, 而etherscan的一个免费 apikey 只有每秒只能调用5次, 超过则会返回错误. 也就是说一个key最理想情况下可以支持15个聪明钱探测, 而极端情况只能支持3-5个, 所以如果追踪的聪明钱较多key也需要根据情况增加
+* 如果需要用到聪明钱的追踪和探测, 需要添加 Etherscan 的 Api Key。
+`在 all-in-one-bot.yml 添加你的 crypto etherscan keys`
+> 按照目前的探测频率, 聪明钱追踪每分钟会调用20次api, 而etherscan的一个免费 apikey 只有每秒只能调用5次, 超过则会返回错误. 也就是说一个key最理想情况下可以支持15个聪明钱探测, 而极端情况只能支持3-5个, 所以如果追踪的聪明钱较多key也需要根据情况增加
 
 `更新`
 
