@@ -1,7 +1,9 @@
 package crypto
 
 import (
-	"sync"
+	"log"
+	"sync/atomic"
+	"time"
 
 	"github.com/uerax/goconf"
 )
@@ -10,15 +12,13 @@ var pollingKey *PollingKey
 
 type PollingKey struct {
 	Keys []string
-	lock sync.RWMutex
-	idx int
+	idx  int32
 }
 
 func NewPollingKey() *PollingKey {
 	if pollingKey == nil {
 		pollingKey = &PollingKey{
 			Keys: make([]string, 0),
-			lock: sync.RWMutex{},
 			idx: 0,
 		}
 		keys, err := goconf.VarArray("crypto", "etherscan", "keys")
@@ -29,29 +29,30 @@ func NewPollingKey() *PollingKey {
 				}	
 			}
 		}
-		
+		go pollingKey.CallsPerM()
 	}
 	
 	return pollingKey
-	
 }
 
 func (t *PollingKey) IsNull() bool {
-	t.lock.RLock()
-	defer t.lock.RUnlock()
 	return len(t.Keys) == 0
 }
 
 func (t *PollingKey) AddKeys(keys ...string) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
 	t.Keys = append(t.Keys, keys...)
 }
 
-func (t *PollingKey) GetKey() string {
-	t.lock.Lock()
-	defer t.lock.Unlock()
+func (t *PollingKey) GetKey() string  {
+	atomic.AddInt32(&t.idx, 1)
+	return t.Keys[int(t.idx) % (len(t.Keys) - 1)]
+}
 
-	t.idx++
-	return t.Keys[t.idx % (len(t.Keys) - 1)]
+func (t *PollingKey) CallsPerM() {
+	tick := time.NewTicker(time.Minute)
+	pre := t.idx
+	for range tick.C {
+		log.Printf("每分钟调用 %d 次 ApiKey", t.idx - pre)
+		pre = t.idx
+	}
 }
