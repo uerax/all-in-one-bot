@@ -31,7 +31,6 @@ func NewPollingKey() *PollingKey {
 		}
 		go pollingKey.CallsPerM()
 	}
-	
 	return pollingKey
 }
 
