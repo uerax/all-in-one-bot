@@ -42,6 +42,8 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Track
+			case "wallet_tx_info":
+				walletTxInfo(update.Message.Text)
 			case "bot_addr_finder":
 				botAddrFinder(update.Message.Text)
 			case "analyze_addr_token_profit":
@@ -167,6 +169,9 @@ func Server() {
 		// Cmd Tip
 		switch update.Message.Command() {
 		// Track
+		case "wallet_tx_info":
+			Cmd = "wallet_tx_info"
+			tips(update.Message.Chat.ID, "获取两日内买入的加密货币和时间 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6`")
 		case "bot_addr_finder":
 			Cmd = "bot_addr_finder"
 			tips(update.Message.Chat.ID, "分析高涨幅度币的早期买入地址 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1`")
