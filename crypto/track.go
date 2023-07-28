@@ -1211,3 +1211,71 @@ func getLinks(code string) map[string]string {
 	}
 	return link
 }
+
+func (t *Track) WalletTxInfo(addr string) {
+	if t.Keys.IsNull() {
+		t.C <- "未读取到etherscan的apikey无法调用api"
+		return
+	}
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, "300", addr, t.Keys.GetKey()))
+	if err != nil {
+		log.Println("etherscan请求失败")
+		t.C <- "etherscan请求失败"
+		return
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println("读取body失败")
+		t.C <- "读取body失败"
+		return
+	}
+	scan := new(TokenTxResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		log.Println("json转换失败")
+		t.C <- "json转换失败"
+		return
+	}
+
+	if scan.Status != "1" {
+		t.C <- "响应码异常"
+		return
+	}
+
+	type txInfo struct {
+		Earliest string
+		Times int
+		TokenName string
+		TokenSymbol string
+
+	}
+
+	record := make(map[string]*txInfo)
+	now := time.Now()
+
+	for _, tx := range scan.Result {
+		ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
+		if err == nil {
+			if now.After(time.Unix(ts, 0).Add(2 * 24 * time.Hour)) {
+				break
+			}
+		}
+		if strings.EqualFold(tx.To, addr) {
+			if _, ok := record[tx.ContractAddress]; !ok {
+				record[tx.ContractAddress] = new(txInfo)
+			}
+			record[tx.ContractAddress].Times++
+			record[tx.ContractAddress].Earliest = time.Unix(ts, 0).Format("2006-01-02 15:04:05")
+			record[tx.ContractAddress].TokenName = tx.TokenName
+			record[tx.ContractAddress].TokenSymbol = tx.TokenSymbol
+		}
+	}
+
+	sb := strings.Builder{}
+	for k, v := range record {
+		sb.WriteString(fmt.Sprintf("\n*%s:* [%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s) *(%s)*", v.TokenName, v.TokenSymbol, k, v.Earliest))
+	}
+	t.C <- fmt.Sprintf("`%s` [交易](https://etherscan.io/address/%s)", addr, addr) + sb.String()
+}

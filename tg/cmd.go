@@ -9,6 +9,10 @@ import (
 )
 
 // Crypto Start
+func walletTxInfo(args string) {
+	go api.Track.WalletTxInfo(args)
+}
+
 func trackingLastestTx() {
 	go api.Track.WalletLastTransaction()
 }
