@@ -60,6 +60,7 @@ photo:
 
 command:
   crypto:
+    - "wallet_tx_analyze - 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30"
     - "bot_addr_finder - 分析高涨幅度币的早期买入地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1"
     - "tracking_lastest_tx - 获取正在追踪的钱包最后一次交易的时间"
     - "analyze_addr_token_profit - 分析钱包的指定加密货币总收益情况(钱包地址 加加密货币合约地址) 例: 0x1c8075cfc18cd17f5fb7743fba811603b819234c 0x808a57ef754c18e1d2cea5d6cf30f00eeeaa1273"
