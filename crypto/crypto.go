@@ -257,7 +257,6 @@ func (t *Crypto) HoneypotCheck(addr string) string {
 	return "DOES NOT SEEM LIKE A HONEYPOT"
 }
 
-
 func (t *Crypto) WhetherHoneypot(addr string) bool {
 	r, err := http.Get(honeypotUrl + addr)
 	if err != nil {
@@ -316,4 +315,28 @@ func (t *Crypto) DexTools(pair, chain string) *Datum {
 	}
 
 	return &meme.Data[0]
+}
+
+func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
+	r, err := http.Get(honeypotUrl + addr)
+	if err != nil {
+		log.Println("honeypotUrl请求失败", err)
+		return nil
+	}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		log.Println("body读取失败", err)
+		return nil
+	}
+
+	res := new(HoneypotResp)
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		log.Println("json序列化失败", err)
+		return nil
+	}
+
+	return res
 }

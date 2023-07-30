@@ -153,12 +153,82 @@ type TokenTx struct {
 }
 
 type HoneypotResp struct {
-	Honeypot Honeypot `json:"honeypotResult"`
+	Token             HoneypotToken    `json:"token"`
+	WithToken         HoneypotToken    `json:"withToken"`
+	SimulationSuccess bool             `json:"simulationSuccess"`
+	SimulationResult  SimulationResult `json:"simulationResult"`
+	HolderAnalysis    HolderAnalysis   `json:"holderAnalysis"`
+	Flags             []interface{}    `json:"flags"`
+	Chain             HoneypotChain    `json:"chain"`
+	Router            string           `json:"router"`
+	Pair              MainPair         `json:"pair"`
+	PairAddress       string           `json:"pairAddress"`
+	Honeypot          Honeypot         `json:"honeypotResult"`
 }
 
 type Honeypot struct {
 	Is bool `json:"isHoneypot"`
 }
+
+type TaxDistribution struct {
+	Tax   int64 `json:"tax"`
+	Count int64 `json:"count"`
+}
+
+type HoneypotChain struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	ShortName string `json:"shortName"`
+	Currency  string `json:"currency"`
+}
+
+type HolderAnalysis struct {
+	Holders         string            `json:"holders"`
+	Successful      string            `json:"successful"`
+	Failed          string            `json:"failed"`
+	Siphoned        string            `json:"siphoned"`
+	AverageTax      float64           `json:"averageTax"`
+	AverageGas      float64           `json:"averageGas"`
+	HighestTax      float64           `json:"highestTax"`
+	HighTaxWallets  string            `json:"highTaxWallets"`
+	TaxDistribution []TaxDistribution `json:"taxDistribution"`
+}
+
+type MainPair struct {
+	Pair               PairPair `json:"pair"`
+	ChainID            string   `json:"chainId"`
+	Reserves0          string   `json:"reserves0"`
+	Reserves1          string   `json:"reserves1"`
+	Liquidity          float64  `json:"liquidity"`
+	Router             string   `json:"router"`
+	CreatedAtTimestamp string   `json:"createdAtTimestamp"`
+	CreationTxHash     string   `json:"creationTxHash"`
+}
+
+type PairPair struct {
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Token0  string `json:"token0"`
+	Token1  string `json:"token1"`
+	Type    string `json:"type"`
+}
+
+type SimulationResult struct {
+	BuyTax      float64 `json:"buyTax"`
+	SellTax     float64 `json:"sellTax"`
+	TransferTax int64   `json:"transferTax"`
+	BuyGas      string  `json:"buyGas"`
+	SellGas     string  `json:"sellGas"`
+}
+
+type HoneypotToken struct {
+	Name     string `json:"name"`
+	Symbol   string `json:"symbol"`
+	Decimals int64  `json:"decimals"`
+	Address  string `json:"address"`
+}
+
+// Contract
 
 type ContractCreationResp struct {
 	Status  string             `json:"status"`

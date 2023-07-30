@@ -917,6 +917,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	detail := ""
 	check := ""
 	link := ""
+	tax := ""
 
 	getBalance := func() {
 		defer wg.Done()
@@ -931,9 +932,11 @@ func (t *Track) WalletTrackingV2(addr string) {
 	// -1s
 	getHoneypot := func() {
 		defer wg.Done()
-		if t.api.WhetherHoneypot(record.ContractAddress) {
+		hr := t.api.IsHoneypot(record.ContractAddress)
+		if hr.Honeypot.Is {
 			isHoneypot += "*[SCAM]*"
 		}
+		tax += fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax)
 		log.Println("getHoneypot耗时: ", time.Since(now))
 	}
 
@@ -962,7 +965,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*", ck.BuyTax, ck.SellTax, ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent)
+			check += fmt.Sprintf("   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*", ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent)
 		}
 		log.Println("getCheck耗时: ", time.Since(now))
 	}
@@ -1024,6 +1027,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		sb.WriteString(link)
 	}
 	sb.WriteString("\n")
+	sb.WriteString(tax)
 	sb.WriteString(check)
 
 	log.Println("查询总耗时: ", time.Since(now))
