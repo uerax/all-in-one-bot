@@ -42,6 +42,10 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Track
+			case "tacking_tax":
+				trackingTax(update.Message.Text)
+			case "get_tax":
+				getTax(update.Message.Text)
 			case "wallet_tx_info":
 				walletTxInfo(update.Message.Text)
 			case "bot_addr_finder":
@@ -169,6 +173,12 @@ func Server() {
 		// Cmd Tip
 		switch update.Message.Command() {
 		// Track
+		case "tacking_tax":
+			Cmd = "tacking_tax"
+			tips(update.Message.Chat.ID, "设置tax监控线20分钟后自动取消 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10`")
+		case "get_tax":
+			Cmd = "get_tax"
+			tips(update.Message.Chat.ID, "获取当前tax 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6`")
 		case "wallet_tx_info":
 			Cmd = "wallet_tx_info"
 			tips(update.Message.Chat.ID, "获取两日内买入的加密货币和时间 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6`")

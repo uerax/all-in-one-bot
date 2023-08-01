@@ -936,7 +936,8 @@ func (t *Track) WalletTrackingV2(addr string) {
 		if hr.Honeypot.Is {
 			isHoneypot += "*[SCAM]*"
 		}
-		tax += fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax)
+
+		tax += fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%   |   Ratio: %.2f", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, 1.0/((1.0-hr.SimulationResult.BuyTax)*(1.0-hr.SimulationResult.SellTax)))
 		log.Println("getHoneypot耗时: ", time.Since(now))
 	}
 
@@ -965,7 +966,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		ck := t.api.MemeCheck(record.ContractAddress, "eth")
 		if ck != nil {
-			check += fmt.Sprintf("   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*", ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent)
+			check += fmt.Sprintf("*Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*", ck.LpLockedTotal*100.0, ck.OwnerAddress, ck.CreatorAddress, ck.CreatorPercent)
 		}
 		log.Println("getCheck耗时: ", time.Since(now))
 	}
@@ -1028,6 +1029,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	}
 	sb.WriteString("\n")
 	sb.WriteString(tax)
+	sb.WriteString("\n")
 	sb.WriteString(check)
 
 	log.Println("查询总耗时: ", time.Since(now))
@@ -1249,11 +1251,10 @@ func (t *Track) WalletTxInfo(addr string) {
 	}
 
 	type txInfo struct {
-		Earliest string
-		Times int
-		TokenName string
+		Earliest    string
+		Times       int
+		TokenName   string
 		TokenSymbol string
-
 	}
 
 	record := make(map[string]*txInfo)
@@ -1282,4 +1283,56 @@ func (t *Track) WalletTxInfo(addr string) {
 		sb.WriteString(fmt.Sprintf("\n*%s:* [%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s) *(%s)*", v.TokenName, v.TokenSymbol, k, v.Earliest))
 	}
 	t.C <- fmt.Sprintf("`%s` [交易](https://etherscan.io/address/%s)", addr, addr) + sb.String()
+}
+
+func (t *Track) GetTax(addr string) {
+	hr := t.api.IsHoneypot(addr)
+	ratio := 0.0
+	if hr.SimulationResult.SellTax < 99 && hr.SimulationResult.BuyTax < 99 {
+		ratio = 1 / ((1 - hr.SimulationResult.BuyTax/100) * (1 - hr.SimulationResult.SellTax/100))
+	}
+	tax := fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%   |   Ratio: %.2f*", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, ratio)
+
+	t.C <- "`" + addr + "`: [Tax](https://honeypot.is/ethereum?address=" + addr + ")\n" + tax
+}
+
+func (t *Track) CronTaxTracking(addr string, buy, sell string) {
+	buytax, err := strconv.Atoi(buy)
+	if err != nil {
+		t.C <- "Buy Tax格式错误"
+		return
+	}
+	selltax, err := strconv.Atoi(sell)
+	if err != nil {
+		t.C <- "Sell Tax格式错误"
+		return
+	}
+	ctx, cl := context.WithCancel(context.Background())
+	go t.TaxTracking(addr, buytax, selltax, ctx)
+	time.Sleep(time.Minute * 20)
+	cl()
+}
+
+func (t *Track) TaxTracking(addr string, buy, sell int, ctx context.Context) {
+	tick := time.NewTicker(time.Second * 5)
+	for {
+		select {
+		case <-ctx.Done():
+			t.C <- fmt.Sprintf("`%s`: \n超过20分钟停止探测Tax", addr)
+			return
+		case <-tick.C:
+			hr := t.api.IsHoneypot(addr)
+			if (hr.SimulationResult.BuyTax <= float64(buy)) || (hr.SimulationResult.SellTax <= float64(sell)) {
+				ratio := 0.0
+				if hr.SimulationResult.SellTax != 100 && hr.SimulationResult.BuyTax != 100 {
+					ratio = 1 / ((1 - hr.SimulationResult.BuyTax/100) * (1 - hr.SimulationResult.SellTax/100))
+				}
+				
+				t.C <- fmt.Sprintf("`%s`: Tax变化\n%s:[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)\n\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%*\n*Ratio: %.2f   |   Formula: NxRatio*\n*Pool: $%.2f*", addr, hr.Token.Name, hr.Token.Symbol, addr, hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, ratio, hr.Pair.Liquidity)
+				return
+			}
+
+		}
+	}
+
 }

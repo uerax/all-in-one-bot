@@ -9,6 +9,20 @@ import (
 )
 
 // Crypto Start
+func getTax(args string) {
+	go api.Track.GetTax(args)
+}
+
+func trackingTax(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) != 3 {
+		log.Printf("trackingTax 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+	go api.Track.CronTaxTracking(arg[0], arg[1], arg[2])
+}
+
 func walletTxInfo(args string) {
 	go api.Track.WalletTxInfo(args)
 }
