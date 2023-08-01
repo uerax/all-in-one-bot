@@ -60,6 +60,8 @@ photo:
 
 command:
   crypto:
+    - "tacking_tax - 设置tax监控线20分钟后自动取消 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10"
+    - "get_tax - 获取当前tax 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6"
     - "wallet_tx_analyze - 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30"
     - "bot_addr_finder - 分析高涨幅度币的早期买入地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1"
     - "tracking_lastest_tx - 获取正在追踪的钱包最后一次交易的时间"
