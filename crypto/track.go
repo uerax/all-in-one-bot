@@ -1316,6 +1316,7 @@ func (t *Track) CronTaxTracking(addr string, buy, sell string) {
 	}
 	ctx, cl := context.WithCancel(context.Background())
 	go t.TaxTracking(addr, buytax, selltax, ctx)
+	t.C <- "开始追踪:" + addr
 	time.Sleep(time.Minute * 20)
 	cl()
 }
