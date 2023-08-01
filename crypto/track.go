@@ -933,10 +933,14 @@ func (t *Track) WalletTrackingV2(addr string) {
 	getHoneypot := func() {
 		defer wg.Done()
 		hr := t.api.IsHoneypot(record.ContractAddress)
+		if hr == nil {
+			return
+		}
 		if hr.Honeypot.Is {
 			isHoneypot += "*[SCAM]*"
 		}
 		ratio := 0.0
+		
 		if hr.SimulationResult.SellTax != 100 && hr.SimulationResult.BuyTax != 100 {
 			ratio = 1 / ((1 - hr.SimulationResult.BuyTax/100) * (1 - hr.SimulationResult.SellTax/100))
 		}
