@@ -214,11 +214,11 @@ type PairPair struct {
 }
 
 type SimulationResult struct {
-	BuyTax      float64 `json:"buyTax"`
-	SellTax     float64 `json:"sellTax"`
-	TransferTax int64   `json:"transferTax"`
-	BuyGas      string  `json:"buyGas"`
-	SellGas     string  `json:"sellGas"`
+	BuyTax  float64 `json:"buyTax"`
+	SellTax float64 `json:"sellTax"`
+	// TransferTax int64   `json:"transferTax"`
+	// BuyGas      string  `json:"buyGas"`
+	// SellGas     string  `json:"sellGas"`
 }
 
 type HoneypotToken struct {
