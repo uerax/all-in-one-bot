@@ -936,8 +936,11 @@ func (t *Track) WalletTrackingV2(addr string) {
 		if hr.Honeypot.Is {
 			isHoneypot += "*[SCAM]*"
 		}
-
-		tax += fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%   |   Ratio: %.2f", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, 1.0/((1.0-hr.SimulationResult.BuyTax)*(1.0-hr.SimulationResult.SellTax)))
+		ratio := 0.0
+		if hr.SimulationResult.SellTax != 100 && hr.SimulationResult.BuyTax != 100 {
+			ratio = 1 / ((1 - hr.SimulationResult.BuyTax/100) * (1 - hr.SimulationResult.SellTax/100))
+		}
+		tax += fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%   |   Ratio: %.2f", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, ratio)
 		log.Println("getHoneypot耗时: ", time.Since(now))
 	}
 
