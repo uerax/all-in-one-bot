@@ -940,7 +940,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		if hr.SimulationResult.SellTax != 100 && hr.SimulationResult.BuyTax != 100 {
 			ratio = 1 / ((1 - hr.SimulationResult.BuyTax/100) * (1 - hr.SimulationResult.SellTax/100))
 		}
-		tax += fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%   |   Ratio: %.2f", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, ratio)
+		tax += fmt.Sprintf("\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%   |   Ratio: %.2f*", hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, ratio)
 		log.Println("getHoneypot耗时: ", time.Since(now))
 	}
 
