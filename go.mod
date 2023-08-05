@@ -6,11 +6,11 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/iawia002/lux v0.18.0
 	github.com/kkdai/youtube/v2 v2.8.0
-	github.com/uerax/goconf v1.0.4
+	github.com/uerax/goconf v1.1.1
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/MercuryEngineering/CookieMonster v0.0.0-20180304172713-1584578b3403 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
