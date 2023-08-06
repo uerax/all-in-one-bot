@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"regexp"
@@ -890,7 +891,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		if err == nil {
 			t.Newest[addr].Latest = time.Unix(late, 0).Format("2006-01-02 15:04:05")
 		}
-		return
+		// return
 	}
 
 	t.Newest[addr].Hash = scan.Result[0].Hash
@@ -919,13 +920,18 @@ func (t *Track) WalletTrackingV2(addr string) {
 	check := ""
 	link := ""
 	tax := ""
+	count := 0.0
 
 	getBalance := func() {
 		defer wg.Done()
 		if strings.EqualFold(record.From, addr) {
-			balance += t.getSellEthByHash(record.Hash, addr)
+			//balance += t.getSellEthByHash(record.Hash, addr)
+			balance += t.getEthByHtml(record.Hash, false)[1]
+			count += t.getEthByHtml(record.Hash, false)[0]
 		} else {
-			balance += t.getBuyEthByHash(record.Hash)
+			//balance += t.getBuyEthByHash(record.Hash)
+			balance += t.getEthByHtml(record.Hash, false)[0]
+			count += t.getEthByHtml(record.Hash, false)[1]
 		}
 		log.Println("getBalance耗时: ", time.Since(now))
 	}
@@ -960,9 +966,9 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 		pair := t.api.MemePrice(record.ContractAddress, "eth")
 		if pair != nil {
-			detail += fmt.Sprintf("   |   *Price: $%s (%d)*", pair.PriceUsd, zeroCal(pair.PriceUsd))
+			detail += fmt.Sprintf("\n\n*Price: $%s (%d)*", pair.PriceUsd, zeroCal(pair.PriceUsd))
 			if pair.Lp != nil {
-				detail += fmt.Sprintf("\n\n*Pool: $%0.5f*", pair.Lp.Usd)
+				detail += fmt.Sprintf("   |   *Pool: $%0.5f*", pair.Lp.Usd)
 			}
 			//detail += fmt.Sprintf("\n*CreationTime: %s*", pair.CreateTime)
 			detail += fmt.Sprintf("\n\n*5M:    %0.2f%%    $%0.2f    %d/%d*\n*1H:    %0.2f%%    $%0.2f    %d/%d*\n*6H:    %0.2f%%    $%0.2f    %d/%d*\n*1D:    %0.2f%%    $%0.2f    %d/%d*", pair.PriceChange.M5, pair.Volume.M5, pair.Txns.M5.B, pair.Txns.M5.S, pair.PriceChange.H1, pair.Volume.H1, pair.Txns.H1.B, pair.Txns.H1.S, pair.PriceChange.H6, pair.Volume.H6, pair.Txns.H6.B, pair.Txns.H6.S, pair.PriceChange.H24, pair.Volume.H24, pair.Txns.H24.B, pair.Txns.H24.S)
@@ -1029,7 +1035,12 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString("`")
 	sb.WriteString("\n\n*Cost: ")
 	sb.WriteString(fmt.Sprintf("%f", balance))
-	sb.WriteString(" ETH*")
+	sb.WriteString(" ETH   |   ")
+	sb.WriteString("Count: ")
+	sb.WriteString(fmt.Sprintf("%f", count))
+	sb.WriteString(" ")
+	sb.WriteString(record.TokenSymbol)
+	sb.WriteString("*")
 	sb.WriteString(detail)
 	if link != "" {
 		sb.WriteString("\n\n")
@@ -1344,7 +1355,9 @@ func (t *Track) TaxTracking(addr string, buy, sell int, ctx context.Context) {
 	}
 }
 
-func (t *Track) getEthByHtml(hash string) []float64 {	
+// Buy Return ETH Balance
+// Sell Return Balance ETH
+func (t *Track) getEthByHtml(hash string, buy bool) []float64 {	
 	res, err := http.Get("https://etherscan.io/tx/" + hash)
 	val := make([]float64, 0, 2)
 	if err != nil {
@@ -1363,6 +1376,10 @@ func (t *Track) getEthByHtml(hash string) []float64 {
 		log.Println(err)
 		return val
 	}
+	fromIdx, toIdx := 2, 4
+	if buy {
+		toIdx++
+	}
 
 	from, to := 0.0, 0.0
 
@@ -1370,19 +1387,33 @@ func (t *Track) getEthByHtml(hash string) []float64 {
 		// For each item found, get the title
 		title := s.Text()
 		title = strings.ReplaceAll(title, ",", "")
-		if i % 8 == 2 {
+		//fmt.Println(i, " " + title)
+		if i % 8 == fromIdx {
+			if len(title) - strings.Index(title, ".") > 4 {
+				title = title[:strings.Index(title, ".") + 4]
+			}
 			bae, err := strconv.ParseFloat(title, 64)
 			if err == nil {
+				if !buy {
+					bae = math.Round(bae*1e5) / 1e5
+				}
 				from += bae
 			}
 		}
-		if i % 8 == 4 {
+		if i % 8 == toIdx {
 			bae, err := strconv.ParseFloat(title, 64)
 			if err == nil {
+				if buy {
+					bae = math.Round(bae*1e5) / 1e5
+				}
 				to += bae
 			}
 		}
 	})
+
+	if strings.Contains(doc.Find(".far.fa-bolt.fa-fw.text-primary.me-1").Parent().Parent().Find("a").Text(), "USDT") {
+		return val
+	}
 
 	val = append(val, from)
 	val = append(val, to)
