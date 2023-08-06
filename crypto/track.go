@@ -782,9 +782,11 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 					if _, ok := his[tx.Hash]; !ok {
 						his[tx.Hash] = struct{}{}
 						if strings.EqualFold(tx.From, address) {
-							val = t.getSellEthByHash(tx.Hash, address)
+							val = t.getEthByHtml(tx.Hash, false)[1]
+							// val = t.getSellEthByHash(tx.Hash, address)
 						} else {
-							val = t.getBuyEthByHash(tx.Hash)
+							val = t.getEthByHtml(tx.Hash, true)[0]
+							// val = t.getBuyEthByHash(tx.Hash)
 						}
 					}
 
@@ -891,7 +893,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		if err == nil {
 			t.Newest[addr].Latest = time.Unix(late, 0).Format("2006-01-02 15:04:05")
 		}
-		// return
+		return
 	}
 
 	t.Newest[addr].Hash = scan.Result[0].Hash
@@ -926,12 +928,14 @@ func (t *Track) WalletTrackingV2(addr string) {
 		defer wg.Done()
 		if strings.EqualFold(record.From, addr) {
 			//balance += t.getSellEthByHash(record.Hash, addr)
-			balance += t.getEthByHtml(record.Hash, false)[1]
-			count += t.getEthByHtml(record.Hash, false)[0]
+			eth := t.getEthByHtml(record.Hash, false)
+			balance += eth[1]
+			count += eth[0]
 		} else {
 			//balance += t.getBuyEthByHash(record.Hash)
-			balance += t.getEthByHtml(record.Hash, false)[0]
-			count += t.getEthByHtml(record.Hash, false)[1]
+			eth := t.getEthByHtml(record.Hash, true)
+			balance += eth[0]
+			count += eth[1]
 		}
 		log.Println("getBalance耗时: ", time.Since(now))
 	}
