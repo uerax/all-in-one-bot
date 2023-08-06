@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
@@ -1339,8 +1340,52 @@ func (t *Track) TaxTracking(addr string, buy, sell int, ctx context.Context) {
 				t.C <- fmt.Sprintf("`%s`: Tax变化\n%s:[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)\n\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%*\n*Ratio: %.2f   |   Formula: NxRatio*\n*Pool: $%.2f*", addr, hr.Token.Name, hr.Token.Symbol, addr, hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, ratio, hr.Pair.Liquidity)
 				return
 			}
-
 		}
 	}
+}
 
+func (t *Track) getEthByHtml(hash string) []float64 {	
+	res, err := http.Get("https://etherscan.io/tx/" + hash)
+	val := make([]float64, 0, 2)
+	if err != nil {
+		log.Println(err)
+		return val
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		log.Printf("status code error: %d %s", res.StatusCode, res.Status)
+		return val
+	}
+
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		log.Println(err)
+		return val
+	}
+
+	from, to := 0.0, 0.0
+
+	doc.Find(".far.fa-bolt.fa-fw.text-primary.me-1").Parent().Parent().Find("span").Each(func(i int, s *goquery.Selection) {
+		// For each item found, get the title
+		title := s.Text()
+		title = strings.ReplaceAll(title, ",", "")
+		if i % 8 == 2 {
+			bae, err := strconv.ParseFloat(title, 64)
+			if err == nil {
+				from += bae
+			}
+		}
+		if i % 8 == 4 {
+			bae, err := strconv.ParseFloat(title, 64)
+			if err == nil {
+				to += bae
+			}
+		}
+	})
+
+	val = append(val, from)
+	val = append(val, to)
+
+	return val
 }
