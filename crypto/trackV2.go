@@ -18,7 +18,7 @@ import (
 
 // Buy Return ETH Balance
 // Sell Return Balance ETH
-func (t *Track) getEthByHtml(hash string, buy bool) []float64 {
+func (t *Track) getEthByHtml(hash, symbol string) []float64 {
 	res, err := http.Get("https://etherscan.io/tx/" + hash)
 	val := make([]float64, 2)
 	if err != nil {
@@ -37,48 +37,46 @@ func (t *Track) getEthByHtml(hash string, buy bool) []float64 {
 		log.Println(err)
 		return val
 	}
-	fromIdx, toIdx := 2, 4
-	if buy {
-		toIdx++
-	}
 
-	from, to := 0.0, 0.0
+	eth, coin := 0.0, 0.0
+	pre := ""
 
-	doc.Find(".far.fa-bolt.fa-fw.text-primary.me-1").Parent().Parent().Find("span").Each(func(i int, s *goquery.Selection) {
+	doc.Find(".far.fa-bolt.fa-fw.text-primary.me-1").Parent().Parent().Find(".me-1").Each(func(i int, s *goquery.Selection) {
 		// For each item found, get the title
 		title := s.Text()
+		if title == "" {
+			return
+		}
 		title = strings.ReplaceAll(title, ",", "")
 		//fmt.Println(i, " " + title)
-		if i%8 == fromIdx {
+
+		if strings.EqualFold(title, "Ether") {
 			if len(title)-strings.Index(title, ".") > 4 {
 				title = title[:strings.Index(title, ".")+4]
 			}
-			bae, err := strconv.ParseFloat(title, 64)
+			bae, err := strconv.ParseFloat(pre, 64)
 			if err == nil {
-				if !buy {
-					bae = math.Round(bae*1e5) / 1e5
-				}
-				from += bae
+				eth += bae
 			}
 		}
-		if i%8 == toIdx {
-			bae, err := strconv.ParseFloat(title, 64)
+		if strings.EqualFold(title, symbol) {
+			bae, err := strconv.ParseFloat(pre, 64)
 			if err == nil {
-				if buy {
-					bae = math.Round(bae*1e5) / 1e5
-				}
-				to += bae
+				bae = math.Round(bae*1e5) / 1e5
+				coin += bae
 			}
 		}
+		pre = title
 	})
 
 	if strings.Contains(doc.Find(".far.fa-bolt.fa-fw.text-primary.me-1").Parent().Parent().Find("a").Text(), "USDT") {
+		val[0] = 0
+		val[1] = 0
 		return val
 	}
 
-	val[0] = from
-	val[1] = to
-
+	val[0] = eth
+	val[1] = coin
 	return val
 }
 
@@ -317,112 +315,116 @@ func (t *Track) WalletTrackingV2(addr string) {
 	t.C <- "*" + strings.ToUpper(t.Newest[addr].Remark) + ":* `" + addr + "` [Buying](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 }
 
-func (t *Track) SmartAddrFinderV2(token, offset, page string) {
+func (t *Track) SmartAddrFinderV2(token, offset, page string) []string {
 	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法启动分析"
-		return
+		return nil
 	}
-	// getContractCreationUrl := "https://api.etherscan.io/api?module=contract&action=getcontractcreation&contractaddresses=%s&apikey=%s"
-	// creator := new(ContractCreationResp)
-	// err := common.HttpGet(fmt.Sprintf(getContractCreationUrl, token, apiKey), &creator)
 
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=%s&offset=%s&sort=asc&contractaddress=%s&apikey=%s"
 	scan := new(TokenTxResp)
 	err := common.HttpGet(fmt.Sprintf(url, page, offset, token, t.Keys.GetKey()), &scan)
 	if err != nil {
 		log.Println("请求失败: ", err)
-		return
+		return nil
 	}
 
 	if scan.Status != "1" {
-		return
+		return nil
 	}
 
-	recorded := map[string]struct{}{
-		"0x0000000000000000000000000000000000000000": {},
-		"0x000000000000000000000000000000000000dead": {},
-		// uniswap router
-		"0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": {},
-		"0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": {},
-	}
+	recorded := sync.Map{}
 
-	analyze := make(map[string]*txs)
+	// addr -> txs
+	analyze := sync.Map{}
 
-	handle := func(address string) {
+	handle := func(address string, sw *sync.WaitGroup) {
+		defer sw.Done()
 		address = strings.ToLower(address)
-		if _, ok := recorded[address]; !ok {
-			recorded[address] = struct{}{}
+		if _, ok := recorded.Load(address); !ok {
+			recorded.Store(address, struct{}{})
 			his := make(map[string]struct{})
 			list := t.TransferList(address, token)
-			if len(list) != 0 {
-				analyze[address] = new(txs)
-				for _, tx := range list {
-					cnt := 0.0
-					dec, err := strconv.Atoi(tx.Decimal)
-					if err == nil {
-						l := len(tx.Value) - dec
-						tmp := ""
-						if l <= 0 {
-							tmp = "0." + strings.Repeat("0", -l) + tx.Value
-						} else {
-							tmp = tx.Value[:l]
-						}
-						cnt, _ = strconv.ParseFloat(tmp, 64)
-					}
-
-					val := 0.0
-					if _, ok := his[tx.Hash]; !ok {
-						his[tx.Hash] = struct{}{}
-						if strings.EqualFold(tx.From, address) {
-							val = t.getEthByHtml(tx.Hash, false)[1]
-							// val = t.getSellEthByHash(tx.Hash, address)
-						} else {
-							val = t.getEthByHtml(tx.Hash, true)[0]
-							// val = t.getBuyEthByHash(tx.Hash)
-						}
-					}
-
-					if strings.EqualFold(address, tx.From) {
-						// sell
-						analyze[address].Profit += val
-						analyze[address].Sell += cnt
+			if len(list) == 0 {
+				return
+			}
+			tmp := new(txs)
+			for _, tx := range list {
+				cnt := 0.0
+				val := 0.0
+				if _, ok := his[tx.Hash]; !ok {
+					his[tx.Hash] = struct{}{}
+					if strings.EqualFold(tx.From, address) {
+						eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+						val = eth[0]
+						cnt = eth[1]
+						tmp.Profit += val
+						tmp.Sell += cnt
+						// val = t.getSellEthByHash(tx.Hash, address)
 					} else {
-						// buy
-						analyze[address].Profit -= val
-						analyze[address].Buy += cnt
-						analyze[address].Pay += val
-					}
-					if analyze[address].Time == "" {
-						ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
-						if err == nil {
-							analyze[address].Time = time.Unix(ts, 0).Format("01-02 15:04:05")
-						}
+						eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+						val = eth[0]
+						cnt = eth[1]
+						tmp.Profit -= val
+						tmp.Buy += cnt
+						tmp.Pay += val
+						// val = t.getBuyEthByHash(tx.Hash)
 					}
 				}
 			}
+			analyze.Store(address, tmp)
 		}
 	}
 
-	for _, v := range scan.Result {
-		handle(v.From)
-		handle(v.To)
+	wg := sync.WaitGroup{}
+	lens := len(scan.Result)
+	wg.Add(lens * 2)
+	for i, v := range scan.Result {
+		go handle(v.From, &wg)
+		go handle(v.To, &wg)
+		if i%(2*t.Keys.Len()) == 0 {
+			time.Sleep(time.Second)
+		}
 	}
 
-	if len(analyze) > 0 {
-		msg := fmt.Sprintf("*合约地址:* `%s`\n *------------分析完毕:------------*", token)
-		for k, v := range analyze {
-			if len(msg) > 3500 {
-				msg += "\n*------内容过长进行裁剪------*"
-				t.C <- msg
-				time.Sleep(time.Microsecond * 100)
-				msg = "*------裁剪后的另外部分------*"
-			}
-			if !(v.Pay == 0.0 || v.Profit < 0.0) {
-				msg += fmt.Sprintf("\n`%s`*: %s*\n*B:* %0.3f | *S:* %0.3f | *C:* %0.3f | *P:* %0.3f ETH", k, v.Time, v.Buy, v.Sell, v.Pay, v.Profit)
-			}
-		}
-		t.C <- msg
+	start, end := "", ""
+
+	ts, err := strconv.ParseInt(scan.Result[0].TimeStamp, 10, 64)
+	if err == nil {
+		start = time.Unix(ts, 0).Format("2006-01-02 15:04:05")
 	}
+	ts, err = strconv.ParseInt(scan.Result[lens-1].TimeStamp, 10, 64)
+	if err == nil {
+		end = time.Unix(ts, 0).Format("2006-01-02 15:04:05")
+	}
+
+	wg.Wait()
+
+	list := make([]string, 0)
+	msg := fmt.Sprintf("*合约地址:* `%s`\n*分析完毕: (%s -- %s)*", token, start, end)
+	analyze.Range(func(k, value any) bool {
+		v := value.(*txs)
+		if v.Profit > 0 {
+			list = append(list, k.(string))
+			msg += fmt.Sprintf("\n`%s`*: %0.3f / %0.3f*", k, v.Pay, v.Profit)
+		}
+		return true
+	})
+
+	t.C <- msg
+	return list
+}
+
+func (t *txs) Add(val float64) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+	t.Profit += val
+}
+
+func (t *txs) Sub(val float64) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+	t.Profit -= val
 }
 
 func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
@@ -457,109 +459,69 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
 		return
 	}
 
-	profit := 0.0
-	detail := make(map[string]*txs)
-	his := make(map[string]struct{})
-	// 最近一次交易时间
-	recent := ""
-	for _, record := range scan.Result {
-		if !strings.EqualFold(record.TokenSymbol, "WETH") || !isNull(record.From) || !isNull(record.To) {
-			if _, ok := his[strings.ToLower(record.Hash)]; ok {
-				continue
+	recorded := sync.Map{}
+	analyze := sync.Map{}
+	profit := new(txs)
+	handle := func(token string, wg *sync.WaitGroup) {
+		defer wg.Done()
+		if _, ok := recorded.Load(token); !ok {
+			recorded.Store(token, struct{}{})
+			list := t.TransferList(addr, token)
+			if len(list) == 0 {
+				return
 			}
-
-			val := 0.0
-
-			his[strings.ToLower(record.Hash)] = struct{}{}
-			if strings.EqualFold(record.From, addr) {
-				val = t.getSellEthByHash(record.Hash, addr)
-			} else {
-				val = t.getBuyEthByHash(record.Hash)
-			}
-			if val == 0.0 {
-				continue
-			}
-
-			if strings.EqualFold(record.From, addr) {
-				profit += val
-			} else {
-				profit -= val
-			}
-
-			if record.Decimal != "" {
-				dec, err := strconv.Atoi(record.Decimal)
-				l := len(record.Value) - dec
-				if err == nil {
-					tmp := ""
-					if l <= 0 {
-						tmp = "0." + strings.Repeat("0", -l) + record.Value
-					} else {
-						tmp = record.Value[:l]
-					}
-					cnt, err := strconv.ParseFloat(tmp, 64)
+			tmp := new(txs)
+			for _, tx := range list {
+				cnt := 0.0
+				val := 0.0
+				if strings.EqualFold(tx.From, addr) {
+					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					val = eth[0]
+					cnt = eth[1]
+					tmp.Profit += val
+					tmp.Sell += cnt
+					profit.Sub(val)
+					// val = t.getSellEthByHash(tx.Hash, address)
+				} else {
+					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					val = eth[0]
+					cnt = eth[1]
+					tmp.Profit -= val
+					tmp.Buy += cnt
+					tmp.Pay += val
+					profit.Add(val)
+					// val = t.getBuyEthByHash(tx.Hash)
+				}
+				if tmp.Time == "" {
+					ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
 					if err == nil {
-						if _, ok := detail[record.ContractAddress]; !ok {
-							detail[record.ContractAddress] = new(txs)
-						}
-						if strings.EqualFold(record.From, addr) {
-							detail[record.ContractAddress].Sell += cnt
-							detail[record.ContractAddress].Profit += val
-						} else {
-							detail[record.ContractAddress].Buy += cnt
-							detail[record.ContractAddress].Profit -= val
-							detail[record.ContractAddress].Pay += val
-						}
-						ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
-						if err == nil {
-							if recent == "" {
-								recent = record.TimeStamp
-							}
-							detail[record.ContractAddress].Time = time.Unix(ts, 0).Format("2006-01-02 15:04:05")
-						}
-						detail[record.ContractAddress].Symbol = record.TokenSymbol
-						isHoneypot := t.api.WhetherHoneypot(record.ContractAddress)
-						if isHoneypot {
-							detail[record.ContractAddress].Scam = "SCAM"
-						}
+						tmp.Time = time.Unix(ts, 0).Format("2006-01-02 15:04:05")
 					}
 				}
+				tmp.Symbol = tx.TokenSymbol
 			}
+			analyze.Store(token, tmp)
+		}
+
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(scan.Result))
+	for i, record := range scan.Result {
+		go handle(record.ContractAddress, &wg)
+		if i % (4 * t.Keys.Len()) == 0 {
+			time.Sleep(time.Second)
 		}
 	}
 
-	warn := ""
+	wg.Wait()
 
-	if recent != "" {
-		ts, err := strconv.ParseInt(recent, 10, 64)
-		if err == nil {
-			if time.Unix(ts, 0).Add(10 * 24 * time.Hour).Before(time.Now()) {
-				warn = "*该地址已超过十天未交易,最后一次:" + time.Unix(ts, 0).Format("2006-01-02 15:04:05") + "*\n"
-			}
-		}
-	}
-
-	netMargin := profit
-
-	for _, v := range detail {
-		if v.Buy == 0.0 || v.Sell == 0.0 {
-			netMargin -= v.Profit
-		}
-	}
-
-	msg := fmt.Sprintf("%s[Wallet](https://etherscan.io/address/%s#tokentxns)*总利润: %0.5f | 净利润: %0.5f :*\n", warn, addr, profit, netMargin)
-	for k, v := range detail {
-		if len(msg) > 3500 {
-			msg += "*------内容过长进行裁剪------*"
-			t.C <- msg
-			time.Sleep(time.Microsecond * 100)
-			msg = "*------裁剪后的另外部分------\n*"
-		}
-		unsold := ""
-		if v.Sell == 0.0 {
-			unsold = "UNSOLE"
-		}
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*%s* | *Detect:%s* | *Status:%s*\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f | *P:* %0.3f eth\n", v.Symbol, k, k, v.Time, v.Scam, unsold, v.Buy, v.Sell, v.Pay, v.Profit)
-	}
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)*总利润: %0.5f*\n", addr, profit.Profit)
+	analyze.Range(func(k, value any) bool {
+		v := value.(*txs)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T: %s | C: %0.3f | P: %0.3f *\n", v.Symbol, k, k, v.Time, v.Pay, v.Profit)
+		return true
+	})
 
 	t.C <- msg
 
