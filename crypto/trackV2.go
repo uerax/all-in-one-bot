@@ -160,13 +160,14 @@ func (t *Track) WalletTrackingV2(addr string) {
 			sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
 			sb.WriteString(")*")
 		}
-		sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?exactField=input&exactAmount=0.02&inputCurrency=ETH&outputCurrency=")
+		sb.WriteString("----[前往出售](https://app.uniswap.org/#/swap?exactField=input&inputCurrency=")
 		sb.WriteString(record.ContractAddress)
-		sb.WriteString("&chain=ethereum)")
-		sb.WriteString("\n\n`")
+		sb.WriteString("&outputCurrency=ETH&chain=ethereum)")
+		sb.WriteString("\n")
+		sb.WriteString("\n`")
 		sb.WriteString(record.ContractAddress)
 		sb.WriteString("`")
-		t.C <- strings.ToUpper(t.Newest[addr].Remark) + ":* `" + addr + "` [监控卖出](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+		t.C <- strings.ToUpper(t.Newest[addr].Remark) + ": `" + addr + "` [Selling](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 		return
 	}
 
@@ -313,7 +314,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	log.Println("查询总耗时: ", time.Since(now))
 
-	t.C <- "*" + strings.ToUpper(t.Newest[addr].Remark) + ":* `" + addr + "` [监控买入](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+	t.C <- "*" + strings.ToUpper(t.Newest[addr].Remark) + ":* `" + addr + "` [Buying](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 }
 
 func (t *Track) SmartAddrFinderV2(token, offset, page string) {
