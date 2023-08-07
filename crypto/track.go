@@ -911,8 +911,29 @@ func (t *Track) WalletTrackingV2(addr string) {
 		return
 	}
 
+	// 卖单仅提示
 	if strings.EqualFold(record.From, addr) {
-		log.Println("卖单不做提示")
+		sb.WriteString("\n*")
+		sb.WriteString(record.TokenName)
+		sb.WriteString(": *")
+		sb.WriteString("[")
+		sb.WriteString(record.TokenSymbol)
+		sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
+		sb.WriteString(record.ContractAddress)
+		sb.WriteString(") ")
+		ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+		if err == nil {
+			sb.WriteString("*(")
+			sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
+			sb.WriteString(")*")
+		}
+		sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?exactField=input&exactAmount=0.02&inputCurrency=ETH&outputCurrency=")
+		sb.WriteString(record.ContractAddress)
+		sb.WriteString("&chain=ethereum)")
+		sb.WriteString("\n\n`")
+		sb.WriteString(record.ContractAddress)
+		sb.WriteString("`")
+		t.C <- strings.ToUpper(t.Newest[addr].Remark) + ":* `" + addr + "` [监控卖出](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 		return
 	}
 
@@ -953,7 +974,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 			isHoneypot += "*[SCAM]*"
 		}
 		ratio := 0.0
-		
+
 		if hr.SimulationResult.SellTax != 100 && hr.SimulationResult.BuyTax != 100 {
 			ratio = 1 / ((1 - hr.SimulationResult.BuyTax/100) * (1 - hr.SimulationResult.SellTax/100))
 		}
@@ -1353,7 +1374,7 @@ func (t *Track) TaxTracking(addr string, buy, sell int, ctx context.Context) {
 				if hr.SimulationResult.SellTax != 100 && hr.SimulationResult.BuyTax != 100 {
 					ratio = 1 / ((1 - hr.SimulationResult.BuyTax/100) * (1 - hr.SimulationResult.SellTax/100))
 				}
-				
+
 				t.C <- fmt.Sprintf("`%s`: Tax变化\n%s:[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)\n\n*Buy Tax: %.1f%%   |   Sell Tax: %.1f%%*\n*Ratio: %.2f   |   Formula: NxRatio*\n*Pool: $%.2f*", addr, hr.Token.Name, hr.Token.Symbol, addr, hr.SimulationResult.BuyTax, hr.SimulationResult.SellTax, ratio, hr.Pair.Liquidity)
 				return
 			}
@@ -1363,7 +1384,7 @@ func (t *Track) TaxTracking(addr string, buy, sell int, ctx context.Context) {
 
 // Buy Return ETH Balance
 // Sell Return Balance ETH
-func (t *Track) getEthByHtml(hash string, buy bool) []float64 {	
+func (t *Track) getEthByHtml(hash string, buy bool) []float64 {
 	res, err := http.Get("https://etherscan.io/tx/" + hash)
 	val := make([]float64, 2)
 	if err != nil {
@@ -1394,9 +1415,9 @@ func (t *Track) getEthByHtml(hash string, buy bool) []float64 {
 		title := s.Text()
 		title = strings.ReplaceAll(title, ",", "")
 		//fmt.Println(i, " " + title)
-		if i % 8 == fromIdx {
-			if len(title) - strings.Index(title, ".") > 4 {
-				title = title[:strings.Index(title, ".") + 4]
+		if i%8 == fromIdx {
+			if len(title)-strings.Index(title, ".") > 4 {
+				title = title[:strings.Index(title, ".")+4]
 			}
 			bae, err := strconv.ParseFloat(title, 64)
 			if err == nil {
@@ -1406,7 +1427,7 @@ func (t *Track) getEthByHtml(hash string, buy bool) []float64 {
 				from += bae
 			}
 		}
-		if i % 8 == toIdx {
+		if i%8 == toIdx {
 			bae, err := strconv.ParseFloat(title, 64)
 			if err == nil {
 				if buy {
