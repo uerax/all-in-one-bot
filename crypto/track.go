@@ -922,20 +922,22 @@ func (t *Track) WalletTrackingV2(addr string) {
 	check := ""
 	link := ""
 	tax := ""
-	count := 0.0
+	count := ""
 
 	getBalance := func() {
 		defer wg.Done()
 		if strings.EqualFold(record.From, addr) {
-			//balance += t.getSellEthByHash(record.Hash, addr)
-			eth := t.getEthByHtml(record.Hash, false)
-			balance += eth[1]
-			count += eth[0]
+			balance += t.getSellEthByHash(record.Hash, addr)
+			count = record.Value
+			// eth := t.getEthByHtml(record.Hash, false)
+			// balance += eth[1]
+			// count = fmt.Sprintf("%f", eth[0])
 		} else {
-			//balance += t.getBuyEthByHash(record.Hash)
-			eth := t.getEthByHtml(record.Hash, true)
-			balance += eth[0]
-			count += eth[1]
+			balance += t.getBuyEthByHash(record.Hash)
+			count = record.Value
+			// eth := t.getEthByHtml(record.Hash, true)
+			// balance += eth[0]
+			// count = fmt.Sprintf("%f", eth[1])
 		}
 		log.Println("getBalance耗时: ", time.Since(now))
 	}
@@ -1041,7 +1043,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString(fmt.Sprintf("%f", balance))
 	sb.WriteString(" ETH   |   ")
 	sb.WriteString("Count: ")
-	sb.WriteString(fmt.Sprintf("%f", count))
+	sb.WriteString(count)
 	sb.WriteString(" ")
 	sb.WriteString(record.TokenSymbol)
 	sb.WriteString("*")
@@ -1363,7 +1365,7 @@ func (t *Track) TaxTracking(addr string, buy, sell int, ctx context.Context) {
 // Sell Return Balance ETH
 func (t *Track) getEthByHtml(hash string, buy bool) []float64 {	
 	res, err := http.Get("https://etherscan.io/tx/" + hash)
-	val := make([]float64, 0, 2)
+	val := make([]float64, 2)
 	if err != nil {
 		log.Println(err)
 		return val
@@ -1419,8 +1421,8 @@ func (t *Track) getEthByHtml(hash string, buy bool) []float64 {
 		return val
 	}
 
-	val = append(val, from)
-	val = append(val, to)
+	val[0] = from
+	val[1] = to
 
 	return val
 }
