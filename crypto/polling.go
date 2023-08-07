@@ -38,6 +38,10 @@ func (t *PollingKey) IsNull() bool {
 	return len(t.Keys) == 0
 }
 
+func (t *PollingKey) Len() int {
+	return len(t.Keys)
+}
+
 func (t *PollingKey) AddKeys(keys ...string) {
 	t.Keys = append(t.Keys, keys...)
 }

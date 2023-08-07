@@ -55,6 +55,7 @@ type txs struct {
 	Scam   string
 	Pay    float64
 	Time   string
+	Mu     sync.Mutex
 }
 
 func NewTrack() *Track {
@@ -780,10 +781,10 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 					if _, ok := his[tx.Hash]; !ok {
 						his[tx.Hash] = struct{}{}
 						if strings.EqualFold(tx.From, address) {
-							val = t.getEthByHtml(tx.Hash, false)[1]
+							val = t.getEthByHtml(tx.Hash, tx.TokenSymbol)[0]
 							// val = t.getSellEthByHash(tx.Hash, address)
 						} else {
-							val = t.getEthByHtml(tx.Hash, true)[0]
+							val = t.getEthByHtml(tx.Hash, tx.TokenSymbol)[0]
 							// val = t.getBuyEthByHash(tx.Hash)
 						}
 					}
