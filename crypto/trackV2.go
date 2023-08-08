@@ -406,6 +406,10 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) []string {
 		v := value.(*txs)
 		if v.Profit > 0 {
 			list = append(list, k.(string))
+			if len(msg) > 4000 {
+				t.C <- msg
+				msg = "---------------切割线---------------"
+			}
 			msg += fmt.Sprintf("\n`%s`*: %0.3f / %0.3f*", k, v.Pay, v.Profit)
 		}
 		return true
@@ -425,6 +429,7 @@ func (t *txs) Sub(val float64) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	t.Profit -= val
+	t.Pay += val
 }
 
 func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
@@ -471,25 +476,24 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
 				return
 			}
 			tmp := new(txs)
+			his := make(map[string]struct{})
 			for _, tx := range list {
-				cnt := 0.0
-				val := 0.0
+				if _, ok := his[strings.ToLower(tx.Hash)]; ok {
+					continue
+				}
+				his[strings.ToLower(tx.Hash)] = struct{}{}
 				if strings.EqualFold(tx.From, addr) {
 					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					val = eth[0]
-					cnt = eth[1]
-					tmp.Profit += val
-					tmp.Sell += cnt
-					profit.Sub(val)
+					tmp.Profit += eth[0]
+					tmp.Sell += eth[1]
+					profit.Add(eth[0])
 					// val = t.getSellEthByHash(tx.Hash, address)
 				} else {
 					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					val = eth[0]
-					cnt = eth[1]
-					tmp.Profit -= val
-					tmp.Buy += cnt
-					tmp.Pay += val
-					profit.Add(val)
+					tmp.Profit -= eth[0]
+					tmp.Buy += eth[1]
+					tmp.Pay += eth[0]
+					profit.Sub(eth[0])
 					// val = t.getBuyEthByHash(tx.Hash)
 				}
 				if tmp.Time == "" {
@@ -509,16 +513,20 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
 	wg.Add(len(scan.Result))
 	for i, record := range scan.Result {
 		go handle(record.ContractAddress, &wg)
-		if i % (4 * t.Keys.Len()) == 0 {
+		if i % (2 * t.Keys.Len()) == 0 {
 			time.Sleep(time.Second)
 		}
 	}
 
 	wg.Wait()
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)*总利润: %0.5f*\n", addr, profit.Profit)
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)*支出: %0.5f | 净收入: %0.5f*\n", addr, profit.Pay, profit.Profit)
 	analyze.Range(func(k, value any) bool {
 		v := value.(*txs)
+		if len(msg) > 4000 {
+			t.C <- msg
+			msg = "---------------切割线---------------\n"
+		}
 		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T: %s | C: %0.3f | P: %0.3f *\n", v.Symbol, k, k, v.Time, v.Pay, v.Profit)
 		return true
 	})

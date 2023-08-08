@@ -838,7 +838,7 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.Keys.GetKey()), &tx)
 
 	if err != nil {
-		log.Println("请求失败: ", err)
+		log.Println(addr + ":" + token + "请求失败: ", err)
 		return nil
 	}
 	if len(tx.Result) > 6 {
