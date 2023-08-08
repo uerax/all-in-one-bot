@@ -841,9 +841,6 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 		log.Println(addr + ":" + token + "请求失败: ", err)
 		return nil
 	}
-	if len(tx.Result) > 6 {
-		return nil
-	}
 
 	return tx.Result
 }
