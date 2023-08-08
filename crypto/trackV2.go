@@ -470,6 +470,18 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
 	profit := new(txs)
 	handle := func(token string, wg *sync.WaitGroup) {
 		defer wg.Done()
+		if strings.EqualFold(token, "0x29480f9385de5f1e7084c2c09167a155d1285ccc") {
+			// USDT
+			return
+		}
+		if strings.EqualFold(token, "0xdac17f958d2ee523a2206206994597c13d831ec7") {
+			// USDT
+			return
+		}
+		if strings.EqualFold(token, "0x3579781bcfefc075d2cb08b815716dc0529f3c7d") {
+			// ETH
+			return
+		}
 		if _, ok := recorded.Load(token); !ok {
 			recorded.Store(token, struct{}{})
 			list := t.TransferList(addr, token)
