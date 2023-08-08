@@ -350,25 +350,26 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) []string {
 			}
 			tmp := new(txs)
 			for _, tx := range list {
-				cnt := 0.0
-				val := 0.0
 				if _, ok := his[tx.Hash]; !ok {
 					his[tx.Hash] = struct{}{}
 					if strings.EqualFold(tx.From, address) {
 						eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-						val = eth[0]
-						cnt = eth[1]
+						val := eth[0]
+						cnt := eth[1]
 						tmp.Profit += val
 						tmp.Sell += cnt
-						// val = t.getSellEthByHash(tx.Hash, address)
+						// val := t.getSellEthByHash(tx.Hash, address)
+						// tmp.Profit += val
 					} else {
 						eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-						val = eth[0]
-						cnt = eth[1]
+						val := eth[0]
+						cnt := eth[1]
 						tmp.Profit -= val
 						tmp.Buy += cnt
 						tmp.Pay += val
-						// val = t.getBuyEthByHash(tx.Hash)
+						// val := t.getBuyEthByHash(tx.Hash)
+						// tmp.Profit -= val
+						// tmp.Pay += val
 					}
 				}
 			}
@@ -382,7 +383,7 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) []string {
 	for i, v := range scan.Result {
 		go handle(v.From, &wg)
 		go handle(v.To, &wg)
-		if i%(2*t.Keys.Len()) == 0 {
+		if i%(3*t.Keys.Len()) == 0 {
 			time.Sleep(time.Second)
 		}
 	}
@@ -483,18 +484,23 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
 				}
 				his[strings.ToLower(tx.Hash)] = struct{}{}
 				if strings.EqualFold(tx.From, addr) {
-					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					tmp.Profit += eth[0]
-					tmp.Sell += eth[1]
-					profit.Add(eth[0])
-					// val = t.getSellEthByHash(tx.Hash, address)
+					// eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					// tmp.Profit += eth[0]
+					// tmp.Sell += eth[1]
+					// profit.Add(eth[0])
+					val := t.getSellEthByHash(tx.Hash, addr)
+					tmp.Profit += val
+					profit.Add(val)
 				} else {
-					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					tmp.Profit -= eth[0]
-					tmp.Buy += eth[1]
-					tmp.Pay += eth[0]
-					profit.Sub(eth[0])
-					// val = t.getBuyEthByHash(tx.Hash)
+					// eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					// tmp.Profit -= eth[0]
+					// tmp.Buy += eth[1]
+					// tmp.Pay += eth[0]
+					// profit.Sub(eth[0])
+					val := t.getBuyEthByHash(tx.Hash)
+					tmp.Profit -= val
+					tmp.Pay += val
+					profit.Sub(val)
 				}
 				if tmp.Time == "" {
 					ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)

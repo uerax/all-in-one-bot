@@ -54,6 +54,21 @@ func smartAddrFinder(args string) {
 		return
 	}
 
+	go api.Track.SmartAddrFinder(arg[0], arg[1], arg[2])
+}
+
+func smartAddrFinderV2(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) == 1 {
+		arg = append(arg, "50")
+		arg = append(arg, "1")
+	}
+
+	if len(arg) != 3 {
+		log.Printf("smartAddrFinder 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
 
 	go api.Track.SmartAddrFinderV2(arg[0], arg[1], arg[2])
 }

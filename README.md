@@ -265,6 +265,7 @@ wallet_tracking - 追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18
 stop_wallet_tracking - 停止追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
 wallet_tx_info - 获取两日内买入的加密货币和时间 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6
 smart_addr_finder - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
+smart_addr_finder_v2 - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 analyze_addr_token_profit - 分析钱包的指定加密货币总收益情况(钱包地址 加加密货币合约地址) 例:0x1c8075cfc18cd17f5fb7743fba811603b819234c 0x808a57ef754c18e1d2cea5d6cf30f00eeeaa1273
 wallet_tx_analyze - 分析钱包近n条交易的利润 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E 30
 tacking_tax - 设置tax监控线20分钟后自动取消 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10
@@ -286,6 +287,7 @@ bot_addr_finder - 分析高涨幅度币的早期买入地址 例:  0x2890df158d7
 tracking_lastest_tx - 获取正在追踪的钱包最后一次交易的时间
 analyze_addr_token_profit - 分析钱包的指定加密货币总收益情况(钱包地址 加加密货币合约地址) 例:0x1c8075cfc18cd17f5fb7743fba811603b819234c 0x808a57ef754c18e1d2cea5d6cf30f00eeeaa1273
 smart_addr_finder - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
+smart_addr_finder_v2 - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 list_wallet_tracking - 列出正在追踪的聪明钱包地址
 list_smart_addr_probe - 列出正在探测的聪明钱包地址
 dump_tracking_list - dump追踪地址列表(建议每次准备重启服务的时候执行一次)

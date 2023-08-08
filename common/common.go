@@ -100,6 +100,11 @@ func HttpGet(url string, v any) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(b, &v)
 
+	err = json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
