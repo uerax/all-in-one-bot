@@ -341,6 +341,9 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) []string {
 	handle := func(address string, sw *sync.WaitGroup) {
 		defer sw.Done()
 		address = strings.ToLower(address)
+		if isNull(address) {
+			return
+		}
 		if _, ok := recorded.Load(address); !ok {
 			recorded.Store(address, struct{}{})
 			his := make(map[string]struct{})
