@@ -485,6 +485,10 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
 			// ETH
 			return
 		}
+		if strings.EqualFold(token, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2") {
+			// WETH
+			return
+		}
 		if _, ok := recorded.Load(token); !ok {
 			recorded.Store(token, struct{}{})
 			list := t.TransferList(addr, token)
