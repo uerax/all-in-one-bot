@@ -597,7 +597,7 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 
 	msg := fmt.Sprintf("`%s` *分析完毕:*", token)
 	for k, v := range profit {
-		msg += fmt.Sprintf("\n[W](https://etherscan.io/address/%s#tokentxns)`%s`* %0.5f ETH*", k, k, v)
+		msg += fmt.Sprintf("\n[W](https://etherscan.io/address/%s#tokentxns) `%s`* %0.4f ETH*", k, k, v)
 	}
 
 	t.C <- msg
