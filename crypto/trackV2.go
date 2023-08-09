@@ -545,7 +545,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string) {
 
 	wg.Wait()
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)*支出: %0.5f | 净收入: %0.5f*\n", addr, profit.Pay, profit.Profit)
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)* -- 支出: %0.5f | 净收入: %0.5f*\n", addr, profit.Pay, profit.Profit)
 	analyze.Range(func(k, value any) bool {
 		v := value.(*txs)
 		if len(msg) > 4000 {
