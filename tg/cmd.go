@@ -9,6 +9,22 @@ import (
 )
 
 // Crypto Start
+func smartAddrAnalyze(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) == 1 {
+		arg = append(arg, "5")
+		arg = append(arg, "1")
+	}
+
+	if len(arg) != 3 {
+		log.Printf("smartAddrFinder 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+
+	go api.Track.SmartAddrAnalyze(arg[0], arg[1], arg[2])
+}
+
 func getTax(args string) {
 	go api.Track.GetTax(args)
 }
@@ -108,10 +124,10 @@ func walletAnalyze(args string) {
 		return
 	}
 	if len(arg) == 1 {
-		arg = append(arg, "30")
+		arg = append(arg, "40")
 	}
 
-	go api.Track.WalletTxAnalyzeV2(arg[0], arg[1])
+	go api.Track.WalletTxAnalyzeV2(arg[0], arg[1], false)
 }
 
 func walletTracking(args string) {

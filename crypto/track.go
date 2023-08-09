@@ -373,6 +373,11 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 		return
 	}
 
+	if len(tx.Result) > 100 {
+		log.Println("交易数过高直接过滤: ", len(tx.Result))
+		return
+	}
+
 	his := make(map[string]struct{})
 	analyze := new(txs)
 
@@ -419,7 +424,7 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 
 	}
 
-	t.C <- fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*总利润为: %0.5f eth: *\n*B:* %0.2f | *S:* %0.2f | *C:* %0.3f eth\n", analyze.Symbol, token, analyze.Profit, analyze.Buy, analyze.Sell, analyze.Pay)
+	t.C <- fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*总利润为: %0.5f eth: *\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth\n", analyze.Symbol, token, analyze.Profit, analyze.Buy, analyze.Sell, analyze.Pay)
 }
 
 func (t *Track) getBuyEthByHash(hash string) float64 {
@@ -443,8 +448,6 @@ func (t *Track) getBuyEthByHash(hash string) float64 {
 	}
 
 	if scan.Status != "1" || len(scan.Result) == 0 {
-		fmt.Printf(url, hash, t.Keys.GetKey())
-		log.Printf("\n%+v\n", scan)
 		return 0.0
 	}
 
@@ -500,8 +503,6 @@ func (t *Track) getSellEthByHash(hash, addr string) float64 {
 	}
 
 	if scan.Status != "1" || len(scan.Result) == 0 {
-		fmt.Printf(url, hash, t.Keys.GetKey())
-		log.Printf("\n%+v\n", scan)
 		return 0.0
 	}
 
@@ -839,6 +840,11 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 
 	if err != nil {
 		log.Println(addr + ":" + token + "请求失败: ", err)
+		return nil
+	}
+
+	if len(tx.Result) > 100 {
+		log.Println("交易数过高直接过滤: ", len(tx.Result))
 		return nil
 	}
 
