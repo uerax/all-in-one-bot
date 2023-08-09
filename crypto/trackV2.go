@@ -435,36 +435,36 @@ func (t *txs) Sub(val float64) {
 	t.Pay += val
 }
 
-func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool) float64 {
+func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float64,int) {
 	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法调用api"
-		return 0.0
+		return 0.0,0
 	}
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
 		log.Println("etherscan请求失败")
 		t.C <- "etherscan请求失败"
-		return 0.0
+		return 0.0,0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("读取body失败")
 		t.C <- "读取body失败"
-		return 0.0
+		return 0.0,0
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		log.Println("json转换失败")
 		t.C <- "json转换失败"
-		return 0.0
+		return 0.0,0
 	}
 
 	if scan.Status != "1" {
 		t.C <- "响应码异常"
-		return 0.0
+		return 0.0,0
 	}
 
 	recorded := sync.Map{}
@@ -545,7 +545,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool) float
 	wg.Wait()
 
 	if output {
-		return profit.Profit
+		return profit.Profit, len(scan.Result)
 	}
 
 	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)* -- 支出: %0.5f | 净收入: %0.5f*\n", addr, profit.Pay, profit.Profit)
@@ -560,7 +560,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool) float
 	})
 
 	t.C <- msg
-	return 0.0
+	return 0.0,0
 }
 
 func (t *Track) SmartAddrAnalyze(token, offset, page string) {
@@ -581,23 +581,25 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 		return 
 	}
 
-	profit := make(map[string]float64)
+	profit := make(map[string]string)
 	for _, v := range scan.Result {
 		from, to := strings.ToLower(v.From), strings.ToLower(v.To)
 		if _, ok := profit[from]; !ok && !isNull(from) {
-			profit[from] = t.WalletTxAnalyzeV2(v.From, "40", true)
+			f, i := t.WalletTxAnalyzeV2(v.From, "40", true)
+			profit[from] = fmt.Sprintf("%.3f(%d)", f, i)
 			time.Sleep(500 * time.Millisecond)
 		}
 		
 		if _, ok := profit[to]; !ok && !isNull(to) {
-			profit[to] = t.WalletTxAnalyzeV2(v.To, "40", true)
+			f, i := t.WalletTxAnalyzeV2(v.To, "40", true)
+			profit[to] = fmt.Sprintf("%.3f(%d)", f, i)
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
 
 	msg := fmt.Sprintf("`%s` *分析完毕:*", token)
 	for k, v := range profit {
-		msg += fmt.Sprintf("\n[W](https://etherscan.io/address/%s#tokentxns) `%s`* %0.4f ETH*", k, k, v)
+		msg += fmt.Sprintf("\n[W](https://etherscan.io/address/%s#tokentxns) `%s`* %s*", k, k, v)
 	}
 
 	t.C <- msg
