@@ -428,6 +428,15 @@ func (t *txs) Add(val float64) {
 	t.Profit += val
 }
 
+func (t *txs) JudgeWin(val float64) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+	t.TotalTx++
+	if val >= 0 {
+		t.WinTx++
+	}
+}
+
 func (t *txs) Sub(val float64) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
@@ -508,6 +517,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 					// profit.Add(eth[0])
 					val := t.getSellEthByHash(tx.Hash, addr)
 					tmp.Profit += val
+					tmp.Tx++
 					profit.Add(val)
 				} else {
 					// eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
@@ -518,6 +528,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 					val := t.getBuyEthByHash(tx.Hash)
 					tmp.Profit -= val
 					tmp.Pay += val
+					tmp.Tx++
 					profit.Sub(val)
 				}
 				if tmp.Time == "" {
@@ -527,6 +538,9 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 					}
 				}
 				tmp.Symbol = tx.TokenSymbol
+			}
+			if tmp.Tx > 0 {
+				profit.JudgeWin(tmp.Profit)
 			}
 			analyze.Store(token, tmp)
 		}
@@ -548,7 +562,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 		return profit.Profit, len(scan.Result)
 	}
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)* -- 支出: %0.5f | 净收入: %0.5f*\n", addr, profit.Pay, profit.Profit)
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *支出: %0.5f  |  净收入: %0.5f  |  胜率: %d:%d*\n", addr, profit.Pay, profit.Profit, profit.WinTx, profit.TotalTx)
 	analyze.Range(func(k, value any) bool {
 		v := value.(*txs)
 		if len(msg) > 4000 {
