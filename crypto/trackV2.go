@@ -432,7 +432,7 @@ func (t *txs) JudgeWin(val float64) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	t.TotalTx++
-	if val >= 0 {
+	if val > 0 {
 		t.WinTx++
 	}
 }
