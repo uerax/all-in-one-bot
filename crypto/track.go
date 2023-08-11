@@ -48,14 +48,17 @@ type tx struct {
 }
 
 type txs struct {
-	Buy    float64
-	Sell   float64
-	Symbol string
-	Profit float64
-	Scam   string
-	Pay    float64
-	Time   string
-	Mu     sync.Mutex
+	Buy     float64
+	Sell    float64
+	Symbol  string
+	Profit  float64
+	Scam    string
+	Pay     float64
+	Time    string
+	Tx		int
+	TotalTx int
+	WinTx   int
+	Mu      sync.Mutex
 }
 
 func NewTrack() *Track {
@@ -839,7 +842,7 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.Keys.GetKey()), &tx)
 
 	if err != nil {
-		log.Println(addr + ":" + token + "请求失败: ", err)
+		log.Println(addr+":"+token+"请求失败: ", err)
 		return nil
 	}
 
