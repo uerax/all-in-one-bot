@@ -19,6 +19,7 @@ var (
 	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
 	honeypotUrl  = "https://api.honeypot.is/v2/IsHoneypot?address="
 	dextoolsUrl  = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
+	uniswapUrl = "https://etherscan.io/tradingview/uniswapv2/%s/history?toTs=%d&fromTs=%d&resolution=%d&last=%d"
 )
 
 type Crypto struct {
@@ -339,4 +340,8 @@ func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
 	}
 
 	return res
+}
+
+func (t *Crypto) DexKline( string) {
+
 }
