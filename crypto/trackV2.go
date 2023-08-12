@@ -618,3 +618,15 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 
 	t.C <- msg
 }
+
+type OLHC struct {
+	O float64
+	L float64
+	H float64
+	C float64
+}
+
+func (t *Track) PriceOLHC(token string) *OLHC {
+	o := new(OLHC)
+	return o
+}
