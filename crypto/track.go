@@ -20,6 +20,7 @@ import (
 
 type Track struct {
 	C            chan string
+	DeferC       chan string
 	Newest       map[string]*newest
 	apiKey       string
 	Task         map[string]context.CancelFunc
@@ -55,7 +56,7 @@ type txs struct {
 	Scam    string
 	Pay     float64
 	Time    string
-	Tx		int
+	Tx      int
 	TotalTx int
 	WinTx   int
 	Mu      sync.Mutex
@@ -65,6 +66,7 @@ func NewTrack() *Track {
 
 	t := &Track{
 		C:            make(chan string, 5),
+		DeferC:       make(chan string, 5),
 		Newest:       recoverTrackingList(),
 		apiKey:       goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey"),
 		Task:         make(map[string]context.CancelFunc),

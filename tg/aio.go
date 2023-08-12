@@ -80,11 +80,11 @@ func (t *Aio) DeleteAfterSendMessage(msg string) {
 	}
 }
 
-func (t *Aio) SendMarkdown(id int64, msg string, preview bool) {
+func (t *Aio) SendMarkdown(id int64, msg string, preview bool) (tgbotapi.Message, error) {
 	mc := tgbotapi.NewMessage(id, msg)
 	mc.ParseMode = "Markdown"
 	mc.DisableWebPagePreview = preview
-	t.bot.Send(mc)
+	return t.bot.Send(mc)
 }
 
 func (t *Aio) DeleteAfterSendMarkdown(id int64, msg string, preview bool) {
@@ -100,6 +100,13 @@ func (t *Aio) DeleteAfterSendMarkdown(id int64, msg string, preview bool) {
 func (t *Aio) deleteAfterMinute(id int64, msgId int, minute int) {
 	time.Sleep(time.Minute * time.Duration(minute))
 	t.bot.Send(tgbotapi.NewDeleteMessage(id, msgId))
+}
+
+func (t *Aio) AppendMsg(id int64, msgId int, msg string) {
+	mc := tgbotapi.NewEditMessageText(id, msgId, msg)
+	mc.ParseMode = "Markdown"
+	mc.DisableWebPagePreview = true
+	t.bot.Send(tgbotapi.NewEditMessageText(id, msgId, msg))
 }
 
 func (t *Aio) SendImg(id int64, img string) {
@@ -220,6 +227,5 @@ func (t *Aio) WaitToSend() {
 		case v := <-t.Track.C:
 			go t.SendMarkdown(ChatId, v, true)
 		}
-
 	}
 }
