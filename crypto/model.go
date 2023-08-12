@@ -382,3 +382,20 @@ type Votes struct {
 }
 
 // DextoolsResp End
+
+// DexKline 
+type DexKline struct {
+	S    string    `json:"s"`    
+	T    []int64   `json:"t"`    
+	C    []float64 `json:"c"`    
+	H    []float64 `json:"h"`    
+	L    []float64 `json:"l"`    
+	O    []float64 `json:"o"`    
+	V    []float64 `json:"v"`    
+	CUsd []float64 `json:"c_usd"`
+	HUsd []float64 `json:"h_usd"`
+	LUsd []float64 `json:"l_usd"`
+	OUsd []float64 `json:"o_usd"`
+	VUsd []float64 `json:"v_usd"`
+	From int64     `json:"_from"`
+}
