@@ -19,7 +19,7 @@ var (
 	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
 	honeypotUrl  = "https://api.honeypot.is/v2/IsHoneypot?address="
 	dextoolsUrl  = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
-	uniswapUrl = "https://etherscan.io/tradingview/uniswapv2/%s/history?toTs=%d&fromTs=%d&resolution=%d&last=%d"
+	uniswapUrl = "https://etherscan.io/tradingview/uniswapv2/%s/history?fromTs=%d&toTs=%d&resolution=%s&last=%d"
 )
 
 type Crypto struct {
@@ -342,6 +342,24 @@ func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
 	return res
 }
 
-func (t *Crypto) DexKline( string) {
+func (t *Crypto) DexKline(pair string, start, end int64, resolution string, last int64) *DexKline {
+	r, err := http.Get(fmt.Sprintf(uniswapUrl, pair, start, end, resolution, last))
+	if err != nil {
+		log.Println("honeypotUrl请求失败", err)
+		return nil
+	}
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		log.Println("body读取失败", err)
+		return nil
+	}
 
+	res := new(DexKline)
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		log.Println("json序列化失败", err)
+		return nil
+	}
+	return res
 }
