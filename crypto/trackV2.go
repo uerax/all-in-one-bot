@@ -619,14 +619,28 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 	t.C <- msg
 }
 
-type OLHC struct {
-	O float64
-	L float64
-	H float64
-	C float64
-}
-
-func (t *Track) PriceOLHC(token string) *OLHC {
-	o := new(OLHC)
-	return o
+func (t *Track) PriceHighestAndNow(token, start, end string) {
+	from, err := time.Parse("2006-01-02 15:04:05", start)
+	if err != nil {
+		t.C <- "时间格式输入错误,请按照以下格式'2006-01-02 15:04:05'"
+		return
+	}
+	to := time.Now()
+	if !strings.EqualFold(end, "now") {
+		to, err = time.Parse("2006-01-02 15:04:05", end)
+		if err != nil {
+			t.C <- "时间格式输入错误,请按照以下格式'2006-01-02 15:04:05'"
+			return
+		}
+	}
+	p := t.api.MemePrice(token, "eth")
+	if p == nil {
+		t.C <- "token地址查询失败,请检查填写是否正确"
+		return
+	}
+	dk := t.api.DexKline(p.PairAddress, from.Unix(), to.Unix(), "5", to.Unix())
+	if dk == nil {
+		t.C <- "pair查询失败"
+		return
+	}
 }
