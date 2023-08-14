@@ -154,9 +154,9 @@ func (t *Track) WalletTrackingV2(addr string) {
 		sb.WriteString(") ")
 		ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
 		if err == nil {
-			sb.WriteString("*(")
-			sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
-			sb.WriteString(")*")
+			sb.WriteString("*(*`")
+			sb.WriteString(time.Unix(ts, 0).Format("2006-01-02_15:04:05"))
+			sb.WriteString("`*)*")
 		}
 		sb.WriteString("----[前往出售](https://app.uniswap.org/#/swap?exactField=input&inputCurrency=")
 		sb.WriteString(record.ContractAddress)
@@ -282,9 +282,9 @@ func (t *Track) WalletTrackingV2(addr string) {
 	sb.WriteString(") ")
 	ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
 	if err == nil {
-		sb.WriteString("*(")
-		sb.WriteString(time.Unix(ts, 0).Format("2006-01-02 15:04:05"))
-		sb.WriteString(")*")
+		sb.WriteString("*(*`")
+		sb.WriteString(time.Unix(ts, 0).Format("2006-01-02_15:04:05"))
+		sb.WriteString("`*)*")
 	}
 	sb.WriteString("----[前往购买](https://app.uniswap.org/#/swap?exactField=input&exactAmount=0.02&inputCurrency=ETH&outputCurrency=")
 	sb.WriteString(record.ContractAddress)
@@ -537,7 +537,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 				if tmp.Time == "" {
 					ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
 					if err == nil {
-						tmp.Time = time.Unix(ts, 0).Format("2006-01-02 15:04:05")
+						tmp.Time = time.Unix(ts, 0).Format("2006-01-02_15:04:05")
 					}
 				}
 				tmp.Symbol = tx.TokenSymbol
@@ -573,7 +573,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 				t.C <- msg
 				msg = "---------------切割线---------------\n"
 			}
-			msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T: %s | C: %0.3f | P: %0.3f *\n", v.Symbol, k, k, v.Time, v.Pay, v.Profit)
+			msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s` *| C: %0.3f | P: %0.3f *\n", v.Symbol, k, k, v.Time, v.Pay, v.Profit)
 		}
 		
 		return true
@@ -626,16 +626,16 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 }
 
 func (t *Track) PriceHighestAndNow(token, start, end string) {
-	from, err := time.Parse("2006-01-02 15:04:05", start)
+	from, err := time.ParseInLocation("2006-01-02_15:04:05", start, time.Local)
 	if err != nil {
-		t.C <- "时间格式输入错误,请按照以下格式'2006-01-02 15:04:05'"
+		t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
 		return
 	}
 	to := time.Now()
 	if !strings.EqualFold(end, "now") {
-		to, err = time.Parse("2006-01-02 15:04:05", end)
+		to, err = time.ParseInLocation("2006-01-02_15:04:05", end, time.Local)
 		if err != nil {
-			t.C <- "时间格式输入错误,请按照以下格式'2006-01-02 15:04:05'"
+			t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
 			return
 		}
 	}
@@ -649,4 +649,28 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 		t.C <- "pair查询失败"
 		return
 	}
+	var o,h float64
+	var oTime, hTime int64
+	for k := range dk.HUsd {
+		if dk.HUsd[k] > h {
+			h = dk.HUsd[k]
+			if len(dk.T) > k {
+				hTime = dk.T[k]
+			}
+		}
+	}
+	if len(dk.OUsd) > 0 {
+		o = dk.OUsd[0]
+		if len(dk.T) > 0 {
+			oTime = dk.T[0]
+		}
+	}
+
+	profit := 0.0
+	if o != 0 {
+		profit = (h-o)/o
+	}
+
+	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*购买价格: %f (%s)*\n*最高价格: %f (%s)*\n*当前价格: %s (%s)*\n\n*可获得利润率(税前): %.5f*", p.PairAddress, token, o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), profit)
+	
 }

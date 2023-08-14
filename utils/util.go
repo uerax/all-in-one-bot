@@ -55,7 +55,7 @@ func (t *Utils) TimestampConvert(Timestamp string) {
 
 func (t *Utils) TimeConvert(date string) {
 
-	ts, err := time.Parse(t.format, date)
+	ts, err := time.ParseInLocation(t.format, date, time.Local)
 	if err != nil {
 		log.Println(err)
 		t.ErrC <- "时间格式有误"

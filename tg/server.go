@@ -42,6 +42,8 @@ func Server() {
 		if !update.Message.IsCommand() { // ignore any non-command Messages
 			switch Cmd {
 			// Track
+			case "price_highest":
+				priceHighest(update.Message.Text)
 			case "tacking_tax":
 				trackingTax(update.Message.Text)
 			case "get_tax":
@@ -177,6 +179,9 @@ func Server() {
 		// Cmd Tip
 		switch update.Message.Command() {
 		// Track
+		case "price_highest":
+			Cmd = "price_highest"
+			tips(update.Message.Chat.ID, "查看时间区间最高价格(now可以是具体时间) 例: \n`0x9eac760d89805558d1a657b59bed313766e09e61 2023-08-15_02:36:35 now`")
 		case "tacking_tax":
 			Cmd = "tacking_tax"
 			tips(update.Message.Chat.ID, "设置tax监控线20分钟后自动取消 例: \n`0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10`")

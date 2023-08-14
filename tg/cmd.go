@@ -9,6 +9,19 @@ import (
 )
 
 // Crypto Start
+
+func priceHighest(args string) {
+	arg := strings.Split(args, " ")
+
+	if len(arg) != 3 {
+		log.Printf("priceHighest 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+
+	go api.Track.PriceHighestAndNow(arg[0], arg[1], arg[2])
+}
+
 func smartAddrAnalyze(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) == 1 {

@@ -386,7 +386,7 @@ type Votes struct {
 // DexKline 
 type DexKline struct {
 	S    string    `json:"s"`    
-	// T    []int64   `json:"t"`    
+	T    []int64   `json:"t"`    
 	// C    []float64 `json:"c"`    
 	// H    []float64 `json:"h"`    
 	// L    []float64 `json:"l"`    
