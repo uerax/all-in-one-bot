@@ -431,9 +431,9 @@ func (t *txs) Add(val float64) {
 func (t *txs) JudgeWin(val float64) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
-	t.TotalTx++
+	t.TotalTx = t.TotalTx + 1
 	if val > 0 {
-		t.WinTx++
+		t.WinTx = t.WinTx + 1
 	}
 }
 
@@ -449,6 +449,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 		t.C <- "未读取到etherscan的apikey无法调用api"
 		return 0.0,0
 	}
+	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
@@ -515,6 +516,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 					// tmp.Profit += eth[0]
 					// tmp.Sell += eth[1]
 					// profit.Add(eth[0])
+					// tmp.Tx++
 					val := t.getSellEthByHash(tx.Hash, addr)
 					tmp.Profit += val
 					tmp.Tx++
@@ -525,6 +527,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 					// tmp.Buy += eth[1]
 					// tmp.Pay += eth[0]
 					// profit.Sub(eth[0])
+					// tmp.Tx++
 					val := t.getBuyEthByHash(tx.Hash)
 					tmp.Profit -= val
 					tmp.Pay += val
@@ -539,10 +542,11 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 				}
 				tmp.Symbol = tx.TokenSymbol
 			}
-			if tmp.Tx > 0 {
+			if tmp.Tx > 0 && tmp.Pay > 0 {
 				profit.JudgeWin(tmp.Profit)
+				analyze.Store(token, tmp)
 			}
-			analyze.Store(token, tmp)
+			
 		}
 
 	}
@@ -550,7 +554,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 	wg := sync.WaitGroup{}
 	wg.Add(len(scan.Result))
 	for i, record := range scan.Result {
-		go handle(record.ContractAddress, &wg)
+		go handle(strings.ToLower(record.ContractAddress), &wg)
 		if i % (2 * t.Keys.Len()) == 0 {
 			time.Sleep(time.Second)
 		}
@@ -564,12 +568,14 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 
 	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *支出: %0.5f  |  净收入: %0.5f  |  胜率: %d:%d*\n", addr, profit.Pay, profit.Profit, profit.WinTx, profit.TotalTx)
 	analyze.Range(func(k, value any) bool {
-		v := value.(*txs)
-		if len(msg) > 4000 {
-			t.C <- msg
-			msg = "---------------切割线---------------\n"
+		if v, ok := value.(*txs); ok {
+			if len(msg) > 4000 {
+				t.C <- msg
+				msg = "---------------切割线---------------\n"
+			}
+			msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T: %s | C: %0.3f | P: %0.3f *\n", v.Symbol, k, k, v.Time, v.Pay, v.Profit)
 		}
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T: %s | C: %0.3f | P: %0.3f *\n", v.Symbol, k, k, v.Time, v.Pay, v.Profit)
+		
 		return true
 	})
 
