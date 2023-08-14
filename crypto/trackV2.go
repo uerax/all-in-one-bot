@@ -512,27 +512,27 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 				}
 				his[strings.ToLower(tx.Hash)] = struct{}{}
 				if strings.EqualFold(tx.From, addr) {
-					// eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					// tmp.Profit += eth[0]
-					// tmp.Sell += eth[1]
-					// profit.Add(eth[0])
-					// tmp.Tx++
-					val := t.getSellEthByHash(tx.Hash, addr)
-					tmp.Profit += val
+					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					tmp.Profit += eth[0]
+					tmp.Sell += eth[1]
+					profit.Add(eth[0])
 					tmp.Tx++
-					profit.Add(val)
+					// val := t.getSellEthByHash(tx.Hash, addr)
+					// tmp.Profit += val
+					// tmp.Tx++
+					// profit.Add(val)
 				} else {
-					// eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					// tmp.Profit -= eth[0]
-					// tmp.Buy += eth[1]
-					// tmp.Pay += eth[0]
-					// profit.Sub(eth[0])
-					// tmp.Tx++
-					val := t.getBuyEthByHash(tx.Hash)
-					tmp.Profit -= val
-					tmp.Pay += val
+					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					tmp.Profit -= eth[0]
+					tmp.Buy += eth[1]
+					tmp.Pay += eth[0]
+					profit.Sub(eth[0])
 					tmp.Tx++
-					profit.Sub(val)
+					// val := t.getBuyEthByHash(tx.Hash)
+					// tmp.Profit -= val
+					// tmp.Pay += val
+					// tmp.Tx++
+					// profit.Sub(val)
 				}
 				if tmp.Time == "" {
 					ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
