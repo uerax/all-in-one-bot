@@ -688,6 +688,6 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 		readP = (readH-o)/o	
 	}
 
-	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*当前价格: %s (%s)*\n\n*购买价格: %f (%s)*\n*实线高价: %f (%s)*\n*最高价格: %f (%s)*\n\n*实线的利润率(税前): %.5f*\n*可获得利润率(税前): %.5f*", p.PairAddress, token, p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH,time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, profit)
+	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*当前价格: %s (%s)*\n\n*购买价格: %.18f (%s)*\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f*\n*可获得利润率(税前): %f*", p.PairAddress, token, p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH,time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, profit)
 	
 }
