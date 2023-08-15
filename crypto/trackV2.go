@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -429,12 +430,11 @@ func (t *txs) Add(val float64) {
 }
 
 func (t *txs) JudgeWin(val float64) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
-	t.TotalTx = t.TotalTx + 1
+	atomic.AddUint32(&t.TotalTx, 1)
 	if val > 0 {
-		t.WinTx = t.WinTx + 1
+		atomic.AddUint32(&t.WinTx, 1)
 	}
+	log.Println("111")
 }
 
 func (t *txs) Sub(val float64) {

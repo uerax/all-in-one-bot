@@ -57,8 +57,8 @@ type txs struct {
 	Pay     float64
 	Time    string
 	Tx      int
-	TotalTx int
-	WinTx   int
+	TotalTx uint32
+	WinTx   uint32
 	Mu      sync.Mutex
 }
 
