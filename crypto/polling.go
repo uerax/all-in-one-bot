@@ -2,13 +2,17 @@ package crypto
 
 import (
 	"log"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/uerax/goconf"
 )
 
-var pollingKey *PollingKey
+var (
+	pollingKey *PollingKey
+	once       sync.Once
+)
 
 type PollingKey struct {
 	Keys []string
@@ -16,21 +20,21 @@ type PollingKey struct {
 }
 
 func NewPollingKey() *PollingKey {
-	if pollingKey == nil {
+	once.Do(func() {
 		pollingKey = &PollingKey{
 			Keys: make([]string, 0),
-			idx: 0,
+			idx:  0,
 		}
 		keys, err := goconf.VarArray("crypto", "etherscan", "keys")
 		if err == nil {
 			for k := range keys {
 				if keys[k] != nil {
 					pollingKey.AddKeys(keys[k].(string))
-				}	
+				}
 			}
 		}
 		go pollingKey.CallsPerM()
-	}
+	})
 	return pollingKey
 }
 
@@ -46,16 +50,16 @@ func (t *PollingKey) AddKeys(keys ...string) {
 	t.Keys = append(t.Keys, keys...)
 }
 
-func (t *PollingKey) GetKey() string  {
+func (t *PollingKey) GetKey() string {
 	atomic.AddInt32(&t.idx, 1)
-	return t.Keys[int(t.idx) % (len(t.Keys) - 1)]
+	return t.Keys[int(t.idx)%(len(t.Keys)-1)]
 }
 
 func (t *PollingKey) CallsPerM() {
 	tick := time.NewTicker(time.Minute)
 	pre := t.idx
 	for range tick.C {
-		log.Printf("每分钟调用 %d 次 ApiKey", t.idx - pre)
+		log.Printf("每分钟调用 %d 次 ApiKey", t.idx-pre)
 		pre = t.idx
 	}
 }
