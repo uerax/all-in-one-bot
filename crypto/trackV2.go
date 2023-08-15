@@ -649,8 +649,8 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 		t.C <- "pair查询失败"
 		return
 	}
-	var o,h float64
-	var oTime, hTime int64
+	var o,h,readH float64
+	var oTime, hTime, readHT int64
 	for k := range dk.HUsd {
 		if dk.HUsd[k] > h {
 			h = dk.HUsd[k]
@@ -659,18 +659,35 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 			}
 		}
 	}
-	if len(dk.OUsd) > 0 {
-		o = dk.OUsd[0]
-		if len(dk.T) > 0 {
-			oTime = dk.T[0]
+	for k := range dk.OUsd {
+		if k == 0 {
+			o = dk.OUsd[k]
+			if len(dk.T) > 0 {
+				oTime = dk.T[k]
+			}
+		}
+		if readH < dk.OUsd[k] {
+			readH = dk.OUsd[k]
+			if len(dk.T) > k {
+				readHT = dk.T[k]
+			}
+		}
+	}
+	for k := range dk.CUsd {
+		if readH < dk.CUsd[k] {
+			readH = dk.CUsd[k]
+			if len(dk.T) > k {
+				readHT = dk.T[k]
+			}
 		}
 	}
 
-	profit := 0.0
+	profit, readP := 0.0, 0.0
 	if o != 0 {
 		profit = (h-o)/o
+		readP = (readP-o)/o
 	}
 
-	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*购买价格: %f (%s)*\n*最高价格: %f (%s)*\n*当前价格: %s (%s)*\n\n*可获得利润率(税前): %.5f*", p.PairAddress, token, o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), profit)
+	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*购买价格: %f (%s)*\n*最高价格(实体线): %f (%s)*\n*最高价格: %f (%s)*\n*当前价格: %s (%s)*\n\n*可获得利润率(税前): %.5f*\n*可获得利润率(实线税前): %.5f*", p.PairAddress, token, o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH,time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), profit, readP)
 	
 }
