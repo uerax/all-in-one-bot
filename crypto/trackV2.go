@@ -340,7 +340,8 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) {
 		return 
 	}
 
-	recorded := sync.Map{}
+	recorded := &SyncMap{sync.Mutex{}, make(map[string]struct{})}
+	recorded.M[strings.ToLower(token)] = struct{}{}
 
 	// addr -> txs
 	analyze := sync.Map{}
@@ -351,8 +352,7 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) {
 		if isNull(address) {
 			return
 		}
-		if _, ok := recorded.Load(address); !ok {
-			recorded.Store(address, struct{}{})
+		if !recorded.Exist(address) {
 			his := make(map[string]struct{})
 			list := t.TransferList(address, token)
 			if len(list) == 0 {
@@ -390,12 +390,9 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) {
 	wg := sync.WaitGroup{}
 	lens := len(scan.Result)
 	wg.Add(lens * 2)
-	for i, v := range scan.Result {
+	for _, v := range scan.Result {
 		go handle(v.From, &wg)
 		go handle(v.To, &wg)
-		if i%(3*t.Keys.Len()) == 0 {
-			time.Sleep(time.Second)
-		}
 	}
 
 	start, end := "", ""
@@ -482,7 +479,8 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 		return 0.0,0
 	}
 
-	recorded := sync.Map{}
+	recorded := &SyncMap{sync.Mutex{}, make(map[string]struct{})}
+	
 	analyze := sync.Map{}
 	profit := new(txs)
 	handle := func(token string, wg *sync.WaitGroup) {
@@ -503,8 +501,11 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 			// WETH
 			return
 		}
-		if _, ok := recorded.Load(token); !ok {
-			recorded.Store(token, struct{}{})
+		if strings.EqualFold(token, addr) {
+			// Self
+			return
+		}
+		if !recorded.Exist(token) {
 			list := t.TransferList(addr, token)
 			if len(list) == 0 {
 				return
@@ -550,19 +551,15 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 			if tmp.Tx > 0 && tmp.Pay > 0 {
 				profit.JudgeWin(tmp.Profit)
 				analyze.Store(token, tmp)
-			}
-			
+			}	
 		}
 
 	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(scan.Result))
-	for i, record := range scan.Result {
+	for _, record := range scan.Result {
 		go handle(strings.ToLower(record.ContractAddress), &wg)
-		if i % (2 * t.Keys.Len()) == 0 {
-			time.Sleep(time.Second)
-		}
 	}
 
 	wg.Wait()
@@ -609,16 +606,14 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 	profit := make(map[string]string)
 	for _, v := range scan.Result {
 		from, to := strings.ToLower(v.From), strings.ToLower(v.To)
-		if _, ok := profit[from]; !ok && !isNull(from) {
+		if _, ok := profit[from]; !ok && !isNull(from) && !strings.EqualFold(token, from) {
 			f, i := t.WalletTxAnalyzeV2(v.From, "40", true)
 			profit[from] = fmt.Sprintf("%.3f(%d)", f, i)
-			time.Sleep(500 * time.Millisecond)
 		}
 		
-		if _, ok := profit[to]; !ok && !isNull(to) {
+		if _, ok := profit[to]; !ok && !isNull(to) && !strings.EqualFold(token, to) {
 			f, i := t.WalletTxAnalyzeV2(v.To, "40", true)
 			profit[to] = fmt.Sprintf("%.3f(%d)", f, i)
-			time.Sleep(500 * time.Millisecond)
 		}
 	}
 
@@ -693,6 +688,6 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 		readP = (readH-o)/o	
 	}
 
-	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*当前价格: %s (%s)*\n\n*购买价格: %.18f (%s)*\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f*\n*可获得利润率(税前): %f*", p.PairAddress, token, p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH,time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, profit)
+	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f*\n*可获得利润率(税前): %f*", p.PairAddress, token, p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH,time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, profit)
 	
 }
