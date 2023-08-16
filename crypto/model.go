@@ -17,12 +17,14 @@ type Pair struct {
 	PriceNative string       `json:"priceNative"`
 	PriceUsd    string       `json:"priceUsd"`
 	BaseToken   *BaseToken   `json:"baseToken"`
+	QuoteToken  *BaseToken   `json:"quoteToken"`
 	PriceChange *PriceChange `json:"priceChange"`
 	Volume      *Volume      `json:"volume"`
 	Txns        *Txn         `json:"txns"`
 	Lp          *Liquidity   `json:"liquidity"`
 	Fdv         int64        `json:"fdv"`
 	CreateAt    int64        `json:"pairCreatedAt"`
+	Labels      []string     `json:"labels"`
 	CreateTime  string
 }
 
@@ -383,19 +385,19 @@ type Votes struct {
 
 // DextoolsResp End
 
-// DexKline 
+// DexKline
 type DexKline struct {
-	S    string    `json:"s"`    
-	T    []int64   `json:"t"`    
-	// C    []float64 `json:"c"`    
-	// H    []float64 `json:"h"`    
-	// L    []float64 `json:"l"`    
-	// O    []float64 `json:"o"`    
-	// V    []float64 `json:"v"`    
+	S string  `json:"s"`
+	T []int64 `json:"t"`
+	// C    []float64 `json:"c"`
+	// H    []float64 `json:"h"`
+	// L    []float64 `json:"l"`
+	// O    []float64 `json:"o"`
+	// V    []float64 `json:"v"`
 	CUsd []float64 `json:"c_usd"`
 	HUsd []float64 `json:"h_usd"`
 	LUsd []float64 `json:"l_usd"`
 	OUsd []float64 `json:"o_usd"`
 	// VUsd []float64 `json:"v_usd"`
-	From int64     `json:"_from"`
+	From int64 `json:"_from"`
 }
