@@ -434,7 +434,6 @@ func (t *txs) JudgeWin(val float64) {
 	if val > 0 {
 		atomic.AddUint32(&t.WinTx, 1)
 	}
-	log.Println("111")
 }
 
 func (t *txs) Sub(val float64) {
