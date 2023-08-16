@@ -787,11 +787,11 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 					if _, ok := his[tx.Hash]; !ok {
 						his[tx.Hash] = struct{}{}
 						if strings.EqualFold(tx.From, address) {
-							val = t.getEthByHtml(tx.Hash, tx.TokenSymbol)[0]
-							// val = t.getSellEthByHash(tx.Hash, address)
+							// val = t.getEthByHtml(tx.Hash, tx.TokenSymbol)[0]
+							val = t.getSellEthByHash(tx.Hash, address)
 						} else {
-							val = t.getEthByHtml(tx.Hash, tx.TokenSymbol)[0]
-							// val = t.getBuyEthByHash(tx.Hash)
+							// val = t.getEthByHtml(tx.Hash, tx.TokenSymbol)[0]
+							val = t.getBuyEthByHash(tx.Hash)
 						}
 					}
 

@@ -20,18 +20,24 @@ import (
 // Buy Return ETH Balance
 // Sell Return Balance ETH
 func (t *Track) getEthByHtml(hash, symbol string) []float64 {
-	res, err := http.Get("https://etherscan.io/tx/" + hash)
+	req, err := http.NewRequest("GET", "https://etherscan.io/tx/" + hash, nil)
 	val := make([]float64, 2)
 	if err != nil {
 		log.Println(err)
 		return val
 	}
-	defer res.Body.Close()
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Println(err)
+		return val
+	}
 	if res.StatusCode != http.StatusOK {
 		log.Printf("status code error: %d %s", res.StatusCode, res.Status)
 		return val
 	}
-
+	defer res.Body.Close()
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
@@ -511,27 +517,27 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 				}
 				his[strings.ToLower(tx.Hash)] = struct{}{}
 				if strings.EqualFold(tx.From, addr) {
-					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					tmp.Profit += eth[0]
-					tmp.Sell += eth[1]
-					profit.Add(eth[0])
-					tmp.Tx++
-					// val := t.getSellEthByHash(tx.Hash, addr)
-					// tmp.Profit += val
+					// eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					// tmp.Profit += eth[0]
+					// tmp.Sell += eth[1]
+					// profit.Add(eth[0])
 					// tmp.Tx++
-					// profit.Add(val)
+					val := t.getSellEthByHash(tx.Hash, addr)
+					tmp.Profit += val
+					tmp.Tx++
+					profit.Add(val)
 				} else {
-					eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
-					tmp.Profit -= eth[0]
-					tmp.Buy += eth[1]
-					tmp.Pay += eth[0]
-					profit.Sub(eth[0])
-					tmp.Tx++
-					// val := t.getBuyEthByHash(tx.Hash)
-					// tmp.Profit -= val
-					// tmp.Pay += val
+					// eth := t.getEthByHtml(tx.Hash, tx.TokenSymbol)
+					// tmp.Profit -= eth[0]
+					// tmp.Buy += eth[1]
+					// tmp.Pay += eth[0]
+					// profit.Sub(eth[0])
 					// tmp.Tx++
-					// profit.Sub(val)
+					val := t.getBuyEthByHash(tx.Hash)
+					tmp.Profit -= val
+					tmp.Pay += val
+					tmp.Tx++
+					profit.Sub(val)
 				}
 				if tmp.Time == "" {
 					ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
