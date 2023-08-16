@@ -63,3 +63,9 @@ func (t *PollingKey) CallsPerM() {
 		pre = t.idx
 	}
 }
+
+type LinkedList struct {
+	Key  string
+	Next *LinkedList
+}
+

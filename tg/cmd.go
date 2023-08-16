@@ -13,10 +13,14 @@ import (
 func priceHighest(args string) {
 	arg := strings.Split(args, " ")
 
-	if len(arg) != 3 {
+	if len(arg) < 2 {
 		log.Printf("priceHighest 参数有误: %s", args)
 		go api.DeleteAfterSendMessage("参数有误")
 		return
+	}
+	
+	if len(arg) == 2 {
+		arg = append(arg, "now")
 	}
 
 	go api.Track.PriceHighestAndNow(arg[0], arg[1], arg[2])
