@@ -639,12 +639,18 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 			return
 		}
 	}
-	p := t.api.MemePrice(token, "eth")
-	if p == nil {
+	p := t.api.Dexscreener(token, "eth")
+	if len(p) == 0 {
 		t.C <- "token地址查询失败,请检查填写是否正确"
 		return
 	}
-	dk := t.api.DexKline(p.PairAddress, from.Unix(), to.Unix(), "5", to.Unix())
+	version := "v3"
+	if _, ok := p[version]; !ok {
+		version = "v2"
+	}
+	pair := p[version].PairAddress
+	nowPrice := p[version].PriceUsd
+	dk := t.api.DexKline(pair, from.Unix(), to.Unix(), "5", to.Unix(), version)
 	if dk == nil {
 		t.C <- "pair查询失败"
 		return
@@ -688,6 +694,6 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 		readP = (readH-o)/o	
 	}
 
-	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f*\n*可获得利润率(税前): %f*", p.PairAddress, token, p.PriceUsd, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH,time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, profit)
+	t.C <- fmt.Sprintf("[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s) `%s`\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f*\n*可获得利润率(税前): %f*", pair, token, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH,time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, profit)
 	
 }

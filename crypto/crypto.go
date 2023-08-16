@@ -19,7 +19,7 @@ var (
 	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
 	honeypotUrl  = "https://api.honeypot.is/v2/IsHoneypot?address="
 	dextoolsUrl  = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
-	uniswapUrl = "https://etherscan.io/tradingview/uniswapv2/%s/history?fromTs=%d&toTs=%d&resolution=%s&last=%d"
+	uniswapUrl = "https://etherscan.io/tradingview/uniswap%s/%s/history?fromTs=%d&toTs=%d&resolution=%s&last=%d"
 )
 
 type Crypto struct {
@@ -146,6 +146,51 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 
 	return res
 }
+
+func (t *Crypto) Dexscreener(query string, chain string) map[string]*Pair {
+	c := strings.ToLower(chain)
+	if c == "eth" {
+		c = "ethereum"
+	}
+
+	meme := new(Meme)
+
+	r, err := http.Get(memeUrl + query)
+	if err != nil {
+		log.Println("请求失败：", err)
+		return nil
+	}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		log.Println("body读取失败：", err)
+		return nil
+	}
+
+	err = json.Unmarshal(b, &meme)
+	if err != nil {
+		log.Println("json转换失败: ", err)
+		return nil
+	}
+
+	m := make(map[string]*Pair)
+
+	for _, v := range meme.Pairs {
+		if v.DexId == "uniswap" && v.QuoteToken != nil {
+			v.CreateTime = time.Unix(v.CreateAt/1000, 0).Format("2006-01-02 15:04:05")
+			for i := range v.Labels {
+				if strings.EqualFold(v.QuoteToken.Symbol,"WETH") {
+					m[v.Labels[i]] = v
+				}
+			}
+		}
+	}
+
+	return m
+
+}
+
 
 func (t *Crypto) MemePrice(query string, chain string) *Pair {
 	c := strings.ToLower(chain)
@@ -342,8 +387,8 @@ func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
 	return res
 }
 
-func (t *Crypto) DexKline(pair string, start, end int64, resolution string, last int64) *DexKline {
-	r, err := http.Get(fmt.Sprintf(uniswapUrl, pair, start, end, resolution, last))
+func (t *Crypto) DexKline(pair string, start, end int64, resolution string, last int64, version string) *DexKline {
+	r, err := http.Get(fmt.Sprintf(uniswapUrl, version, pair, start, end, resolution, last))
 	if err != nil {
 		log.Println("honeypotUrl请求失败", err)
 		return nil
