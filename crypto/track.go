@@ -26,7 +26,7 @@ type Track struct {
 	Task         map[string]context.CancelFunc
 	api          *Crypto
 	dumpPath     string
-	Keys         *PollingKey
+	Keys         *PollingKeyV2
 	trackingLock sync.RWMutex
 }
 
@@ -72,7 +72,7 @@ func NewTrack() *Track {
 		Task:         make(map[string]context.CancelFunc),
 		api:          NewCrypto("", ""),
 		dumpPath:     goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
-		Keys:         NewPollingKey(),
+		Keys:         NewPollingKeyV2(),
 		trackingLock: sync.RWMutex{},
 	}
 
@@ -844,12 +844,12 @@ func (t *Track) TransferList(addr, token string) []TokenTx {
 	err := common.HttpGet(fmt.Sprintf(transferListUrl, token, addr, t.Keys.GetKey()), &tx)
 
 	if err != nil {
-		log.Println(addr+":"+token+"请求失败: ", err)
+		log.Println(addr+" - "+token+": 请求失败: ", err)
 		return nil
 	}
 
 	if len(tx.Result) > 100 {
-		log.Println("交易数过高直接过滤: ", len(tx.Result))
+		log.Println(addr, " - ", token, ": 交易数过高直接过滤: ", len(tx.Result))
 		return nil
 	}
 
