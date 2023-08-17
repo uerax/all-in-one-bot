@@ -66,20 +66,21 @@ func (t *PollingKey) CallsPerM() {
 }
 
 type PollingKeyV2 struct {
-	Keys        *LinkedList
-	Now         *LinkedList
-	mu          sync.Mutex
-	Len         int
-	CallInS     int // 一秒调用次数
-	MaxCallPerS int // 每秒调用最大次数
+	Keys   *LinkedList
+	Now    *LinkedList
+	mu     sync.Mutex
+	Len    int
+	Bucket *TokenBucket
+	qps    int // 每秒调用最大次数
 }
 
 func NewPollingKeyV2() *PollingKeyV2 {
 	once.Do(func() {
 		pollingKeyV2 = &PollingKeyV2{
-			Keys:    new(LinkedList),
-			Now:     nil,
-			mu:      sync.Mutex{},
+			Keys: new(LinkedList),
+			Now:  nil,
+			mu:   sync.Mutex{},
+			qps:  0,
 		}
 		keys, err := goconf.VarArray("crypto", "etherscan", "keys")
 		if err == nil {
@@ -90,10 +91,21 @@ func NewPollingKeyV2() *PollingKeyV2 {
 					}
 				}
 			}
-			pollingKeyV2.MaxCallPerS = pollingKeyV2.Len * 5
+			pollingKeyV2.Bucket = NewTokenBucket(pollingKeyV2.Len * 5)
+			go pollingKeyV2.Qps()
 		}
 	})
 	return pollingKeyV2
+}
+
+func (t *PollingKeyV2) Qps() {
+	tick := time.NewTicker(time.Second)
+	for range tick.C {
+		if t.qps > t.Len*4 {
+			log.Println("GetKey QPS: ", t.qps)
+		}
+		t.qps = 0
+	}
 }
 
 func (t *PollingKeyV2) GetKey() string {
@@ -105,6 +117,8 @@ func (t *PollingKeyV2) GetKey() string {
 	defer func() {
 		t.Now = t.Now.Next
 	}()
+	t.qps++
+	t.Bucket.GetToken()
 	return t.Now.Key
 
 }

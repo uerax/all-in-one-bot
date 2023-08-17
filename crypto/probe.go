@@ -34,7 +34,7 @@ type Probe struct {
 	smartBuys     map[string]map[string]struct{}
 	smartItv      int
 	smartDumpPath string
-	Keys		  *PollingKey
+	Keys		  *PollingKeyV2
 }
 
 func NewProbe() *Probe {
@@ -53,7 +53,7 @@ func NewProbe() *Probe {
 		smartBuys:     recoverSmartAddrList(),
 		smartItv:      goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval"),
 		smartDumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
-		Keys: NewPollingKey(),
+		Keys: NewPollingKeyV2(),
 	}
 
 	go p.DumpCron()
