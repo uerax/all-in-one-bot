@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -540,10 +541,10 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 					tmp.Tx++
 					profit.Sub(val)
 				}
-				if tmp.Time == "" {
+				if tmp.Ts == 0 {
 					ts, err := strconv.ParseInt(tx.TimeStamp, 10, 64)
 					if err == nil {
-						tmp.Time = time.Unix(ts, 0).Format("2006-01-02_15:04:05")
+						tmp.Ts = ts
 					}
 				}
 				tmp.Symbol = tx.TokenSymbol
@@ -568,18 +569,27 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 		return profit.Profit, len(scan.Result)
 	}
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *支出: %0.5f  |  净收入: %0.5f  |  胜率: %d:%d*\n", addr, profit.Pay, profit.Profit, profit.WinTx, profit.TotalTx)
+	list := make([]*txs, 0)
 	analyze.Range(func(k, value any) bool {
 		if v, ok := value.(*txs); ok {
-			if len(msg) > 4000 {
-				t.C <- msg
-				msg = "---------------切割线---------------\n"
-			}
-			msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s` *| C: %0.3f | P: %0.3f *\n", v.Symbol, k, k, v.Time, v.Pay, v.Profit)
+			v.Addr = k.(string)
+			list = append(list, v)
 		}
-		
 		return true
 	})
+
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].Ts > list[j].Ts
+	})
+
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *支出: %0.5f  |  净收入: %0.5f  |  胜率: %d:%d*\n", addr, profit.Pay, profit.Profit, profit.WinTx, profit.TotalTx)
+	for _, v := range list {
+		if len(msg) > 4000 {
+			t.C <- msg
+			msg = "---------------切割线---------------\n"
+		}
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s` *| C: %0.3f | P: %0.3f *\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Pay, v.Profit)
+	}
 
 	t.C <- msg
 	return 0.0,0
