@@ -429,7 +429,7 @@ func (t *Track) AnalyzeAddrTokenProfit(addr, token string) {
 
 	}
 
-	t.C <- fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*总利润为: %0.5f eth: *\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth\n", analyze.Symbol, token, analyze.Profit, analyze.Buy, analyze.Sell, analyze.Pay)
+	t.C <- fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s) *净利润为: %0.5f eth: *\n*B:* %0.2f | *S:* %0.2f | *C:* %0.5f eth\n", analyze.Symbol, token, analyze.Profit, analyze.Buy, analyze.Sell, analyze.Pay)
 }
 
 func (t *Track) getBuyEthByHash(hash string) float64 {
