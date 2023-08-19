@@ -654,13 +654,20 @@ func (t *Track) PriceHighestAndNow(token, start, end string) {
 		t.C <- "token地址查询失败,请检查填写是否正确"
 		return
 	}
+	resolution := 5
+	if to.Sub(from) <= 15*time.Minute {
+		resolution = 1
+	}
+	if to.Sub(from) >= 24*time.Hour {
+		resolution = 60
+	}
 	version := "v3"
 	if _, ok := p[version]; !ok {
 		version = "v2"
 	}
 	pair := p[version].PairAddress
 	nowPrice := p[version].PriceUsd
-	dk := t.api.DexKline(pair, from.Unix(), to.Unix(), "5", to.Unix(), version)
+	dk := t.api.DexKline(pair, from.Unix(), to.Unix(), resolution, to.Unix(), version)
 	if dk == nil {
 		t.C <- "pair查询失败"
 		return
