@@ -60,6 +60,7 @@ photo:
 
 command:
   crypto:
+    - "wallet_tx_interest_rate - 分析钱包近n条交易的可盈利率 例: 0xC100D16B937Cd4bD2672F3D2636602267aD65A8e 50"
     - "price_highest - 查看时间区间最高价格(now可以是具体时间) 例: 0x9eac760d89805558d1a657b59bed313766e09e61 2023-08-15_02:36:35 now"
     - "smart_addr_analyze - 分析最早买入的钱包近期40次交易收益 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 1"
     - "tacking_tax - 设置tax监控线20分钟后自动取消 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10"
