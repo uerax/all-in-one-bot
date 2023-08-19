@@ -554,7 +554,6 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool)(float
 				analyze.Store(token, tmp)
 			}	
 		}
-
 	}
 
 	wg := sync.WaitGroup{}

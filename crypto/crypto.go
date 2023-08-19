@@ -393,7 +393,9 @@ func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last in
 		log.Println(err)
 		return nil
 	}
+
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
+	req.Header.Set("Referer", fmt.Sprintf("https://etherscan.io/dex/uniswap%s/%s", version, pair))
 
 	r, err := http.DefaultClient.Do(req)
 	if err != nil {
