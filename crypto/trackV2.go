@@ -737,3 +737,118 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) float6
 
 	return profit
 }
+
+func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) {
+	if t.Keys.IsNull() {
+		t.C <- "未读取到etherscan的apikey无法调用api"
+		return 
+	}
+	addr = strings.ToLower(addr)
+	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
+	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
+	if err != nil {
+		log.Println("etherscan请求失败")
+		t.C <- "etherscan请求失败"
+		return 
+	}
+	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println("读取body失败")
+		t.C <- "读取body失败"
+		return 
+	}
+	scan := new(TokenTxResp)
+	err = json.Unmarshal(b, &scan)
+	if err != nil {
+		log.Println("json转换失败")
+		t.C <- "json转换失败"
+		return 
+	}
+
+	if scan.Status != "1" {
+		t.C <- "响应码异常"
+		return 
+	}
+
+	highest := NewSyncMap()
+	wg := sync.WaitGroup{}
+	tprs := make([]*TxProfitRate, 0)
+
+	high := func(token, symbol, timestamp string, wg *sync.WaitGroup)  {
+		defer wg.Done()
+		if strings.EqualFold(token, "0x29480f9385de5f1e7084c2c09167a155d1285ccc") {
+			// USDT
+			return
+		}
+		if strings.EqualFold(token, "0xdac17f958d2ee523a2206206994597c13d831ec7") {
+			// USDT
+			return
+		}
+		if strings.EqualFold(token, "0x3579781bcfefc075d2cb08b815716dc0529f3c7d") {
+			// ETH
+			return
+		}
+		if strings.EqualFold(token, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2") {
+			// WETH
+			return
+		}
+		if strings.EqualFold(token, addr) {
+			// Self
+			return
+		}
+		if highest.ExistOrStore(token, struct{}{}) {
+			return
+		}
+		ts, err := strconv.ParseInt(timestamp, 10, 64)
+		if err != nil {
+			return
+		}
+		
+		tp := t.PriceHighestAndNow(token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now", true)
+
+		tpr := &TxProfitRate{
+			Ts: ts,
+			Rate: tp,
+			Addr: addr,
+			Symbol: symbol,
+			Earnable: tp > 0.5,
+			Quality: tp > 1.0,
+		}
+
+		tprs = append(tprs, tpr)
+	}
+
+	wg.Add(len(scan.Result) * 2)
+	for i := len(scan.Result) - 1; i >= 0 ; i-- {
+		go high(strings.ToLower(scan.Result[i].From), scan.Result[i].TokenSymbol, scan.Result[i].TimeStamp, &wg)
+		go high(strings.ToLower(scan.Result[i].To), scan.Result[i].TokenSymbol, scan.Result[i].TimeStamp, &wg)
+	}
+
+	wg.Wait()
+
+	sort.Slice(tprs, func(i, j int) bool {
+		return tprs[i].Ts > tprs[j].Ts
+	})
+
+	total, earnable, quality := 0, 0, 0
+
+	msg := ""
+	for _, v := range tprs {
+		if v.Earnable {
+			earnable++
+		}
+		if v.Quality {
+			quality++
+		}
+		total++
+		if len(msg) > 4000 {
+			t.C <- msg
+			msg = "---------------切割线---------------\n"
+		}
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s` *| Rate: %.4f *\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Rate)
+	}
+	msg = fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) `%s` *胜率: %d:%d | 翻倍: %d*\n", addr, addr, earnable, total, quality) + msg
+
+	t.C <- msg
+}

@@ -9,6 +9,19 @@ import (
 )
 
 // Crypto Start
+func walletTxInterestRate(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) < 1 {
+		log.Printf("walletTxInterestRate 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+	if len(arg) == 1 {
+		arg = append(arg, "100")
+	}
+
+	go api.Track.WalletTxInterestRate(arg[0], arg[1], false)
+}
 
 func priceHighest(args string) {
 	arg := strings.Split(args, " ")

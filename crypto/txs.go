@@ -22,10 +22,19 @@ type txs struct {
 	Scam    string
 	Pay     float64
 	Time    string
-	Addr	string
-	Ts 		int64
+	Addr    string
+	Ts      int64
 	Tx      int
 	TotalTx uint32
 	WinTx   uint32
 	Mu      sync.Mutex
+}
+
+type TxProfitRate struct {
+	Ts       int64
+	Rate     float64
+	Earnable bool
+	Quality  bool
+	Symbol   string
+	Addr     string
 }
