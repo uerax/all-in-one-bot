@@ -4,14 +4,20 @@ import "sync"
 
 type SyncMap struct {
 	Mu sync.Mutex
-	M  map[string]struct{}
+	M  map[string]any
 }
 
-func (t *SyncMap) Exist(addr string) bool {
+func (t *SyncMap) Swap(addr string, v any) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+	t.M[addr] = v
+}
+
+func (t *SyncMap) ExistOrStore(addr string, v any) bool {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	if _, ok := t.M[addr]; !ok {
-		t.M[addr] = struct{}{}
+		t.M[addr] = v
 		return false
 	}
 	return true
