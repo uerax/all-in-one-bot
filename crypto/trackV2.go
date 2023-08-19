@@ -679,9 +679,9 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) float6
 	if to.Sub(from) >= 24*time.Hour {
 		resolution = 60
 	}
-	version := "v3"
+	version := "v2"
 	if _, ok := p[version]; !ok {
-		version = "v2"
+		version = "v3"
 	}
 	pair := p[version].PairAddress
 	nowPrice := p[version].PriceUsd
