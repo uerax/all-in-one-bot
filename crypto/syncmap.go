@@ -29,3 +29,9 @@ func (t *SyncMap) ExistOrStore(addr string, v any) bool {
 	}
 	return true
 }
+
+func (t *SyncMap) Store(addr string, v any) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+	t.M[addr] = v
+}

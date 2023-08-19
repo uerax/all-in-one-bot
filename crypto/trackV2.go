@@ -777,26 +777,6 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) {
 
 	high := func(token, symbol, timestamp string, wg *sync.WaitGroup)  {
 		defer wg.Done()
-		if strings.EqualFold(token, "0x29480f9385de5f1e7084c2c09167a155d1285ccc") {
-			// USDT
-			return
-		}
-		if strings.EqualFold(token, "0xdac17f958d2ee523a2206206994597c13d831ec7") {
-			// USDT
-			return
-		}
-		if strings.EqualFold(token, "0x3579781bcfefc075d2cb08b815716dc0529f3c7d") {
-			// ETH
-			return
-		}
-		if strings.EqualFold(token, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2") {
-			// WETH
-			return
-		}
-		if strings.EqualFold(token, addr) {
-			// Self
-			return
-		}
 		if highest.ExistOrStore(token, struct{}{}) {
 			return
 		}
@@ -810,22 +790,31 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) {
 		tpr := &TxProfitRate{
 			Ts: ts,
 			Rate: tp,
-			Addr: addr,
+			Addr: token,
 			Symbol: symbol,
 			Earnable: tp > 0.5,
 			Quality: tp > 1.0,
 		}
 
-		tprs = append(tprs, tpr)
+		highest.Store(token, tpr)
 	}
 
-	wg.Add(len(scan.Result) * 2)
+	wg.Add(len(scan.Result))
 	for i := len(scan.Result) - 1; i >= 0 ; i-- {
-		go high(strings.ToLower(scan.Result[i].From), scan.Result[i].TokenSymbol, scan.Result[i].TimeStamp, &wg)
-		go high(strings.ToLower(scan.Result[i].To), scan.Result[i].TokenSymbol, scan.Result[i].TimeStamp, &wg)
+		if !strings.EqualFold(scan.Result[i].From, addr) {
+			go high(strings.ToLower(scan.Result[i].ContractAddress), scan.Result[i].TokenSymbol, scan.Result[i].TimeStamp, &wg)
+		} else {
+			wg.Done()
+		}
 	}
 
 	wg.Wait()
+
+	for _, v := range highest.M {
+		if tpr, ok := v.(*TxProfitRate); ok {
+			tprs = append(tprs, tpr)
+		}
+	}
 
 	sort.Slice(tprs, func(i, j int) bool {
 		return tprs[i].Ts > tprs[j].Ts
@@ -846,9 +835,9 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) {
 			t.C <- msg
 			msg = "---------------切割线---------------\n"
 		}
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s` *| Rate: %.4f *\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Rate)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s`  *|  Rate: %.4f *\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Rate)
 	}
-	msg = fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) `%s` *胜率: %d:%d | 翻倍: %d*\n", addr, addr, earnable, total, quality) + msg
+	msg = fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *胜率: %d:%d  |  翻倍: %d*\n\n", addr, earnable, total, quality) + msg
 
 	t.C <- msg
 }
