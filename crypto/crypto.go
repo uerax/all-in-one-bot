@@ -19,7 +19,7 @@ var (
 	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
 	honeypotUrl  = "https://api.honeypot.is/v2/IsHoneypot?address="
 	dextoolsUrl  = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
-	uniswapUrl = "https://etherscan.io/tradingview/uniswap%s/%s/history?fromTs=%d&toTs=%d&resolution=%s&last=%d"
+	uniswapUrl = "https://etherscan.io/tradingview/uniswap%s/%s/history?fromTs=%d&toTs=%d&resolution=%d&last=%d"
 )
 
 type Crypto struct {
@@ -387,8 +387,15 @@ func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
 	return res
 }
 
-func (t *Crypto) DexKline(pair string, start, end int64, resolution string, last int64, version string) *DexKline {
-	r, err := http.Get(fmt.Sprintf(uniswapUrl, version, pair, start, end, resolution, last))
+func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last int64, version string) *DexKline {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(uniswapUrl, version, pair, start, end, resolution, last), nil)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
+
+	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("honeypotUrl请求失败", err)
 		return nil
