@@ -23,7 +23,7 @@ func priceHighest(args string) {
 		arg = append(arg, "now")
 	}
 
-	go api.Track.PriceHighestAndNow(arg[0], arg[1], arg[2])
+	go api.Track.PriceHighestAndNow(arg[0], arg[1], arg[2], false)
 }
 
 func smartAddrAnalyze(args string) {
