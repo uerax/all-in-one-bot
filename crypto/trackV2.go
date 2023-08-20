@@ -719,6 +719,9 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) float6
 		}
 	}
 	for k := range dk.CUsd {
+		if k == 0 {
+			o = (o + dk.CUsd[k]) / 2
+		}
 		if readH < dk.CUsd[k] {
 			readH = dk.CUsd[k]
 			if len(dk.T) > k {
