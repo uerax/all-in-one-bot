@@ -37,4 +37,5 @@ type TxProfitRate struct {
 	Quality  bool
 	Symbol   string
 	Addr     string
+	Scam     string
 }

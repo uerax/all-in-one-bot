@@ -17,7 +17,7 @@ func walletTxInterestRate(args string) {
 		return
 	}
 	if len(arg) == 1 {
-		arg = append(arg, "50")
+		arg = append(arg, "30")
 	}
 
 	go api.Track.WalletTxInterestRate(arg[0], arg[1], false)
