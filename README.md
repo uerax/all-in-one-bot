@@ -1,12 +1,31 @@
-## 一. all-in-one-bot
+## all-in-one-bot
 
 __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图, Youtube视频/音频下载和剪切, Telegram贴纸Sticker下载, Telegram的gif图片下载, Bilibili视频下载, Douyin视频下载, 土狗币查询, 通用工具箱(base64,json格式化,时间戳转换)__
 
-![image](https://github.com/bakasine/GitTester/assets/44748971/04eda675-eae0-4532-8579-b30489a7bce0)
+![image](https://telegraph-image-d1y.pages.dev/file/125524be210db57cfc5a7.png)
 
-![image](https://github.com/bakasine/GitTester/assets/44748971/5187c403-29f3-46b2-93fd-f78a2ac9d653)
+# Tutorial
 
-## 二. Usage
+- [Tutorial](#tutorial)
+  * [Usage](#usage)
+  * [Demo](#demo)
+    + [如何找聪明钱包v2](#-------v2)
+    + [如何找聪明钱包](#-------)
+    + [跟着聪明钱包买入后寻找出点](#-------------)
+  * [Functions](#functions)
+    + [1. 加密货币监控功能清单](#1-----------)
+    + [2. ChatGPT功能清单](#2-chatgpt----)
+    + [3. VPS库存监控功能清单(已弃用)](#3-vps-------------)
+    + [4. 抠图功能](#4-----)
+    + [5. Telegram 信息获取](#5-telegram-----)
+    + [6. Cron 定时提醒](#6-cron-----)
+    + [7. 视频下载](#7-----)
+    + [8. 贴纸和GIF下载](#8----gif--)
+    + [9. 工具箱](#9----)
+  * [Env(Optional)](#env-optional-)
+  * [Commands](#commands)
+
+## Usage
 
 `安装`
 
@@ -55,10 +74,49 @@ systemctl enable aio
 systemctl status aio
 ```
 
-## 三. Use Case
+## Demo
 
 * 功能太多太杂导致我自己使用都会有些混乱, 整理一些常用的组合用法
-### 1. 如何找聪明钱包
+
+### 如何找聪明钱包v2
+
+__首先找到一个金狗(涨幅巨大),使用smart_addr_finder去找出早期购买且收益高的钱包地址, 我这边随便找一个作为示例__
+
+`发送命令`
+
+```
+/smart_addr_finder
+```
+
+`发送参数`
+
+* 10 1即最早的1-10号交易, 10 2 就是11-20号交易,以此类推
+
+```
+0xde15b9919539113a1930d3eed5088cd10338abb5 10 1
+```
+
+0xa3ed1d630c4c1128aa3facff739165f4f1357d41 (6)9/11 蜜罐:0
+* 11: 该地址近期30条交易购买的加密货币总数
+* 9: 购买的11个加密货币后涨幅超过0.5倍的数量
+* (6): 购买的11个加密货币后涨幅超过1倍的数量
+
+__然后通过/wallet_tx_interest_rate扩大搜索范围, 进一步判断该地址购买的成功率__
+
+`发送命令`
+
+```
+/wallet_tx_interest_rate
+0xa3ed1d630c4c1128aa3facff739165f4f1357d41 100
+```
+
+__如果胜率足够满意即可加入你的探测列表__
+
+```
+/wallet_tracking
+```
+
+### 如何找聪明钱包
 
 __首先找到一个金狗(涨幅巨大),使用smart_addr_finder去找出早期购买且收益高的钱包地址, 我这边随便找一个作为示例__
 
@@ -100,7 +158,7 @@ __观察钱包的交易总收益和情况,如果返回交易数特别少那大�
 /wallet_tracking
 ```
 
-### 2. 跟着聪明钱包买入后寻找出点
+### 跟着聪明钱包买入后寻找出点
 
 __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以有时候聪明钱包在等多倍的时候, 我们应该选择翻倍出场或者是翻倍出本, 这样的操作可能会导致少赚但是更加安全. 所以买入后使用 add_meme_growth_monitor / add_meme_decline_monitor 进行价格监控, 自己选择出点而不是无脑相信聪明钱包__
 
@@ -124,7 +182,7 @@ __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以�
 0x51187cab377ed5e1386042919a9c3d6b5ea402f0 eth 2.4
 ```
 
-## 四. Command List
+## Functions
 ### 1. 加密货币监控功能清单
 - [x] wallet_tx_interest_rate 分析钱包近n条交易的可盈利率 例: 0xC100D16B937Cd4bD2672F3D2636602267aD65A8e 50
 - [x] tacking_tax 设置tax监控线20分钟后自动取消 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10
@@ -212,7 +270,7 @@ __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以�
 - [x] decimal2string 十进制转换成字符串
 - [x] binary2string 二进制转换成字符串
 
-## 五. 环境安装(可选)
+## Env(Optional)
 
 * __Telegram 50M上传限制的解决思路__
 
@@ -254,7 +312,7 @@ sudo dnf install ffmpeg
 sudo pacman -S ffmpeg
 ```
 
-## 六. Telegram Commands
+## Commands
 
 __通过 @BotFather /setcommands 发送添加__
 
