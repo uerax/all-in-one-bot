@@ -673,10 +673,9 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		}
 	}
 
-	var dk *DexKline
 	var check *HoneypotResp
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		check = t.api.IsHoneypot(token)
@@ -700,12 +699,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	pair := p[version].PairAddress
 	nowPrice := p[version].PriceUsd
 
-	go func() {
-		defer wg.Done()
-		dk = t.api.DexKline(pair, from.Unix(), to.Unix(), resolution, to.Unix(), version)
-	}()
-
-	wg.Wait()
+	dk := t.api.DexKline(pair, from.Unix(), to.Unix(), resolution, to.Unix(), version)
 
 	if dk == nil {
 		t.C <- "pair查询失败"
@@ -713,6 +707,16 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	}
 	var o, h, readH float64
 	var oTime, hTime, readHT int64
+	if len(dk.CUsd) > 0 {
+		o = dk.CUsd[0]
+		if resolution > 5 && len(dk.OUsd) > 0 {
+			o = (o + dk.OUsd[0]) / 2.0
+		}
+		if len(dk.T) > 0 {
+			oTime = dk.T[0]
+		}
+	}
+	
 	for k := range dk.HUsd {
 		if dk.HUsd[k] > h {
 			h = dk.HUsd[k]
@@ -722,12 +726,6 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		}
 	}
 	for k := range dk.OUsd {
-		if k == 0 {
-			o = dk.OUsd[k]
-			if len(dk.T) > 0 {
-				oTime = dk.T[k]
-			}
-		}
 		if readH < dk.OUsd[k] {
 			readH = dk.OUsd[k]
 			if len(dk.T) > k {
@@ -736,9 +734,6 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		}
 	}
 	for k := range dk.CUsd {
-		if k == 0 {
-			o = (o + dk.CUsd[k]) / 2
-		}
 		if readH < dk.CUsd[k] {
 			readH = dk.CUsd[k]
 			if len(dk.T) > k {
@@ -757,6 +752,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		return profit, check
 	}
 
+	wg.Wait()
 	scam := ""
 	tax := ""
 	if check != nil {
