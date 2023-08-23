@@ -9,20 +9,20 @@ __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图
 - [Tutorial](#tutorial)
   * [Usage](#usage)
   * [Demo](#demo)
-    + [如何找聪明钱包v2](#-------v2)
-    + [如何找聪明钱包](#-------)
-    + [跟着聪明钱包买入后寻找出点](#-------------)
+    + [如何找聪明钱包v2](#如何找聪明钱包v2)
+    + [如何找聪明钱包](#如何找聪明钱包)
+    + [跟着聪明钱包买入后寻找出点](#跟着聪明钱包买入后寻找出点)
   * [Functions](#functions)
-    + [1. 加密货币监控功能清单](#1-----------)
-    + [2. ChatGPT功能清单](#2-chatgpt----)
-    + [3. VPS库存监控功能清单(已弃用)](#3-vps-------------)
-    + [4. 抠图功能](#4-----)
-    + [5. Telegram 信息获取](#5-telegram-----)
-    + [6. Cron 定时提醒](#6-cron-----)
-    + [7. 视频下载](#7-----)
-    + [8. 贴纸和GIF下载](#8----gif--)
-    + [9. 工具箱](#9----)
-  * [Env(Optional)](#env-optional-)
+    + [加密货币监控功能清单](#加密货币监控功能清单)
+    + [ChatGPT功能清单](#ChatGPT功能清单)
+    + [VPS库存监控功能清单(已弃用)](#VPS库存监控功能清单(已弃用))
+    + [抠图功能](#抠图功能)
+    + [Telegram 信息获取](#telegram-信息获取)
+    + [Cron 定时提醒](#cron-定时提醒)
+    + [视频下载](#视频下载)
+    + [贴纸和GIF下载](#贴纸和GIF下载)
+    + [工具箱](#工具箱)
+  * [Env](#env)
   * [Commands](#commands)
 
 ## Usage
@@ -183,7 +183,7 @@ __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以�
 ```
 
 ## Functions
-### 1. 加密货币监控功能清单
+### 加密货币监控功能清单
 - [x] wallet_tx_interest_rate 分析钱包近n条交易的可盈利率 例: 0xC100D16B937Cd4bD2672F3D2636602267aD65A8e 50
 - [x] tacking_tax 设置tax监控线20分钟后自动取消 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10
 - [x] price_highest 查看时间区间最高价格(now可以是具体时间) 例: 0x9eac760d89805558d1a657b59bed313766e09e61 2023-08-15_02:36:35 now
@@ -220,25 +220,25 @@ __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以�
 - [x] delete_crypto_minitor 加密货币(多个用逗号隔开) 例子: BNB,ARB
 - [x] get_crypto_ufutures_price u本位合约[可选,默认BTCUSDT] 例子: ETHBTC
 
-### 2. ChatGPT功能清单
+### ChatGPT功能清单
 - [x] chatgpt
 
-### 3. VPS库存监控功能清单(已弃用)
+### VPS库存监控功能清单(已弃用)
 - [ ] vps_monitor_supported_list 查看支持监控的网站
 - [ ] vps_add_supported_list 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
 - [ ] add_vps_monitor url(必须是vps_monitor_supported_list有的,或者系统站点模版的商家)
 
-### 4. 抠图功能
+### 抠图功能
 - [x] cutout (需要在配置文件添加apikey)
 
-### 5. Telegram 信息获取
+### Telegram 信息获取
 - [x] chatid
 
-### 6. Cron 定时提醒
+### Cron 定时提醒
 - [x] add_cron 每隔多久一次提醒,单位/秒 例: 15 提醒内容(必填)
 - [x] delete_cron 删除 例: 1
 
-### 7. 视频下载
+### 视频下载
 - [x] youtube_download 下载ytb视频
 - [x] youtube_audio_download 下载ytb音频
 - [x] bilibili_download 下载bilibili视频
@@ -247,11 +247,11 @@ __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以�
 - [ ] twitter_download 下载twitter的视频
 - [x] douyin_download 下载douyin的视频
 
-### 8. 贴纸和GIF下载
+### 贴纸和GIF下载
 - [x] sticker_download 下载贴纸表情
 - [x] gif_download 下载GIF(非贴纸)
 
-### 9. 工具箱
+### 工具箱
 - [x] base64_encode 进行base64加密
 - [x] base64_decode 进行base64解密
 - [x] timestamp_convert 时间戳转换为时间"2006-01-02 15:04:05"
@@ -270,7 +270,7 @@ __聪明钱包不一定永远聪明, 土狗格局的下场就是深埋, 所以�
 - [x] decimal2string 十进制转换成字符串
 - [x] binary2string 二进制转换成字符串
 
-## Env(Optional)
+## Env
 
 * __Telegram 50M上传限制的解决思路__
 
