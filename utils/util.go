@@ -3,11 +3,11 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -27,7 +27,6 @@ func NewUtils() *Utils {
 
 func (t *Utils) Base64Encode(str string) {
 	encoded := base64.StdEncoding.EncodeToString([]byte(str))
-	
 	t.MsgC <- fmt.Sprintf("`%s`", encoded)
 }
 
@@ -54,16 +53,20 @@ func (t *Utils) TimestampConvert(Timestamp string) {
 }
 
 func (t *Utils) TimeConvert(date string) {
-
-	ts, err := time.ParseInLocation(t.format, date, time.Local)
-	if err != nil {
-		log.Println(err)
-		t.ErrC <- "时间格式有误"
-		return
+	var timestamp int64
+	if date != "" || !strings.EqualFold(date, "now") {
+		ts, err := time.ParseInLocation(t.format, date, time.Local)
+		if err != nil {
+			log.Println(err)
+			t.ErrC <- "时间格式有误"
+			return
+		}
+		timestamp = ts.Unix()
+	} else {
+		timestamp = time.Now().Unix()
 	}
 
-	t.MsgC <- fmt.Sprintf("`%d`", ts.Unix())
-	
+	t.MsgC <- fmt.Sprintf("`%d`", timestamp)
 }
 
 
@@ -77,51 +80,3 @@ func (t *Utils) JsonFormat(str string) {
 	}
 	t.MsgC <- fmt.Sprintf("`%s`", out.String())
 }
-
-func (t *Utils) String2Hex(str string) {
-	t.MsgC <- hex.EncodeToString([]byte(str))
-}
-
-func (t *Utils) Hex2String(str string) {
-	s, err := hex.DecodeString(str)
-	if err != nil {
-		t.MsgC <- "转换失败"
-		return
-	}
-	
-	t.MsgC <- string(s)
-}
-
-func (t *Utils) StrDecimalConv(str string, to int) {
-	num, err := strconv.ParseInt(hex.EncodeToString([]byte(str)), 16, 64)
-	if err != nil {
-		t.MsgC <- "转换失败"
-		return
-	}
-	t.MsgC <- strconv.FormatInt(num, to)
-}
-
-func (t *Utils) DecimalStrConv(str string, from int) {
-	num, err := strconv.ParseInt(str, from, 64)
-	if err != nil {
-		t.MsgC <- "转换失败"
-		return
-	}
-	s, err := hex.DecodeString(fmt.Sprintf("%d", num))
-	if err != nil {
-		t.MsgC <- "转换失败"
-		return
-	}
-	
-	t.MsgC <- string(s)
-}
-
-func (t *Utils) DecimalConv(str string, from, to int) {
-	num, err := strconv.ParseInt(str, from, 64)
-	if err != nil {
-		t.MsgC <- "转换失败"
-		return
-	}
-	t.MsgC <- strconv.FormatInt(num, to)
-}
-
