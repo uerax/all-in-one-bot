@@ -686,7 +686,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		return 0, nil
 	}
 	resolution := 5
-	if to.Sub(from) <= 15*time.Minute {
+	if to.Sub(from) <= 5*time.Hour {
 		resolution = 1
 	}
 	if to.Sub(from) >= 24*time.Hour {
@@ -751,7 +751,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	wg.Wait()
 
 	if output {
-		return profit, check
+		return readP, check
 	}
 
 	scam := ""
@@ -770,7 +770,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 
 	t.C <- fmt.Sprintf("%s`%s`\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f*\n*可获得利润率(税前): %f*\n\n[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s)  *|*  [Uniswap](https://etherscan.io/dex/uniswap%s/%s)%s", scam, token, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH, time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, profit, pair, version, pair, tax)
 
-	return profit, check
+	return readP, check
 }
 
 func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (int, int, int, int) {
