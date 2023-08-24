@@ -747,12 +747,13 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		profit = (h - o) / o
 		readP = (readH - o) / o
 	}
+	
+	wg.Wait()
 
 	if output {
 		return profit, check
 	}
 
-	wg.Wait()
 	scam := ""
 	tax := ""
 	if check != nil {

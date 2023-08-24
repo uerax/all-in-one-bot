@@ -276,7 +276,15 @@ func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
 }
 
 func (t *Crypto) HoneypotCheck(addr string) string {
-	r, err := http.Get(honeypotUrl + addr)
+	req, err := http.NewRequest(http.MethodGet, honeypotUrl+addr, nil)
+	if err != nil {
+		log.Println("request创建失败", err)
+		return "Do your own research"
+	}
+	req.Header.Set("Referer", "https://honeypot.is/")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+
+	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("honeypotUrl请求失败", err)
 		return "Do your own research"
@@ -304,7 +312,14 @@ func (t *Crypto) HoneypotCheck(addr string) string {
 }
 
 func (t *Crypto) WhetherHoneypot(addr string) bool {
-	r, err := http.Get(honeypotUrl + addr)
+	req, err := http.NewRequest(http.MethodGet, honeypotUrl+addr, nil)
+	if err != nil {
+		log.Println("request创建失败", err)
+		return false
+	}
+	req.Header.Set("Referer", "https://honeypot.is/")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("honeypotUrl请求失败", err)
 		return false
@@ -364,7 +379,14 @@ func (t *Crypto) DexTools(pair, chain string) *Datum {
 }
 
 func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
-	r, err := http.Get(honeypotUrl + addr)
+	req, err := http.NewRequest(http.MethodGet, honeypotUrl+addr, nil)
+	if err != nil {
+		log.Println("request创建失败", err)
+		return nil
+	}
+	req.Header.Set("Referer", "https://honeypot.is/")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("honeypotUrl请求失败", err)
 		return nil
