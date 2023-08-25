@@ -638,15 +638,15 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 		if _, ok := profit[from]; !ok && !isNull(from) && !strings.EqualFold(token, from) {
 			// f, i := t.WalletTxAnalyzeV2(v.From, "40", true)
 			// profit[from] = fmt.Sprintf("%.3f(%d)", f, i)
-			i, i2, i3, i4 := t.WalletTxInterestRate(v.From, "30", true)
-			profit[from] = fmt.Sprintf("(%d)%d/%d 蜜罐:%d", i3, i2, i, i4)
+			i, i2, i3, i4, i5 := t.WalletTxInterestRate(v.From, "30", true)
+			profit[from] = fmt.Sprintf("(%d)%d/%d,%d/%d", i3, i2, i, i5, i4)
 		}
 
 		if _, ok := profit[to]; !ok && !isNull(to) && !strings.EqualFold(token, to) {
 			// f, i := t.WalletTxAnalyzeV2(v.To, "40", true)
 			// profit[to] = fmt.Sprintf("%.3f(%d)", f, i)
-			i, i2, i3, i4 := t.WalletTxInterestRate(v.To, "30", true)
-			profit[to] = fmt.Sprintf("(%d)%d/%d 蜜罐:%d", i3, i2, i, i4)
+			i, i2, i3, i4, i5 := t.WalletTxInterestRate(v.To, "30", true)
+			profit[to] = fmt.Sprintf("(%d)%d/%d,%d/%d", i3, i2, i, i5, i4)
 		}
 	}
 
@@ -716,7 +716,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 			oTime = dk.T[0]
 		}
 	}
-	
+
 	for k := range dk.HUsd {
 		if dk.HUsd[k] > h {
 			h = dk.HUsd[k]
@@ -747,7 +747,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		profit = (h - o) / o
 		readP = (readH - o) / o
 	}
-	
+
 	wg.Wait()
 
 	if output {
@@ -773,10 +773,10 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	return readP, check
 }
 
-func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (int, int, int, int) {
+func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (int, int, int, int, int) {
 	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法调用api"
-		return 0, 0, 0, 0
+		return 0, 0, 0, 0, 0
 	}
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
@@ -784,26 +784,26 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	if err != nil {
 		log.Println("etherscan请求失败")
 		t.C <- "etherscan请求失败"
-		return 0, 0, 0, 0
+		return 0, 0, 0, 0, 0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("读取body失败")
 		t.C <- "读取body失败"
-		return 0, 0, 0, 0
+		return 0, 0, 0, 0, 0
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		log.Println("json转换失败")
 		t.C <- "json转换失败"
-		return 0, 0, 0, 0
+		return 0, 0, 0, 0, 0
 	}
 
 	if scan.Status != "1" {
 		t.C <- "响应码异常"
-		return 0, 0, 0, 0
+		return 0, 0, 0, 0, 0
 	}
 
 	highest := NewSyncMap()
@@ -827,13 +827,15 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		}
 
 		tpr := &TxProfitRate{
-			Ts:       ts,
-			Rate:     tp,
-			Addr:     token,
-			Symbol:   symbol,
-			Earnable: tp > 0.5,
-			Quality:  tp > 1.0,
-			Scam:     scam,
+			Ts:           ts,
+			Rate:         tp,
+			Addr:         token,
+			Symbol:       symbol,
+			Earnable:     tp > 0.5,
+			Quality:      tp > 1.0,
+			Scam:         scam,
+			EarnableScam: check != nil && check.Honeypot.Is && tp > 0.5,
+			QualityScam:  check != nil && check.Honeypot.Is && tp > 1.0,
 		}
 
 		highest.Store(token, tpr)
@@ -860,7 +862,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		return tprs[i].Ts > tprs[j].Ts
 	})
 
-	total, earnable, quality, scam := 0, 0, 0, 0
+	total, earnable, quality, scam, earnableScam, qualityScam := 0, 0, 0, 0, 0, 0
 
 	for _, v := range tprs {
 		if v.Scam != "" {
@@ -868,18 +870,26 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		}
 		if v.Earnable {
 			earnable++
+			
+		}
+		if v.EarnableScam {
+			earnableScam++
+		}
+		if v.QualityScam {
+			qualityScam++
 		}
 		if v.Quality {
 			quality++
+			
 		}
 		total++
 	}
 
 	if output {
-		return total, earnable, quality, scam
+		return total, earnable, quality, scam, earnableScam
 	}
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *胜率: %d:%d  |  涨幅超过一倍: %d  |  蜜罐: %d*\n\n", addr, earnable, total, quality, scam)
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *胜率: %d:%d  |  蜜罐: %d/%d  |  高倍涨幅: %d  |  高倍蜜罐: %d*\n\n", addr, earnable, total, earnableScam, scam, quality, qualityScam)
 	for _, v := range tprs {
 		if len(msg) > 4000 {
 			t.C <- msg
@@ -889,5 +899,5 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	}
 
 	t.C <- msg
-	return total, earnable, quality, scam
+	return total, earnable, quality, scam, earnableScam
 }

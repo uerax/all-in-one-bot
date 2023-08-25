@@ -31,11 +31,13 @@ type txs struct {
 }
 
 type TxProfitRate struct {
-	Ts       int64
-	Rate     float64
-	Earnable bool
-	Quality  bool
-	Symbol   string
-	Addr     string
-	Scam     string
+	Ts           int64
+	Rate         float64
+	Earnable     bool
+	Quality      bool
+	Symbol       string
+	Addr         string
+	Scam         string
+	EarnableScam bool
+	QualityScam  bool
 }
