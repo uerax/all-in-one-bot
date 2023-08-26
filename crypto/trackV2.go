@@ -685,12 +685,15 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	if len(p) == 0 {
 		return 0, nil
 	}
-	resolution := 5
-	if to.Sub(from) <= 5*time.Hour {
-		resolution = 1
-	}
-	if to.Sub(from) >= 24*time.Hour {
+	resolution := 1
+	duration := to.Sub(from)
+	switch {
+	case duration > 2*24*time.Hour:
 		resolution = 60
+	case duration > 5*time.Hour:
+		resolution = 15
+	case duration > 2*time.Hour:
+		resolution = 5
 	}
 	version := "v2"
 	if _, ok := p[version]; !ok {
