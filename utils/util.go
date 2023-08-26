@@ -54,7 +54,7 @@ func (t *Utils) TimestampConvert(Timestamp string) {
 
 func (t *Utils) TimeConvert(date string) {
 	var timestamp int64
-	if date != "" || !strings.EqualFold(date, "now") {
+	if date != "" && !strings.EqualFold(date, "now") {
 		ts, err := time.ParseInLocation(t.format, date, time.Local)
 		if err != nil {
 			log.Println(err)

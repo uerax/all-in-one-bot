@@ -2,6 +2,7 @@ package tg
 
 import (
 	"log"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/uerax/goconf"
@@ -145,7 +146,7 @@ func Server() {
 				base64Encode(update.Message.Text)
 			case "base64_decode":
 				base64Decode(update.Message.Text)
-			case "timestamp_convert":
+			case "ts_convert":
 				timestampConvert(update.Message.Text)
 			case "time_convert":
 				timeConvert(update.Message.Text)
@@ -339,12 +340,12 @@ func Server() {
 		case "base64_decode":
 			Cmd = "base64_decode"
 			tips(update.Message.Chat.ID, "发送你的base64编码")
-		case "timestamp_convert":
-			Cmd = "timestamp_convert"
-			tips(update.Message.Chat.ID, "发送你的时间搓 例:1686384050")
+		case "ts_convert":
+			Cmd = "ts_convert"
+			tips(update.Message.Chat.ID, "发送你的时间搓 例: `1686384050`")
 		case "time_convert":
 			Cmd = "time_convert"
-			tips(update.Message.Chat.ID, "发送你的时间 格式为: 2023-06-10 16:00:50")
+			tips(update.Message.Chat.ID, "发送你的时间 格式为: `" + time.Now().Format("2006-01-02 15:04:05") + "`")
 		case "json_format":
 			Cmd = "json_format"
 			tips(update.Message.Chat.ID, "发送json内容")
