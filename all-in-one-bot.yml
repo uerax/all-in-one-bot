@@ -109,7 +109,7 @@ command:
     - "chatgpt - chatgpt功能"
     - "base64_encode - 进行base64加密"
     - "base64_decode - 进行base64解密"
-    - 'timestamp_convert - 时间戳转换为时间"2006-01-02 15:04:05"'
+    - 'ts_convert - 时间戳转换为时间"2006-01-02 15:04:05"'
     - 'time_convert - 时间转换为时间戳"2006-01-02 15:04:05"'
     - "json_format - 格式化json"
     - "decimal2binary - 十进制转换成二进制"
