@@ -40,4 +40,5 @@ type TxProfitRate struct {
 	Scam         string
 	EarnableScam bool
 	QualityScam  bool
+	Old			 string
 }

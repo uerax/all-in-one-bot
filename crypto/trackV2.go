@@ -826,7 +826,11 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		tp, check := t.PriceHighestAndNow(token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now", true)
 		scam := ""
 		if check != nil && check.Honeypot.Is {
-			scam = "*|  [SCAM]* "
+			scam = "*  |  [SCAM]*"
+		}
+		old := ""
+		if time.Since(time.Unix(ts, 0)) > 2*24*time.Hour {
+			old = "*  |  [OLDER]*"
 		}
 
 		tpr := &TxProfitRate{
@@ -839,6 +843,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 			Scam:         scam,
 			EarnableScam: check != nil && check.Honeypot.Is && tp > 0.5,
 			QualityScam:  check != nil && check.Honeypot.Is && tp > 1.0,
+			Old:          old,
 		}
 
 		highest.Store(token, tpr)
@@ -873,7 +878,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		}
 		if v.Earnable {
 			earnable++
-			
+
 		}
 		if v.EarnableScam {
 			earnableScam++
@@ -883,7 +888,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		}
 		if v.Quality {
 			quality++
-			
+
 		}
 		total++
 	}
@@ -892,13 +897,13 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		return total, earnable, quality, scam, earnableScam
 	}
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *胜率: %d:%d  |  蜜罐: %d/%d  |  高倍涨幅: %d  |  高倍蜜罐: %d*\n\n", addr, earnable, total, earnableScam, scam, quality, qualityScam)
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *胜率: %d:%d  |  蜜罐: %d/%d  |  高倍涨幅: %d  |  高倍蜜罐: %d  |  操作数: %d*\n\n", addr, earnable, total, earnableScam, scam, quality, qualityScam, len(scan.Result))
 	for _, v := range tprs {
 		if len(msg) > 4000 {
 			t.C <- msg
 			msg = "---------------切割线---------------\n"
 		}
-		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s`  *|  Rate: %.4f*  %s\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Rate, v.Scam)
+		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s`  *|  Rate: %.4f*%s%s\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Rate, v.Old, v.Scam)
 	}
 
 	t.C <- msg
