@@ -165,7 +165,7 @@ type HoneypotResp struct {
 	Router            string           `json:"router"`
 	Pair              MainPair         `json:"pair"`
 	PairAddress       string           `json:"pairAddress"`
-	Honeypot          Honeypot         `json:"honeypotResult"`
+	Honeypot          *Honeypot        `json:"honeypotResult"`
 }
 
 type Honeypot struct {

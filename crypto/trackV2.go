@@ -901,7 +901,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		return total, earnable, quality, scam, earnableScam
 	}
 
-	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *胜率: %d:%d  |  蜜罐: %d/%d  |  高倍涨幅: %d  |  高倍蜜罐: %d  |  操作数: %d*\n\n", addr, earnable, total, earnableScam, scam, quality, qualityScam, len(scan.Result))
+	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)  *胜率: %d:%d | 蜜罐: %d/%d | 2x涨幅: %d | 2x蜜罐: %d | 总操作数: %d*\n\n", addr, earnable, total, earnableScam, scam, quality, qualityScam, len(scan.Result))
 	for _, v := range tprs {
 		if len(msg) > 4000 {
 			t.C <- msg

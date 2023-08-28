@@ -304,7 +304,7 @@ func (t *Crypto) HoneypotCheck(addr string) string {
 		return "Do your own research"
 	}
 
-	if res.Honeypot.Is {
+	if res.Honeypot == nil || res.Honeypot.Is {
 		return "HONEYPOT DETECTED!!! RUN THE FUCK AWAY!"
 	}
 
@@ -337,6 +337,10 @@ func (t *Crypto) WhetherHoneypot(addr string) bool {
 	if err != nil {
 		log.Println("json序列化失败", err)
 		return false
+	}
+
+	if res.Honeypot == nil {
+		return true
 	}
 
 	return res.Honeypot.Is
@@ -404,6 +408,12 @@ func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
 	if err != nil {
 		log.Println("json序列化失败", err)
 		return nil
+	}
+
+	if res.Honeypot == nil {
+		res.Honeypot = &Honeypot{
+			true,
+		}
 	}
 
 	return res
