@@ -334,6 +334,9 @@ tacking_tax - 设置tax监控线20分钟后自动取消 例: 0x2890df158d76e5848
 analyze_addr_token_profit - 分析钱包的指定加密货币总收益情况(钱包地址 加加密货币合约地址) 例:0x1c8075cfc18cd17f5fb7743fba811603b819234c 0x808a57ef754c18e1d2cea5d6cf30f00eeeaa1273
 youtube_audio_download_cut - 下载ytb音频并裁剪
 crypto_cmd_list - 加密货币相关功能列表
+video_cmd_list - 音视频下载处理功能列表
+image_cmd_list - 图片处理/下载功能列表
+utils_cmd_list - 工具类功能列表
 list_cmd_list - 功能分类列表
 ```
 
