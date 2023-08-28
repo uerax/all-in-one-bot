@@ -913,3 +913,21 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	t.C <- msg
 	return total, earnable, quality, scam, earnableScam
 }
+
+func (t *Track) TrackingWalletAnalyze() {
+	profit := make(map[string]string)
+	for addr, detail := range t.Newest {
+		i, i2, i3, i4, i5 := t.WalletTxInterestRate(addr, "30", true)
+		winner := 0
+		if i != 0 {
+			winner = (i2 - i5) * 100 / i
+		}
+		
+		profit[detail.Remark] = fmt.Sprintf("(%d)%d/%d,%d/%d  胜率: %d%%", i3, i2, i, i5, i4, winner)
+	}
+	msg := "*分析完毕:*"
+	for k, v := range profit {
+		msg += fmt.Sprintf("\n*%s: %s*", k, v)
+	}
+	t.C <- msg
+}

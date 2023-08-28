@@ -10,6 +10,10 @@ import (
 )
 
 // Crypto Start
+func trackingWalletAnalyze() {
+	go api.Track.TrackingWalletAnalyze()
+}
+
 func walletTxInterestRate(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) < 1 {

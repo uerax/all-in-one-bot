@@ -182,6 +182,8 @@ func Server() {
 		// Cmd Tip
 		switch update.Message.Command() {
 		// Track
+		case "tracking_wallet_analyze":
+			trackingWalletAnalyze()
 		case "wallet_tx_interest_rate":
 			Cmd = "wallet_tx_interest_rate"
 			tips(update.Message.Chat.ID, "分析钱包近n条交易的可盈利率 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e 50`")
