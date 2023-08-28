@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -34,6 +35,10 @@ func priceHighest(args string) {
 	
 	if len(arg) == 2 {
 		arg = append(arg, "now")
+	}
+
+	if strings.EqualFold(arg[2], "now") {
+		arg[2] = time.Now().Format("2006-01-02_15:04:05")
 	}
 
 	go api.Track.PriceHighestAndNow(arg[0], arg[1], arg[2], false)

@@ -689,8 +689,13 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	duration := to.Sub(from)
 	switch {
 	case duration > 24*time.Hour:
-		to = from.Add(24*time.Hour)
-		resolution = 5
+		if strings.EqualFold(end, "now") {
+			to = from.Add(24*time.Hour)
+			resolution = 5
+		} else {
+			resolution = 60
+		}
+		
 	case duration > 2*time.Hour:
 		resolution = 5
 	}
