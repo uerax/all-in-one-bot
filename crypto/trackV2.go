@@ -150,30 +150,30 @@ func (t *Track) WalletTrackingV2(addr string) {
 		return
 	}
 
-	// 卖单仅提示
+	// 卖单不提示
 	if strings.EqualFold(record.From, addr) {
-		sb.WriteString("\n*")
-		sb.WriteString(record.TokenName)
-		sb.WriteString(": *")
-		sb.WriteString("[")
-		sb.WriteString(record.TokenSymbol)
-		sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
-		sb.WriteString(record.ContractAddress)
-		sb.WriteString(") ")
-		ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
-		if err == nil {
-			sb.WriteString("*(*`")
-			sb.WriteString(time.Unix(ts, 0).Format("2006-01-02_15:04:05"))
-			sb.WriteString("`*)*")
-		}
-		sb.WriteString("----[前往出售](https://app.uniswap.org/#/swap?exactField=input&inputCurrency=")
-		sb.WriteString(record.ContractAddress)
-		sb.WriteString("&outputCurrency=ETH&chain=ethereum)")
-		sb.WriteString("\n")
-		sb.WriteString("\n`")
-		sb.WriteString(record.ContractAddress)
-		sb.WriteString("`")
-		t.C <- strings.ToUpper(t.Newest[addr].Remark) + ": `" + addr + "` [Selling](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+		// sb.WriteString("\n*")
+		// sb.WriteString(record.TokenName)
+		// sb.WriteString(": *")
+		// sb.WriteString("[")
+		// sb.WriteString(record.TokenSymbol)
+		// sb.WriteString("](https://www.dextools.io/app/cn/ether/pair-explorer/")
+		// sb.WriteString(record.ContractAddress)
+		// sb.WriteString(") ")
+		// ts, err := strconv.ParseInt(record.TimeStamp, 10, 64)
+		// if err == nil {
+		// 	sb.WriteString("*(*`")
+		// 	sb.WriteString(time.Unix(ts, 0).Format("2006-01-02_15:04:05"))
+		// 	sb.WriteString("`*)*")
+		// }
+		// sb.WriteString("----[前往出售](https://app.uniswap.org/#/swap?exactField=inp3ut&inputCurrency=")
+		// sb.WriteString(record.ContractAddress)
+		// sb.WriteString("&outputCurrency=ETH&chain=ethereum)")
+		// sb.WriteString("\n")
+		// sb.WriteString("\n`")
+		// sb.WriteString(record.ContractAddress)
+		// sb.WriteString("`")
+		// t.C <- strings.ToUpper(t.Newest[addr].Remark) + ": `" + addr + "` [Selling](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
 		return
 	}
 
