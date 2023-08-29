@@ -388,7 +388,9 @@ func Server() {
 			utilsList()
 		case "list_cmd_list":
 			listsList()
+		// Test
+		case "test":
+			tips(update.Message.Chat.ID, "[发送字符串](`fdfffdafdf`)")
 		}
-
 	}
 }

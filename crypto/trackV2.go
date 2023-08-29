@@ -923,11 +923,11 @@ func (t *Track) TrackingWalletAnalyze() {
 			winner = (i2 - i5) * 100 / i
 		}
 		
-		profit[detail.Remark] = fmt.Sprintf("(%d)%d/%d,%d/%d  胜率: %d%%", i3, i2, i, i5, i4, winner)
+		profit[detail.Remark] = fmt.Sprintf("*(%d)%d/%d,%d/%d  胜率: %d%%* `%s`", i3, i2, i, i5, i4, winner, addr)
 	}
 	msg := "*分析完毕:*"
 	for k, v := range profit {
-		msg += fmt.Sprintf("\n*%s: %s*", k, v)
+		msg += fmt.Sprintf("\n*%s:* %s", k, v)
 	}
 	t.C <- msg
 }
