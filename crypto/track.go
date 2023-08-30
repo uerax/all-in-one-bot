@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -180,6 +181,14 @@ func (t *Track) Tracking(addr string, ctx context.Context) {
 
 func (t *Track) TrackingList(tip bool) string {
 	var sb strings.Builder
+	list := make([]string, 0)
+	for k := range t.Task {
+		list = append(list, k)
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i] < list[j]
+	})
+
 	for k := range t.Task {
 		sb.WriteString("\n")
 		sb.WriteString("[")
