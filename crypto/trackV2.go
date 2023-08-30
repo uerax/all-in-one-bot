@@ -928,7 +928,7 @@ func (t *Track) TrackingWalletAnalyze() {
 			winner = (i2 - i5) * 100 / i
 		}
 		
-		profit[detail.Remark] = fmt.Sprintf("*(%d)%d/%d,%d/%d  胜率: %d%%* `%s`", i3, i2, i, i5, i4, winner, addr)
+		profit[detail.Remark] = fmt.Sprintf("*(%d)%d/%d,%d/%d  胜率: %d%% (%s)* `%s`", i3, i2, i, i5, i4, winner, detail.Latest, addr)
 	}
 	msg := "*分析完毕:*"
 	for k, v := range profit {
