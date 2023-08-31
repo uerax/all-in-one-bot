@@ -639,20 +639,28 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 			// f, i := t.WalletTxAnalyzeV2(v.From, "40", true)
 			// profit[from] = fmt.Sprintf("%.3f(%d)", f, i)
 			i, i2, i3, i4, i5 := t.WalletTxInterestRate(v.From, "30", true)
-			profit[from] = fmt.Sprintf("(%d)%d/%d,%d/%d", i3, i2, i, i5, i4)
+			winner := 0
+			if i != 0 {
+				winner = (i2 - i5) * 100 / i
+			}
+			profit[from] = fmt.Sprintf("*(%d)%d/%d,%d* [%d%%](https://etherscan.io/address/%s#tokentxns)", i3, i2, i, i4, winner, from)
 		}
 
 		if _, ok := profit[to]; !ok && !isNull(to) && !strings.EqualFold(token, to) {
 			// f, i := t.WalletTxAnalyzeV2(v.To, "40", true)
 			// profit[to] = fmt.Sprintf("%.3f(%d)", f, i)
 			i, i2, i3, i4, i5 := t.WalletTxInterestRate(v.To, "30", true)
-			profit[to] = fmt.Sprintf("(%d)%d/%d,%d/%d", i3, i2, i, i5, i4)
+			winner := 0
+			if i != 0 {
+				winner = (i2 - i5) * 100 / i
+			}
+			profit[to] = fmt.Sprintf("*(%d)%d/%d,%d* [%d%%](https://etherscan.io/address/%s#tokentxns)", i3, i2, i, i4, winner, to)
 		}
 	}
 
 	msg := fmt.Sprintf("`%s` *分析完毕:*", token)
 	for k, v := range profit {
-		msg += fmt.Sprintf("\n[W](https://etherscan.io/address/%s#tokentxns) `%s`* %s*", k, k, v)
+		msg += fmt.Sprintf("\n`%s` %s", k, v)
 	}
 
 	t.C <- msg
