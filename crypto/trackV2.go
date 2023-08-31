@@ -704,7 +704,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 			resolution = 60
 		}
 		
-	case duration > 2*time.Hour:
+	case duration > 5*time.Hour:
 		resolution = 5
 	}
 	version := "v2"
