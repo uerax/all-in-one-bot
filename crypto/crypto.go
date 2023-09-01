@@ -13,13 +13,14 @@ import (
 
 var (
 	// apiUrl  = "https://api.binance.com"
-	dataUrl      = "https://data.binance.com"
-	fapiUrl      = "https://fapi.binance.com"
-	memeUrl      = "https://api.dexscreener.com/latest/dex/search/?q="	
-	memeCheckUrl = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
-	honeypotUrl  = "https://api.honeypot.is/v2/IsHoneypot?address="
-	dextoolsUrl  = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
-	uniswapUrl = "https://etherscan.io/tradingview/uniswap%s/%s/history?fromTs=%d&toTs=%d&resolution=%d&last=%d"
+	dataUrl          = "https://data.binance.com"
+	fapiUrl          = "https://fapi.binance.com"
+	memeUrl          = "https://api.dexscreener.com/latest/dex/search/?q="
+	memeCheckUrl     = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
+	honeypotUrl      = "https://api.honeypot.is/v2/IsHoneypot?address="
+	dextoolsUrl      = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
+	uniswapUrl       = "https://etherscan.io/tradingview/uniswap%s/%s/history?fromTs=%d&toTs=%d&resolution=%d&last=%d"
+	honeypotPairsUrl = "https://api.honeypot.is/v1/GetPairs?chainID=1&address="
 )
 
 type Crypto struct {
@@ -180,7 +181,7 @@ func (t *Crypto) Dexscreener(query string, chain string) map[string]*Pair {
 		if v.DexId == "uniswap" && v.QuoteToken != nil {
 			v.CreateTime = time.Unix(v.CreateAt/1000, 0).Format("2006-01-02 15:04:05")
 			for i := range v.Labels {
-				if strings.EqualFold(v.QuoteToken.Symbol,"WETH") {
+				if strings.EqualFold(v.QuoteToken.Symbol, "WETH") {
 					m[v.Labels[i]] = v
 				}
 			}
@@ -191,6 +192,57 @@ func (t *Crypto) Dexscreener(query string, chain string) map[string]*Pair {
 
 }
 
+func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
+
+	meme := new(HoneypotPairsResp)
+	req, err := http.NewRequest(http.MethodGet, honeypotPairsUrl+query, nil)
+	if err != nil {
+		log.Println("请求失败：", err)
+		return nil
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
+	req.Header.Set("Referer", "https://honeypot.is/")
+	req.Header.Set("Origin", "https://honeypot.is")
+	r, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Println("请求失败：", err)
+		return nil
+	}
+
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		log.Println("body读取失败：", err)
+		return nil
+	}
+
+	err = json.Unmarshal(b, &meme)
+	if err != nil {
+		log.Println("json转换失败: ", err)
+		return nil
+	}
+
+	m := make(map[string]*Pair)
+
+	for _, v := range meme.Data {
+		if v.Pairs != nil && strings.Contains(v.Pairs.Name, "Uniswap V2: WETH-") {
+			pair := new(Pair)
+			pair.CreateTime = time.Unix(v.CreatedAtTimestamp, 0).Format("2006-01-02 15:04:05")
+			pair.PriceUsd = "0"
+			m["v2"] = pair
+
+		}
+		if v.Pairs != nil && strings.Contains(v.Pairs.Name, "Uniswap V3: WETH-") {
+			pair := new(Pair)
+			pair.CreateTime = time.Unix(v.CreatedAtTimestamp, 0).Format("2006-01-02 15:04:05")
+			pair.PriceUsd = "0"
+			m["v3"] = pair
+		}
+	}
+
+	return m
+
+}
 
 func (t *Crypto) MemePrice(query string, chain string) *Pair {
 	c := strings.ToLower(chain)
@@ -266,7 +318,7 @@ func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
 				if f, err := strconv.ParseFloat(v.Percent, 64); err == nil {
 					lockedlp += f
 				}
-			}	
+			}
 		}
 		v.LpLockedTotal = lockedlp
 		return v
@@ -374,7 +426,7 @@ func (t *Crypto) DexTools(pair, chain string) *Datum {
 		log.Println("json转换失败", err)
 		return nil
 	}
-	
+
 	if len(meme.Data) < 1 {
 		return nil
 	}

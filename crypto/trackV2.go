@@ -689,7 +689,8 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		check = t.api.IsHoneypot(token)
 	}()
 
-	p := t.api.Dexscreener(token, "eth")
+	// p := t.api.Dexscreener(token, "eth")
+	p := t.api.HoneypotPairs(token)
 	if len(p) == 0 {
 		return 0, nil
 	}
