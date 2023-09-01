@@ -7,6 +7,7 @@ __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图
 # Tutorial
 
 - [Tutorial](#tutorial)
+  * [Introduce](#introduce)
   * [Usage](#usage)
   * [Demo](#demo)
     + [如何找聪明钱包v2](#如何找聪明钱包v2)
@@ -24,6 +25,14 @@ __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图
     + [工具箱](#工具箱)
   * [Env](#env)
   * [Commands](#commands)
+
+## Introduce
+
+`胜率计算算法`
+
+__默认按照5分钟粒度的K线, 取第一根K线的开盘和收盘价格较高价作为初始买入价格__
+__遍历查找一天内最高开盘/收盘价格, 然后计算涨幅百分比__
+__同时会分析超过初始价格的K线数, 如果少于2根K线也就是10分钟, 则该涨幅视为无效__
 
 ## Usage
 
