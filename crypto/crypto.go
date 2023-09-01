@@ -194,7 +194,7 @@ func (t *Crypto) Dexscreener(query string, chain string) map[string]*Pair {
 
 func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
 
-	meme := new(HoneypotPairsResp)
+	meme := make([]*HoneypotPairs, 0)
 	req, err := http.NewRequest(http.MethodGet, honeypotPairsUrl+query, nil)
 	if err != nil {
 		log.Println("请求失败：", err)
@@ -224,18 +224,20 @@ func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
 
 	m := make(map[string]*Pair)
 
-	for _, v := range meme.Data {
-		if v.Pairs != nil && strings.Contains(v.Pairs.Name, "Uniswap V2: WETH-") {
+	for _, v := range meme {
+		if v.Pairs != nil && strings.Contains(v.Pairs.Name, "Uniswap V2") && strings.Contains(v.Pairs.Name, "WETH") {
 			pair := new(Pair)
 			pair.CreateTime = time.Unix(v.CreatedAtTimestamp, 0).Format("2006-01-02 15:04:05")
 			pair.PriceUsd = "0"
+			pair.PairAddress = v.Pairs.Address
 			m["v2"] = pair
 
 		}
-		if v.Pairs != nil && strings.Contains(v.Pairs.Name, "Uniswap V3: WETH-") {
+		if v.Pairs != nil && strings.Contains(v.Pairs.Name, "Uniswap V3") && strings.Contains(v.Pairs.Name, "WETH") {
 			pair := new(Pair)
 			pair.CreateTime = time.Unix(v.CreatedAtTimestamp, 0).Format("2006-01-02 15:04:05")
 			pair.PriceUsd = "0"
+			pair.PairAddress = v.Pairs.Address
 			m["v3"] = pair
 		}
 	}
