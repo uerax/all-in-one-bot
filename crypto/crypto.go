@@ -230,6 +230,7 @@ func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
 			pair.CreateTime = time.Unix(v.CreatedAtTimestamp, 0).Format("2006-01-02 15:04:05")
 			pair.PriceUsd = "0"
 			pair.PairAddress = v.Pairs.Address
+			pair.Lp = &Liquidity{v.Liquidity}
 			m["v2"] = pair
 
 		}
@@ -238,6 +239,7 @@ func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
 			pair.CreateTime = time.Unix(v.CreatedAtTimestamp, 0).Format("2006-01-02 15:04:05")
 			pair.PriceUsd = "0"
 			pair.PairAddress = v.Pairs.Address
+			pair.Lp = &Liquidity{v.Liquidity}
 			m["v3"] = pair
 		}
 	}
