@@ -638,23 +638,23 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 		if _, ok := profit[from]; !ok && !isNull(from) && !strings.EqualFold(token, from) {
 			// f, i := t.WalletTxAnalyzeV2(v.From, "40", true)
 			// profit[from] = fmt.Sprintf("%.3f(%d)", f, i)
-			i, i2, i3, i4, i5 := t.WalletTxInterestRate(v.From, "30", true)
+			i, i2, i3, _, i5, i6 := t.WalletTxInterestRate(v.From, "30", true)
 			winner := 0
 			if i != 0 {
 				winner = (i2 - i5) * 100 / i
 			}
-			profit[from] = fmt.Sprintf("*(%d)%d/%d,%d* [%d%%](https://etherscan.io/address/%s#tokentxns)", i3, i2, i, i4, winner, from)
+			profit[from] = fmt.Sprintf("*(%d)%d/%d* [%d%%](https://etherscan.io/address/%s#tokentxns) *%d*", i3, i2, i, winner, from, i6)
 		}
 
 		if _, ok := profit[to]; !ok && !isNull(to) && !strings.EqualFold(token, to) {
 			// f, i := t.WalletTxAnalyzeV2(v.To, "40", true)
 			// profit[to] = fmt.Sprintf("%.3f(%d)", f, i)
-			i, i2, i3, i4, i5 := t.WalletTxInterestRate(v.To, "30", true)
+			i, i2, i3, _, i5, i6 := t.WalletTxInterestRate(v.To, "30", true)
 			winner := 0
 			if i != 0 {
 				winner = (i2 - i5) * 100 / i
 			}
-			profit[to] = fmt.Sprintf("*(%d)%d/%d,%d* [%d%%](https://etherscan.io/address/%s#tokentxns)", i3, i2, i, i4, winner, to)
+			profit[to] = fmt.Sprintf("*(%d)%d/%d* [%d%%](https://etherscan.io/address/%s#tokentxns) *%d*", i3, i2, i, winner, to, i6)
 		}
 	}
 
@@ -822,10 +822,10 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	return readP, check
 }
 
-func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (int, int, int, int, int) {
+func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (int, int, int, int, int, int) {
 	if t.Keys.IsNull() {
 		t.C <- "未读取到etherscan的apikey无法调用api"
-		return 0, 0, 0, 0, 0
+		return 0, 0, 0, 0, 0, 0
 	}
 	addr = strings.ToLower(addr)
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
@@ -833,26 +833,26 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	if err != nil {
 		log.Println("etherscan请求失败")
 		t.C <- "etherscan请求失败"
-		return 0, 0, 0, 0, 0
+		return 0, 0, 0, 0, 0, 0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("读取body失败")
 		t.C <- "读取body失败"
-		return 0, 0, 0, 0, 0
+		return 0, 0, 0, 0, 0, 0
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		log.Println("json转换失败")
 		t.C <- "json转换失败"
-		return 0, 0, 0, 0, 0
+		return 0, 0, 0, 0, 0, 0
 	}
 
 	if scan.Status != "1" {
 		t.C <- "响应码异常"
-		return 0, 0, 0, 0, 0
+		return 0, 0, 0, 0, 0, 0
 	}
 
 	highest := NewSyncMap()
@@ -940,7 +940,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	}
 
 	if output {
-		return total, earnable, quality, scam, earnableScam
+		return total, earnable, quality, scam, earnableScam, len(scan.Result)
 	}
 
 	winner := 0
@@ -958,19 +958,19 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	}
 
 	t.C <- msg
-	return total, earnable, quality, scam, earnableScam
+	return total, earnable, quality, scam, earnableScam, len(scan.Result)
 }
 
 func (t *Track) TrackingWalletAnalyze() {
 	profit := make(map[string]string)
 	for addr, detail := range t.Newest {
-		i, i2, i3, i4, i5 := t.WalletTxInterestRate(addr, "30", true)
+		i, i2, i3, i4, i5, i6 := t.WalletTxInterestRate(addr, "30", true)
 		winner := 0
 		if i != 0 {
 			winner = (i2 - i5) * 100 / i
 		}
 		
-		profit[detail.Remark] = fmt.Sprintf("*(%d)%d/%d,%d/%d  胜率: %d%% (%s)* `%s`", i3, i2, i, i5, i4, winner, detail.Latest, addr)
+		profit[detail.Remark] = fmt.Sprintf("*(%d)%d/%d 蜜罐: %d/%d  胜率: %d%% (%d) (%s)* `%s`", i3, i2, i, i5, i4, winner, i6, detail.Latest, addr)
 	}
 	msg := "*分析完毕:*"
 	for k, v := range profit {
