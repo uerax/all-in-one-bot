@@ -149,13 +149,6 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 }
 
 func (t *Crypto) Dexscreener(query string, chain string) map[string]*Pair {
-	c := strings.ToLower(chain)
-	if c == "eth" {
-		c = "ethereum"
-	}
-
-	meme := new(Meme)
-
 	r, err := http.Get(memeUrl + query)
 	if err != nil {
 		log.Println("请求失败：", err)
@@ -169,6 +162,7 @@ func (t *Crypto) Dexscreener(query string, chain string) map[string]*Pair {
 		return nil
 	}
 
+	meme := new(Meme)
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
 		log.Println("json转换失败: ", err)
