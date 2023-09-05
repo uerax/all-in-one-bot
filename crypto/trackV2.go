@@ -817,7 +817,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	// 	nowPrice = dk.CUsd[len(dk.CUsd) - 1]
 	// }
 
-	t.C <- fmt.Sprintf("%s`%s` *(K:%d)*\n\n*当前价格: %.18f (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f (大于购入价格K线数: %d)*\n*可获得利润率(税前): %f (大于购入价格K线数: %d)*\n\n[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s)  *|*  [Uniswap](https://etherscan.io/dex/uniswap%s/%s)%s", scam, token, resolution, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH, time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, gto, profit, hGto, pair, version, pair, tax)
+	t.C <- fmt.Sprintf("%s`%s` *(K:%d)*\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f (大于购入价格K线数: %d)*\n*可获得利润率(税前): %f (大于购入价格K线数: %d)*\n\n[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s)  *|*  [Uniswap](https://etherscan.io/dex/uniswap%s/%s)%s", scam, token, resolution, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH, time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, gto, profit, hGto, pair, version, pair, tax)
 
 	return readP, check
 }
