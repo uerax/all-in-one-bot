@@ -871,7 +871,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 
 		tp, check := t.PriceHighestAndNow(token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now", true)
 		scam := ""
-		if check != nil && check.Honeypot.Is {
+		if check != nil && check.Honeypot != nil && check.Honeypot.Is {
 			scam = "*  |  [SCAM]*"
 		}
 		old := ""
@@ -887,8 +887,8 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 			Earnable:     tp > 0.5,
 			Quality:      tp > 1.0,
 			Scam:         scam,
-			EarnableScam: check != nil && check.Honeypot.Is && tp > 0.5,
-			QualityScam:  check != nil && check.Honeypot.Is && tp > 1.0,
+			EarnableScam: check != nil && check.Honeypot != nil && check.Honeypot.Is && tp > 0.5,
+			QualityScam:  check != nil && check.Honeypot != nil && check.Honeypot.Is && tp > 1.0,
 			Old:          old,
 		}
 
