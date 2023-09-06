@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -30,6 +31,7 @@ var (
 var (
 	crypto     *Crypto
 	onceCrypto sync.Once
+	apiErr	   error
 )
 
 type Crypto struct {
@@ -50,6 +52,7 @@ func NewCrypto() *Crypto {
 			pairsMap:  recoverPairsMap(),
 		}
 		go crypto.CronDumpPairsMap()
+		apiErr = errors.New("Pairs Error")
 	})
 	return crypto
 }
@@ -165,25 +168,25 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 	return res
 }
 
-func (t *Crypto) Dexscreener(query string) map[string]*Pair {
+func (t *Crypto) Dexscreener(query string) (map[string]*Pair, error) {
 	r, err := http.Get(memeUrl + query)
 	if err != nil {
 		log.Println("请求失败：", err)
-		return nil
+		return nil, apiErr
 	}
 
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		log.Println("body读取失败：", err)
-		return nil
+		return nil, apiErr
 	}
 
 	meme := new(Meme)
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
 		log.Println("json转换失败: ", err)
-		return nil
+		return nil, apiErr
 	}
 
 	m := make(map[string]*Pair)
@@ -199,17 +202,17 @@ func (t *Crypto) Dexscreener(query string) map[string]*Pair {
 		}
 	}
 
-	return m
+	return m, nil
 
 }
 
-func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
+func (t *Crypto) HoneypotPairs(query string) (map[string]*Pair, error) {
 
 	meme := make([]*HoneypotPairs, 0)
 	req, err := http.NewRequest(http.MethodGet, honeypotPairsUrl+query, nil)
 	if err != nil {
 		log.Println("请求失败：", err)
-		return nil
+		return nil, apiErr
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
 	req.Header.Set("Referer", "https://honeypot.is/")
@@ -217,20 +220,20 @@ func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
 	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("请求失败：", err)
-		return nil
+		return nil, apiErr
 	}
 
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		log.Println("body读取失败：", err)
-		return nil
+		return nil, apiErr
 	}
 
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
 		log.Println("json转换失败: ", err)
-		return nil
+		return nil, apiErr
 	}
 
 	m := make(map[string]*Pair)
@@ -255,7 +258,7 @@ func (t *Crypto) HoneypotPairs(query string) map[string]*Pair {
 		}
 	}
 
-	return m
+	return m, nil
 
 }
 
@@ -521,14 +524,17 @@ func (t *Crypto) Pairs(token string) map[string]*Pair {
 	if v, ok := t.pairsMap[token]; ok {
 		return v
 	}
-	//p := t.Dexscreener(token)
-	p := t.HoneypotPairs(token)
-	t.pairsMap[token] = p
+	p, err := t.Dexscreener(token)
+	//p, err := t.HoneypotPairs(token)
+	if err == nil {
+		t.pairsMap[token] = p
+	}
+	
 	return p
 }
 
 func (t *Crypto) CronDumpPairsMap() {
-	tick := time.NewTicker(time.Hour)
+	tick := time.NewTicker(30 * time.Minute)
 	for range tick.C {
 		t.DumpPairsMap()
 	}

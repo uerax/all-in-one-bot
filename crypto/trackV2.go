@@ -721,7 +721,6 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	dk := t.api.DexKline(pair, from.Unix(), to.Unix(), resolution, to.Unix(), version)
 
 	if dk == nil {
-		t.C <- "pair查询失败"
 		return 0, nil
 	}
 	var o, h, readH float64
