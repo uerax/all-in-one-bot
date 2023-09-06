@@ -689,8 +689,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		check = t.api.IsHoneypot(token)
 	}()
 
-	p := t.api.Dexscreener(token, "eth")
-	//p := t.api.HoneypotPairs(token)
+	p := t.api.Pairs(token)
 	if len(p) == 0 {
 		return 0, nil
 	}
@@ -713,7 +712,6 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		version = "v3"
 	}
 	pair := p[version].PairAddress
-	nowPrice := p[version].PriceUsd
 
 	lp := 0.0
 	if p[version].Lp != nil {
@@ -812,10 +810,11 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		tax = fmt.Sprintf("\n\n*LP: $%.2f   |   Tax Buy / Sell: %.1f%% / %.1f%%   |   Ratio: %.3f*",lp, check.SimulationResult.BuyTax, check.SimulationResult.SellTax, ratio)
 	}
 
-	// nowPrice := 0.0
-	// if len(dk.CUsd) > 0 {
-	// 	nowPrice = dk.CUsd[len(dk.CUsd) - 1]
-	// }
+	//nowPrice := p[version].PriceUsd
+	nowPrice := ""
+	if len(dk.CUsd) > 0 {
+		nowPrice = fmt.Sprintf("%.18f", dk.CUsd[len(dk.CUsd) - 1])
+	}
 
 	t.C <- fmt.Sprintf("%s`%s` *(K:%d)*\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f (大于购入价格K线数: %d)*\n*可获得利润率(税前): %f (大于购入价格K线数: %d)*\n\n[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s)  *|*  [Uniswap](https://etherscan.io/dex/uniswap%s/%s)%s", scam, token, resolution, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH, time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, gto, profit, hGto, pair, version, pair, tax)
 

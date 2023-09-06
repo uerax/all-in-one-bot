@@ -514,5 +514,4 @@ func recoverSmartAddrList() map[string]map[string]struct{} {
 	}
 
 	return dump
-
 }

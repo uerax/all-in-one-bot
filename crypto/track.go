@@ -45,7 +45,7 @@ func NewTrack() *Track {
 		Newest:       recoverTrackingList(),
 		apiKey:       goconf.VarStringOrDefault("", "crypto", "etherscan", "apiKey"),
 		Task:         make(map[string]context.CancelFunc),
-		api:          NewCrypto("", ""),
+		api:          NewCrypto(),
 		dumpPath:     goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 		Keys:         NewPollingKeyV2(),
 		trackingLock: sync.RWMutex{},

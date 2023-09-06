@@ -27,4 +27,7 @@ build
 # Backup file
 tracking.json
 smart_dump.json
+pairs_dump.json
+
+# Debug file
 __debug_bin*

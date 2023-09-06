@@ -43,7 +43,7 @@ func NewCryptoMonitor() *CryptoMonitor {
 		notifyHigherLog: make(map[int64]map[string]int64),
 		notifyLower:     make(map[int64]map[string]string),
 		notifyLowerLog:  make(map[int64]map[string]int64),
-		api:             NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"), goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
+		api:             NewCrypto(),
 		C:               make(chan map[int64]map[string]string, 1),
 		unit:            goconf.VarStringOrDefault("USDT", "crypto", "unit"),
 	}

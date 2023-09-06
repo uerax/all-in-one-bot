@@ -45,7 +45,7 @@ func NewProbe() *Probe {
 		Kline:         make(chan string, 5),
 		Meme:          make(chan string, 5),
 		frequency:     goconf.VarInt64OrDefault(600, "crypto", "monitor", "frequency"),
-		api:           NewCrypto(goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"), goconf.VarStringOrDefault("", "crypto", "binance", "secretKey")),
+		api:           NewCrypto(),
 		task:          make(map[string]context.CancelFunc),
 		memeLowTask:   make(map[string]context.CancelFunc),
 		memeHighTask:  make(map[string]context.CancelFunc),

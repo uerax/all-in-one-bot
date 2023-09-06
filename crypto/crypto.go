@@ -6,9 +6,13 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/uerax/goconf"
 )
 
 var (
@@ -23,18 +27,31 @@ var (
 	honeypotPairsUrl = "https://api.honeypot.is/v1/GetPairs?chainID=1&address="
 )
 
+var (
+	crypto     *Crypto
+	onceCrypto sync.Once
+)
+
 type Crypto struct {
 	apiKey    string
 	secretKey string
 	chainMap  map[string]string
+	pairsMap  map[string]map[string]*Pair
+	pairsPath string
 }
 
-func NewCrypto(api, secret string) *Crypto {
-	return &Crypto{
-		apiKey:    api,
-		secretKey: secret,
-		chainMap:  map[string]string{"ethereum": "1", "optimism": "10", "cronos": "25", "bsc": "56", "okc": "66", "gnosis": "100", "heco": "128", "polygon": "137", "fantom": "250", "kcc": "321", "zksync": "324", "ethw": "10001", "fon": "201022", "arbitrum": "42161", "avalanche": "43114", "linea": "59140", "harmony": "1666600000", "tron": "tron"},
-	}
+func NewCrypto() *Crypto {
+	onceCrypto.Do(func() {
+		crypto = &Crypto{
+			apiKey:    goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"),
+			secretKey: goconf.VarStringOrDefault("", "crypto", "binance", "secretKey"),
+			chainMap:  map[string]string{"ethereum": "1", "optimism": "10", "cronos": "25", "bsc": "56", "okc": "66", "gnosis": "100", "heco": "128", "polygon": "137", "fantom": "250", "kcc": "321", "zksync": "324", "ethw": "10001", "fon": "201022", "arbitrum": "42161", "avalanche": "43114", "linea": "59140", "harmony": "1666600000", "tron": "tron"},
+			pairsPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
+			pairsMap:  recoverPairsMap(),
+		}
+		go crypto.CronDumpPairsMap()
+	})
+	return crypto
 }
 
 func (t *Crypto) Ping() bool {
@@ -148,7 +165,7 @@ func (t *Crypto) UFutureKline(interval string, limit int, symbol string) []int {
 	return res
 }
 
-func (t *Crypto) Dexscreener(query string, chain string) map[string]*Pair {
+func (t *Crypto) Dexscreener(query string) map[string]*Pair {
 	r, err := http.Get(memeUrl + query)
 	if err != nil {
 		log.Println("请求失败：", err)
@@ -277,7 +294,6 @@ func (t *Crypto) MemePrice(query string, chain string) *Pair {
 	}
 
 	return nil
-
 }
 
 func (t *Crypto) MemeCheck(query string, chain string) *MemeChecker {
@@ -498,4 +514,62 @@ func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last in
 		return nil
 	}
 	return res
+}
+
+func (t *Crypto) Pairs(token string) map[string]*Pair {
+	token = strings.ToLower(token)
+	if v, ok := t.pairsMap[token]; ok {
+		return v
+	}
+	//p := t.Dexscreener(token)
+	p := t.HoneypotPairs(token)
+	t.pairsMap[token] = p
+	return p
+}
+
+func (t *Crypto) CronDumpPairsMap() {
+	// tick := time.NewTicker(time.Hour)
+	tick := time.NewTicker(time.Minute)
+	for range tick.C {
+		t.DumpPairsMap()
+	}
+}
+
+func (t *Crypto) DumpPairsMap() {
+	if len(t.pairsMap) == 0 {
+		return
+	}
+	b, err := json.Marshal(t.pairsMap)
+	if err != nil {
+		log.Println("序列化失败:", err)
+		return
+	}
+
+	if _, err := os.Stat(t.pairsPath); os.IsNotExist(err) { // 检查目录是否存在
+		err := os.MkdirAll(t.pairsPath, os.ModePerm) // 创建目录
+		if err != nil {
+			log.Println("创建本地文件夹失败")
+			return
+		}
+	}
+	err = os.WriteFile(t.pairsPath+"pairs_dump.json", b, 0644)
+	if err != nil {
+		log.Println("dump文件创建/写入失败")
+		return
+	}
+}
+
+func recoverPairsMap() map[string]map[string]*Pair {
+	dump := make(map[string]map[string]*Pair)
+	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "pairs_dump.json")
+	if err != nil {
+		return dump
+	}
+
+	err = json.Unmarshal(b, &dump)
+	if err != nil {
+		return dump
+	}
+
+	return dump
 }
