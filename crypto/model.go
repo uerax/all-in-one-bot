@@ -22,7 +22,7 @@ type Pair struct {
 	Volume      *Volume      `json:"volume"`
 	Txns        *Txn         `json:"txns"`
 	Lp          *Liquidity   `json:"liquidity"`
-	Fdv         int64        `json:"fdv"`
+	Fdv         float64        `json:"fdv"`
 	CreateAt    int64        `json:"pairCreatedAt"`
 	Labels      []string     `json:"labels"`
 	CreateTime  string
@@ -163,7 +163,7 @@ type HoneypotResp struct {
 	Flags             []interface{}    `json:"flags"`
 	Chain             HoneypotChain    `json:"chain"`
 	Router            string           `json:"router"`
-	Pair              MainPair         `json:"pair"`
+	Pair              *MainPair        `json:"pair"`
 	PairAddress       string           `json:"pairAddress"`
 	Honeypot          *Honeypot        `json:"honeypotResult"`
 }
@@ -422,4 +422,10 @@ type Pairs struct {
 	Name    string   `json:"Name"`
 	Tokens  []string `json:"Tokens"`
 	Address string   `json:"Address"`
+}
+
+type PairInfo struct {
+	CreateTime  string
+	PairAddress string
+	// Lp          float64
 }

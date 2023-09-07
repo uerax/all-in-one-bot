@@ -31,25 +31,28 @@ var (
 var (
 	crypto     *Crypto
 	onceCrypto sync.Once
-	apiErr	   error
+	apiErr     error
 )
 
 type Crypto struct {
-	apiKey    string
-	secretKey string
-	chainMap  map[string]string
-	pairsMap  map[string]map[string]*Pair
-	pairsPath string
+	apiKey      string
+	secretKey   string
+	chainMap    map[string]string
+	pairsMap    map[string]map[string]*PairInfo
+	pairsPath   string
+	pairsHandle *PairsHandle
+	mu          sync.RWMutex
 }
 
 func NewCrypto() *Crypto {
 	onceCrypto.Do(func() {
 		crypto = &Crypto{
-			apiKey:    goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"),
-			secretKey: goconf.VarStringOrDefault("", "crypto", "binance", "secretKey"),
-			chainMap:  map[string]string{"ethereum": "1", "optimism": "10", "cronos": "25", "bsc": "56", "okc": "66", "gnosis": "100", "heco": "128", "polygon": "137", "fantom": "250", "kcc": "321", "zksync": "324", "ethw": "10001", "fon": "201022", "arbitrum": "42161", "avalanche": "43114", "linea": "59140", "harmony": "1666600000", "tron": "tron"},
-			pairsPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
-			pairsMap:  recoverPairsMap(),
+			apiKey:      goconf.VarStringOrDefault("", "crypto", "binance", "apiKey"),
+			secretKey:   goconf.VarStringOrDefault("", "crypto", "binance", "secretKey"),
+			chainMap:    map[string]string{"ethereum": "1", "optimism": "10", "cronos": "25", "bsc": "56", "okc": "66", "gnosis": "100", "heco": "128", "polygon": "137", "fantom": "250", "kcc": "321", "zksync": "324", "ethw": "10001", "fon": "201022", "arbitrum": "42161", "avalanche": "43114", "linea": "59140", "harmony": "1666600000", "tron": "tron"},
+			pairsPath:   goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
+			pairsMap:    recoverPairsMap(),
+			pairsHandle: NewPairsHandle(),
 		}
 		go crypto.CronDumpPairsMap()
 		apiErr = errors.New("Pairs Error")
@@ -519,22 +522,28 @@ func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last in
 	return res
 }
 
-func (t *Crypto) Pairs(token string) map[string]*Pair {
+func (t *Crypto) Pairs(token string) map[string]*PairInfo {
 	token = strings.ToLower(token)
+	t.mu.RLock()
 	if v, ok := t.pairsMap[token]; ok {
+		t.mu.RUnlock()
 		return v
 	}
-	p, err := t.Dexscreener(token)
+	t.mu.RUnlock()
+	p, err := t.pairsHandle.Pairs(token)
+	//p, err := t.Dexscreener(token)
 	//p, err := t.HoneypotPairs(token)
-	if err == nil {
+	if err == nil && p != nil {
+		t.mu.Lock()
 		t.pairsMap[token] = p
+		t.mu.Unlock()
 	}
-	
+
 	return p
 }
 
 func (t *Crypto) CronDumpPairsMap() {
-	tick := time.NewTicker(30 * time.Minute)
+	tick := time.NewTicker(1 * time.Minute)
 	for range tick.C {
 		t.DumpPairsMap()
 	}
@@ -564,8 +573,8 @@ func (t *Crypto) DumpPairsMap() {
 	}
 }
 
-func recoverPairsMap() map[string]map[string]*Pair {
-	dump := make(map[string]map[string]*Pair)
+func recoverPairsMap() map[string]map[string]*PairInfo {
+	dump := make(map[string]map[string]*PairInfo)
 	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "pairs_dump.json")
 	if err != nil {
 		return dump
