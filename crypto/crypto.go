@@ -543,7 +543,7 @@ func (t *Crypto) Pairs(token string) map[string]*PairInfo {
 }
 
 func (t *Crypto) CronDumpPairsMap() {
-	tick := time.NewTicker(1 * time.Minute)
+	tick := time.NewTicker(30 * time.Minute)
 	for range tick.C {
 		t.DumpPairsMap()
 	}
