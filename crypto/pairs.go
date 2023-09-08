@@ -83,7 +83,6 @@ func (t *Dexscreener) Call(query string) (map[string]*PairInfo, error) {
 	meme := new(Meme)
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
-		log.Println("json转换失败: ", err)
 		return nil, apiErr
 	}
 
@@ -136,7 +135,6 @@ func (t *HoneypotPair) Call(query string) (map[string]*PairInfo, error) {
 
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
-		log.Println("json转换失败: ", err)
 		return nil, apiErr
 	}
 
