@@ -46,9 +46,9 @@ func InitPairsApi() *PairsApi {
 	honeypotPairApi := &PairsApi{
 		Api: new(HoneypotPair),
 	}
-	dexscreenerApi.Next = honeypotPairApi
 	honeypotPairApi.Next = dexscreenerApi
-	return dexscreenerApi
+	dexscreenerApi.Next = honeypotPairApi
+	return honeypotPairApi
 }
 
 func NewPairsHandle() *PairsHandle {
