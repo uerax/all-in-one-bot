@@ -21,16 +21,18 @@ type PairsHandle struct {
 }
 
 func (t *PairsHandle) Pairs(query string) (map[string]*PairInfo, error) {
-	m, err := t.Apis.Api.Call(query)
-	t.mu.Lock()
+	api := t.Apis
+	m, err := api.Api.Call(query)
 	if err != nil {
-		t.Apis = t.Apis.Next
-		log.Println("Pairs Apis Next")
+		t.mu.Lock()
+		if api != t.Apis {
+			t.Apis = t.Apis.Next
+		}
 		t.mu.Unlock()
+		log.Println("Pairs Apis Next")
 		m, err = t.Apis.Api.Call(query)
 		return m, err
 	}
-	t.mu.Unlock()
 	return m, err
 }
 
