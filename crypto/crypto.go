@@ -26,6 +26,7 @@ var (
 	dextoolsUrl      = "https://www.dextools.io/shared/data/pair?chain=%s&address=%s"
 	uniswapUrl       = "https://etherscan.io/tradingview/uniswap%s/%s/history?fromTs=%d&toTs=%d&resolution=%d&last=%d"
 	honeypotPairsUrl = "https://api.honeypot.is/v1/GetPairs?chainID=1&address="
+	guruKlineUrl	 = "https://api.dex.guru/v1/tradingview/history?symbol=%s-eth_USD&from=%d&to=%d&resolution=%d"
 )
 
 var (
@@ -586,4 +587,48 @@ func recoverPairsMap() map[string]map[string]*PairInfo {
 	}
 
 	return dump
+}
+
+func (t *Crypto) GuruKline(token string, start, end int64, resolution int) *GuruKline {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(guruKlineUrl, token, start, end, resolution), nil)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	req.Header.Add("authority", "api.dex.guru")
+	req.Header.Add("accept", "*/*")
+	req.Header.Add("accept-language", "zh-CN,zh;q=0.9,en;q=0.8")
+	req.Header.Add("cache-control", "no-cache")
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("origin", "https://dex.guru")
+	req.Header.Add("pragma", "no-cache")
+	req.Header.Add("referer", "https://dex.guru/")
+	req.Header.Add("sec-ch-ua", "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"")
+	req.Header.Add("sec-ch-ua-mobile", "?0")
+	req.Header.Add("sec-ch-ua-platform", "Windows")
+	req.Header.Add("sec-fetch-dest", "empty")
+	req.Header.Add("sec-fetch-mode", "cors")
+	req.Header.Add("sec-fetch-site", "same-site")
+	req.Header.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")
+
+	r, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Println("guruKlineUrl请求失败", err)
+		return nil
+	}
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		log.Println("guru body读取失败", err)
+		return nil
+	}
+
+	res := new(GuruKline)
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		log.Println("guru kline序列化失败", err)
+		return nil
+	}
+	return res
 }
