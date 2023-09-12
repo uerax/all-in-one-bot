@@ -783,12 +783,12 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	wg.Wait()
 
 	lp := 0.0
-	if check.Pair != nil {
+	if check != nil && check.Pair != nil {
 		lp = check.Pair.Liquidity
 	}
 
 	if output {
-		if gto < 2 || (check.Pair != nil && lp < 100.0) {
+		if gto < 2 || (check != nil && check.Pair != nil && lp < 100.0) {
 			readP = 0.0
 		}
 		return readP, check
