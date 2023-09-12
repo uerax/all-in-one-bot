@@ -657,7 +657,7 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 func (t *Track) DumpTrackingList(tip bool) {
 	b, err := json.Marshal(t.Newest)
 	if err != nil {
-		log.Println("序列化失败:", err)
+		log.Println("TrackingList备份序列化失败:", err)
 		if tip {
 			t.C <- "dump失败: list序列化报错"
 		}

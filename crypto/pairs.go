@@ -21,16 +21,18 @@ type PairsHandle struct {
 }
 
 func (t *PairsHandle) Pairs(query string) (map[string]*PairInfo, error) {
-	m, err := t.Apis.Api.Call(query)
-	t.mu.Lock()
+	api := t.Apis
+	m, err := api.Api.Call(query)
 	if err != nil {
-		t.Apis = t.Apis.Next
-		log.Println("Pairs Apis Next")
+		t.mu.Lock()
+		if api != t.Apis {
+			t.Apis = t.Apis.Next
+		}
 		t.mu.Unlock()
+		log.Println("Pairs Apis Next")
 		m, err = t.Apis.Api.Call(query)
 		return m, err
 	}
-	t.mu.Unlock()
 	return m, err
 }
 
@@ -46,9 +48,9 @@ func InitPairsApi() *PairsApi {
 	honeypotPairApi := &PairsApi{
 		Api: new(HoneypotPair),
 	}
-	dexscreenerApi.Next = honeypotPairApi
 	honeypotPairApi.Next = dexscreenerApi
-	return dexscreenerApi
+	dexscreenerApi.Next = honeypotPairApi
+	return honeypotPairApi
 }
 
 func NewPairsHandle() *PairsHandle {
@@ -83,7 +85,6 @@ func (t *Dexscreener) Call(query string) (map[string]*PairInfo, error) {
 	meme := new(Meme)
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
-		log.Println("json转换失败: ", err)
 		return nil, apiErr
 	}
 
@@ -136,7 +137,6 @@ func (t *HoneypotPair) Call(query string) (map[string]*PairInfo, error) {
 
 	err = json.Unmarshal(b, &meme)
 	if err != nil {
-		log.Println("json转换失败: ", err)
 		return nil, apiErr
 	}
 

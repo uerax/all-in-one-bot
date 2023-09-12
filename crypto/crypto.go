@@ -365,14 +365,14 @@ func (t *Crypto) HoneypotCheck(addr string) string {
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		log.Println("body读取失败", err)
+		log.Println("honeypot body读取失败", err)
 		return "Do your own research"
 	}
 
 	res := new(HoneypotResp)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
-		log.Println("json序列化失败", err)
+		log.Println("honeypot json序列化失败", err)
 		return "Do your own research"
 	}
 
@@ -400,14 +400,14 @@ func (t *Crypto) WhetherHoneypot(addr string) bool {
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		log.Println("body读取失败", err)
+		log.Println("honeypot body读取失败", err)
 		return false
 	}
 
 	res := new(HoneypotResp)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
-		log.Println("json序列化失败", err)
+		log.Println("honeypot 序列化失败", err)
 		return false
 	}
 
@@ -471,14 +471,14 @@ func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		log.Println("body读取失败", err)
+		log.Println("honeypot body读取失败", err)
 		return nil
 	}
 
 	res := new(HoneypotResp)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
-		log.Println("json序列化失败", err)
+		log.Println("honeypot json序列化失败", err)
 		return nil
 	}
 
@@ -516,7 +516,7 @@ func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last in
 	res := new(DexKline)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
-		log.Println("json序列化失败", err)
+		log.Println("etherscan kline序列化失败", err)
 		return nil
 	}
 	return res
@@ -555,7 +555,7 @@ func (t *Crypto) DumpPairsMap() {
 	}
 	b, err := json.Marshal(t.pairsMap)
 	if err != nil {
-		log.Println("序列化失败:", err)
+		log.Println("PairsMap备份序列化失败:", err)
 		return
 	}
 

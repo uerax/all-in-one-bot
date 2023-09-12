@@ -468,7 +468,7 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 	}
 	b, err := json.Marshal(t.smartBuys)
 	if err != nil {
-		log.Println("序列化失败:", err)
+		log.Println("SmartAddr备份序列化失败:", err)
 		if tip {
 			t.Meme <- "dump失败: list序列化报错"
 		}
