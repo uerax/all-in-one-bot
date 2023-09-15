@@ -29,6 +29,7 @@ type Track struct {
 	dumpPath     string
 	Keys         *PollingKeyV2
 	trackingLock sync.RWMutex
+	KlineIdx	 int32
 }
 
 type newest struct {

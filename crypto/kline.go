@@ -2,8 +2,22 @@ package crypto
 
 import (
 	"strings"
+	"sync/atomic"
 	"time"
 )
+
+func (t *Track) Kline(token, start, end string) (float64, *HoneypotResp) {
+	idx := t.KlineIdx
+	atomic.AddInt32(&t.KlineIdx, 1)
+	if idx % 2 == 0 {
+		return t.KlineAnalyze(token, start, end)
+	} else if idx % 2 == 1 {
+		return t.PriceHighestAndNow(token, start, "now", true)
+	}
+	return 0, nil
+}
+
+
 
 func (t *Track) KlineAnalyze(token, start, end string) (float64, *HoneypotResp) {
 	from, err := time.ParseInLocation("2006-01-02_15:04:05", start, time.Local)
