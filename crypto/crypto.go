@@ -492,11 +492,11 @@ func (t *Crypto) IsHoneypot(addr string) *HoneypotResp {
 	return res
 }
 
-func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last int64, version string) *DexKline {
+func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last int64, version string) (*DexKline, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(uniswapUrl, version, pair, start, end, resolution, last), nil)
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, err
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
@@ -505,30 +505,30 @@ func (t *Crypto) DexKline(pair string, start, end int64, resolution int, last in
 	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("honeypotUrl请求失败", err)
-		return nil
+		return nil, err
 	}
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		log.Println("body读取失败", err)
-		return nil
+		return nil, err
 	}
 
 	res := new(DexKline)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
 		log.Println("etherscan kline序列化失败", err)
-		return nil
+		return nil, err
 	}
-	return res
+	return res, err
 }
 
-func (t *Crypto) Pairs(token string) map[string]*PairInfo {
+func (t *Crypto) Pairs(token string) (map[string]*PairInfo, error) {
 	token = strings.ToLower(token)
 	t.mu.RLock()
 	if v, ok := t.pairsMap[token]; ok {
 		t.mu.RUnlock()
-		return v
+		return v, nil
 	}
 	t.mu.RUnlock()
 	p, err := t.pairsHandle.Pairs(token)
@@ -540,7 +540,7 @@ func (t *Crypto) Pairs(token string) map[string]*PairInfo {
 		t.mu.Unlock()
 	}
 
-	return p
+	return p, err
 }
 
 func (t *Crypto) CronDumpPairsMap() {
@@ -589,11 +589,11 @@ func recoverPairsMap() map[string]map[string]*PairInfo {
 	return dump
 }
 
-func (t *Crypto) GuruKline(token string, start, end int64, resolution int) *GuruKline {
+func (t *Crypto) GuruKline(token string, start, end int64, resolution int) (*GuruKline, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(guruKlineUrl, token, start, end, resolution), nil)
 	if err != nil {
 		log.Println(err)
-		return nil
+		return nil, err
 	}
 
 	req.Header.Add("authority", "api.dex.guru")
@@ -615,20 +615,20 @@ func (t *Crypto) GuruKline(token string, start, end int64, resolution int) *Guru
 	r, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("guruKlineUrl请求失败", err)
-		return nil
+		return nil, err
 	}
 	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		log.Println("guru body读取失败", err)
-		return nil
+		return nil, err
 	}
 
 	res := new(GuruKline)
 	err = json.Unmarshal(b, &res)
 	if err != nil {
 		log.Println("guru kline序列化失败", err)
-		return nil
+		return nil, err
 	}
-	return res
+	return res, err
 }

@@ -29,6 +29,8 @@ type Track struct {
 	dumpPath     string
 	Keys         *PollingKeyV2
 	trackingLock sync.RWMutex
+	klineLock    sync.RWMutex
+	klineCache   map[string]map[string]float64
 }
 
 type newest struct {
@@ -49,6 +51,8 @@ func NewTrack() *Track {
 		dumpPath:     goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
 		Keys:         NewPollingKeyV2(),
 		trackingLock: sync.RWMutex{},
+		klineLock:    sync.RWMutex{},
+		klineCache:   recoverKlineCache(),
 	}
 
 	go t.DumpCron()
@@ -653,6 +657,25 @@ func (t *Track) WalletTxAnalyze(addr string, offset string) {
 	t.C <- msg
 
 }
+func (t *Track) DumpKlineCache() {
+	b, err := json.Marshal(t.klineCache)
+	if err != nil {
+		log.Println("KlineCache备份序列化失败:", err)
+		return
+	}
+
+	if _, err := os.Stat(t.dumpPath); os.IsNotExist(err) { // 检查目录是否存在
+		err := os.MkdirAll(t.dumpPath, os.ModePerm) // 创建目录
+		if err != nil {
+			log.Println("创建本地文件夹失败")
+			return
+		}
+	}
+	err = os.WriteFile(t.dumpPath+"kline.json", b, 0644)
+	if err != nil {
+		log.Println("dump文件创建/写入失败")
+	}
+}
 
 func (t *Track) DumpTrackingList(tip bool) {
 	b, err := json.Marshal(t.Newest)
@@ -689,9 +712,9 @@ func (t *Track) DumpTrackingList(tip bool) {
 
 }
 
-func recoverTrackingList() map[string]*newest {
-	dump := make(map[string]*newest)
-	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "tracking.json")
+func recoverKlineCache() map[string]map[string]float64 {
+	dump := make(map[string]map[string]float64)
+	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "kline.json")
 	if err != nil {
 		return dump
 	}
@@ -702,10 +725,23 @@ func recoverTrackingList() map[string]*newest {
 
 }
 
+func recoverTrackingList() map[string]*newest {
+	dump := make(map[string]*newest)
+	b, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path") + "tracking.json")
+	if err != nil {
+		return dump
+	}
+
+	json.Unmarshal(b, &dump)
+
+	return dump
+}
+
 func (t *Track) DumpCron() {
 	h := time.NewTicker(time.Hour)
 	for range h.C {
 		t.DumpTrackingList(false)
+		t.DumpKlineCache()
 	}
 }
 

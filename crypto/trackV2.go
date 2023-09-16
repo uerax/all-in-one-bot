@@ -564,7 +564,7 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool) (floa
 		if err != nil {
 			return
 		}
-		tp, _ := t.PriceHighestAndNow(token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now", true)
+		tp, _, _ := t.PriceHighestAndNow(token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now", true)
 		highest.Swap(token, fmt.Sprintf("RATE: %.3f", tp))
 	}
 
@@ -666,18 +666,18 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 	t.C <- msg
 }
 
-func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float64, *HoneypotResp) {
+func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float64, *HoneypotResp, error) {
 	from, err := time.ParseInLocation("2006-01-02_15:04:05", start, time.Local)
 	if err != nil {
 		t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
-		return 0, nil
+		return 0, nil, err
 	}
 	to := time.Now()
 	if !strings.EqualFold(end, "now") {
 		to, err = time.ParseInLocation("2006-01-02_15:04:05", end, time.Local)
 		if err != nil {
 			t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
-			return 0, nil
+			return 0, nil, err
 		}
 	}
 
@@ -689,9 +689,9 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		check = t.api.IsHoneypot(token)
 	}()
 
-	p := t.api.Pairs(token)
-	if len(p) == 0 {
-		return 0, nil
+	p, err := t.api.Pairs(token)
+	if err != nil || len(p) == 0 {
+		return 0, nil, err
 	}
 	resolution := 1
 	duration := to.Sub(from)
@@ -713,10 +713,10 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	}
 	pair := p[version].PairAddress
 
-	dk := t.api.DexKline(pair, from.Unix(), to.Unix(), resolution, to.Unix(), version)
+	dk, err := t.api.DexKline(pair, from.Unix(), to.Unix(), resolution, to.Unix(), version)
 
-	if dk == nil {
-		return 0, nil
+	if dk == nil || err != nil {
+		return 0, nil, err
 	}
 	var o, h, readH float64
 	var oTime, hTime, readHT int64
@@ -791,7 +791,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		if gto < 2 || (check != nil && check.Pair != nil && lp < 100.0) {
 			readP = 0.0
 		}
-		return readP, check
+		return readP, check, nil
 	}
 
 	scam := ""
@@ -817,7 +817,7 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 
 	t.C <- fmt.Sprintf("%s`%s` *(K:%d)*\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f (大于购入价格K线数: %d)*\n*可获得利润率(税前): %f (大于购入价格K线数: %d)*\n\n[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s)  *|*  [Uniswap](https://etherscan.io/dex/uniswap%s/%s)%s", scam, token, resolution, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH, time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, gto, profit, hGto, pair, version, pair, tax)
 
-	return readP, check
+	return readP, check, nil
 }
 
 func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (int, int, int, int, int, int) {
@@ -868,7 +868,7 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 		}
 
 		//tp, check := t.PriceHighestAndNow(token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now", true)
-		tp, check := t.Kline(token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now")
+		tp, check := t.Kline(addr, token, time.Unix(ts, 0).Format("2006-01-02_15:04:05"), "now")
 		scam := ""
 		if check != nil && check.Honeypot != nil && check.Honeypot.Is {
 			scam = "*  |  [SCAM]*"
