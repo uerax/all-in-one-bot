@@ -23,8 +23,7 @@ func (t *Track) Kline(addr, token, start, end string) (float64, *HoneypotResp) {
 		t.klineCache[addr] = make(map[string]float64)
 		t.klineLock.Unlock()
 	}
-	idx := klineIdx
-	atomic.AddInt32(&klineIdx, 1)
+	idx := atomic.AddInt32(&klineIdx, 1)
 	if idx%2 == 0 {
 		f, hr, err := t.KlineAnalyze(token, start, end)
 		if err == nil {
