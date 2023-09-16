@@ -14,7 +14,7 @@ func (t *Track) Kline(token, start, end string) (float64, *HoneypotResp) {
 	if idx % 2 == 0 {
 		return t.KlineAnalyze(token, start, end)
 	} else if idx % 2 == 1 {
-		return t.PriceHighestAndNow(token, start, "now", true)
+		return t.PriceHighestAndNow(token, start, end, true)
 	}
 	return 0, nil
 }
