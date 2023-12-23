@@ -22,7 +22,7 @@ go.work
 
 # Go build file
 build
-
+tmp
 
 # Backup file
 tracking.json

@@ -135,7 +135,7 @@ func Server() {
 			// Sticker And Gif
 			case "sticker_download":
 				if update.Message.Sticker != nil {
-					stickerDownload(update.Message.Sticker.FileID)
+					stickerDownload(update.Message.Sticker.FileID, update.Message.Sticker.IsAnimated)
 				}
 			case "gif_download":
 				if update.Message.Animation != nil {

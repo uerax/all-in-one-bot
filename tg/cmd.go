@@ -515,8 +515,8 @@ func twitterDownload(args string) {
 }
 
 // Sticker And Gif
-func stickerDownload(args string) {
-	go api.Sticker.StickerDownload(args)
+func stickerDownload(args string, gif bool) {
+	go api.Sticker.StickerDownload(args, gif)
 }
 
 func gifDownload(args string) {

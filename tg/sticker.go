@@ -29,7 +29,7 @@ func NewSticker() *Sticker {
 	}
 }
 
-func (t *Sticker) StickerDownload(fileId string) {
+func (t *Sticker) StickerDownload(fileId string, gif bool) {
 	fileConfig := tgbotapi.FileConfig{
 		FileID: fileId,
 	}
@@ -63,7 +63,7 @@ func (t *Sticker) StickerDownload(fileId string) {
 	fileExt := filepath.Ext(fileName)
 	newFileName := strings.TrimSuffix(fileName, fileExt)
 	filePath := filepath.Join(t.path, newFileName)
-	
+
 	if _, err := os.Stat(t.path); os.IsNotExist(err) { // 检查目录是否存在
 		err := os.MkdirAll(t.path, os.ModePerm) // 创建目录
 		if err != nil {
@@ -73,7 +73,7 @@ func (t *Sticker) StickerDownload(fileId string) {
 		}
 	}
 
-	if strings.ToLower(fileExt) == ".webp" {
+	if !gif {
 		filePath = filePath + ".jpg"
 		fileLocal, err := os.Create(filePath)
 		if err != nil {
@@ -90,9 +90,8 @@ func (t *Sticker) StickerDownload(fileId string) {
 			t.MsgC <- "无法写入本地文件"
 			return
 		}
-	} else if strings.ToLower(fileExt) == ".webm" {
-
-		fileLocal, err := os.Create(filePath + ".webm")
+	} else {
+		fileLocal, err := os.Create(t.path+fileName)
 		if err != nil {
 			log.Printf("无法创建本地文件：%s\n", err.Error())
 			t.MsgC <- "无法创建本地文件"
@@ -108,7 +107,7 @@ func (t *Sticker) StickerDownload(fileId string) {
 			return
 		}
 
-		args := []string{"-i", filePath + ".webm", "-b", "2048k", filePath + ".gif"}
+		args := []string{"-i", t.path+fileName, "-b", "2048k", filePath + ".gif"}
 
 		cmd := exec.Command("ffmpeg", args...)
 		if err = cmd.Run(); err != nil {
