@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -80,3 +81,31 @@ func (t *Utils) JsonFormat(str string) {
 	}
 	t.MsgC <- fmt.Sprintf("`%s`", out.String())
 }
+
+func (t *Utils) RewardCal(h, d, r, time string) {
+	hash, err := strconv.ParseFloat(h, 64)
+	if err != nil {
+		return
+	}
+	diff, err := strconv.ParseFloat(d, 64)
+	if err != nil {
+		return
+	}
+	reward, err := strconv.ParseFloat(r, 64)
+	if err != nil {
+		return
+	}
+	hour, err := strconv.ParseFloat(time, 64)
+	if err != nil {
+		return
+	}
+	cnt := 0.0
+	if diff < 1 {
+		cnt = hash * math.Pow(2, 10) / (diff * math.Pow(2, 32)) * reward * 60 * 60 * hour
+	} else {
+		cnt = hash * math.Pow(2, 10) / (diff) * reward * 60 * 60 * hour
+	}
+	
+	t.MsgC <- fmt.Sprintf("`%.10f`", cnt)
+}
+

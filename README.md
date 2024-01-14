@@ -332,6 +332,7 @@ __通过 @BotFather /setcommands 发送添加__
 `常用命令`
 ```
 bitcointalk_rss - bitcointalk新帖监控
+miningCal - 挖矿收益计算
 youtube_audio_download_cut - 下载ytb音频并裁剪
 crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
@@ -416,6 +417,7 @@ image_cmd_list - 图片处理/下载功能列表
 utils_cmd_list - 工具类功能列表
 bitcointalk_rss - bitcointalk新帖监控
 bitcointalk_rss_stop - 关闭bitcointalk新帖监控
+miningCal - 挖矿收益计算
 ```
 
 __待实现__

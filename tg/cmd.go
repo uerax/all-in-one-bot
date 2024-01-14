@@ -601,6 +601,19 @@ func binary2string(args string) {
 	go api.Utils.DecimalStrConv(args, 2)
 }
 
+func miningRewardCal(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) < 3 {
+		log.Printf("miningRewardCal 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+	if len(arg) == 3 {
+		arg = append(arg, "24")
+	}
+	go api.Utils.RewardCal(arg[0], arg[1], arg[2], arg[3])
+}
+
 // Lists
 func cryptoList() {
 	go api.Lists.Crypto()

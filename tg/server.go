@@ -176,6 +176,8 @@ func Server() {
 				decimal2string(update.Message.Text)
 			case "binary2string":
 				binary2string(update.Message.Text)
+			case "miningCal":
+				miningRewardCal(update.Message.Text)
 			}
 		}
 
@@ -380,6 +382,9 @@ func Server() {
 		case "string2hex":
 			Cmd = "string2hex"
 			tips(update.Message.Chat.ID, "发送字符串")
+		case "miningCal":
+			Cmd = "miningCal"
+			tips(update.Message.Chat.ID, "发送你参数: 算力(k) Diff难度 区块奖励 时间(小时,可选) 例: `10 0.390015 2850`")
 		// Lists
 		case "cmd_list":
 			allList()
