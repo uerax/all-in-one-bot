@@ -5,6 +5,11 @@ telegram:
   # local telegram api地址,结尾必须包含/
   local: http://localhost:8081/
 
+# bbs rss项目
+bbs:
+  # 结尾必须带有/
+  path: 
+
 # 加密货币配置项
 crypto:
   etherscan:
@@ -129,6 +134,8 @@ command:
     - "cutout - 抠图功能"
     - "sticker_download - 下载贴纸表情"
     - "gif_download - 下载GIF(非贴纸)"
+  bbs:
+    - "bitcointalk_rss - bitcointalk 新帖监控"
   list:
     - "cmd_list - 列出全部功能"
     - "crypto_cmd_list - 加密货币相关功能列表"
