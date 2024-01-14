@@ -22,6 +22,7 @@ type Bitcointalk struct {
 	C chan string
 	notifi bool
 	path string
+	running bool
 }
 
 func NewBitcointalk() *Bitcointalk {
@@ -31,6 +32,7 @@ func NewBitcointalk() *Bitcointalk {
 		C: make(chan string, 5),
 		notifi: false,
 		path: goconf.VarStringOrDefault("./", "bbs", "path"),
+		running: false,
 	}
 
 	b.old = b.Recover()
@@ -91,8 +93,12 @@ func (b *Bitcointalk) Recover() map[string]struct{} {
 }
 
 func (b *Bitcointalk) Start() {
+	if b.running {
+		b.C <- "已开启监控Bitcointalk新帖, 无需重复开启"
+		return
+	}
+	b.running = true
 	b.ctx, b.cancel = context.WithCancel(context.Background())
-
 	ticker := time.NewTicker(1 * time.Minute)
 
 	log.Println("开启定时监控Bitcointalk新帖")
@@ -103,6 +109,9 @@ func (b *Bitcointalk) Start() {
 		case <-ticker.C:
 			b.Monitor()
 		case <-b.ctx.Done():
+			log.Println("关闭定时监控Bitcointalk新帖")
+			b.C <- "关闭定时监控Bitcointalk新帖"
+			b.running = false
 			return
 		}
 	}
@@ -128,9 +137,11 @@ func (b *Bitcointalk) Monitor() {
 		if td.Text() != "" {
 			if _, ok := b.old[td.Text()]; !ok {
 				b.old[td.Text()] = struct{}{}
+				reply := s.Find("td").Eq(4).Text()
+				views := s.Find("td").Eq(5).Text()
 				url, exists := td.Attr("href")
 				if exists && b.notifi {
-					b.C <- "Bitcointalk 新帖推送:\n主 题: " + td.Text() + "\n直达链接: " + url
+					b.C <- "Bitcointalk 新帖推送:\n主 题: " + td.Text() + "\n回复: " + reply + "\n点击: " + views + "\n直达链接: " + url
 				}				
 			}
 		}

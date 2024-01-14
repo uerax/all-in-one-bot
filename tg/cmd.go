@@ -14,6 +14,10 @@ func bitcointalkMoniter() {
 	go api.Bitcointalk.Start()
 }
 
+func stopBitcointalkMoniter() {
+	go api.Bitcointalk.Stop()
+}
+
 // Crypto Start
 func trackingWalletAnalyze() {
 	go api.Track.TrackingWalletAnalyze()

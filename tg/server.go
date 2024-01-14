@@ -184,6 +184,8 @@ func Server() {
 		// BBS
 		case "bitcointalk_rss":
 			bitcointalkMoniter()
+		case "bitcointalk_rss_stop":
+			stopBitcointalkMoniter()
 		// Track
 		case "tracking_wallet_analyze":
 			trackingWalletAnalyze()
