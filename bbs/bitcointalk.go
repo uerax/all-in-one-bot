@@ -34,9 +34,10 @@ func NewBitcointalk() *Bitcointalk {
 	}
 
 	b.old = b.Recover()
-	if len(b.old) != 0 {
-		b.notifi = true
+	if len(b.old) == 0 {
+		b.Monitor()
 	}
+	b.notifi = true
 	go b.CronDump()
 
 	return b
@@ -44,7 +45,7 @@ func NewBitcointalk() *Bitcointalk {
 }
 
 func (b *Bitcointalk) CronDump() {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(5 * time.Minute)
 	for range ticker.C {
 		b.Dump()
 	}
@@ -92,7 +93,7 @@ func (b *Bitcointalk) Recover() map[string]struct{} {
 func (b *Bitcointalk) Start() {
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(1 * time.Minute)
 
 	log.Println("开启定时监控Bitcointalk新帖")
 	b.C <- "开启定时监控Bitcointalk新帖"
