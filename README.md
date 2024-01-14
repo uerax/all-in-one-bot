@@ -331,16 +331,7 @@ __通过 @BotFather /setcommands 发送添加__
 
 `常用命令`
 ```
-tracking_wallet_analyze - 分析当前正在追踪的钱包近30条交易的胜率
-wallet_tracking - 追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
-stop_wallet_tracking - 停止追踪聪明钱包买卖动态 例: 0xaA6a1993Ec0BC72dc44B8E18e1DCDeD11A69302E
-wallet_tx_interest_rate - 分析钱包近n条交易的可盈利率 例: 0xC100D16B937Cd4bD2672F3D2636602267aD65A8e 50
-smart_addr_analyze - 分析最早买入的钱包近期40次交易收益 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 1
-price_highest - 查看时间区间最高价格(now可以是具体时间) 例: 0x9eac760d89805558d1a657b59bed313766e09e61 2023-08-15_02:36:35 now
-get_meme - 获取meme币信息 例: 0x6982508145454ce325ddbe47a25d4ec3d2311933 eth(可选填)
-get_tax - 获取当前tax 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6
-tacking_tax - 设置tax监控线20分钟后自动取消 例: 0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 10
-analyze_addr_token_profit - 分析钱包的指定加密货币总收益情况(钱包地址 加加密货币合约地址) 例:0x1c8075cfc18cd17f5fb7743fba811603b819234c 0x808a57ef754c18e1d2cea5d6cf30f00eeeaa1273
+bitcointalk_rss - bitcointalk新帖监控
 youtube_audio_download_cut - 下载ytb音频并裁剪
 crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
@@ -423,6 +414,7 @@ crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
 image_cmd_list - 图片处理/下载功能列表
 utils_cmd_list - 工具类功能列表
+bitcointalk_rss - bitcointalk新帖监控
 ```
 
 __待实现__

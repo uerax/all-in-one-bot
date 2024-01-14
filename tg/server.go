@@ -181,6 +181,9 @@ func Server() {
 
 		// Cmd Tip
 		switch update.Message.Command() {
+		// BBS
+		case "bitcointalk_rss":
+			bitcointalkMoniter()
 		// Track
 		case "tracking_wallet_analyze":
 			trackingWalletAnalyze()

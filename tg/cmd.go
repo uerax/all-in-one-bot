@@ -9,6 +9,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+// BBS
+func bitcointalkMoniter() {
+	go api.Bitcointalk.Start()
+}
+
 // Crypto Start
 func trackingWalletAnalyze() {
 	go api.Track.TrackingWalletAnalyze()

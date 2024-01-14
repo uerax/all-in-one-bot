@@ -8,6 +8,7 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/uerax/all-in-one-bot/bbs"
 	"github.com/uerax/all-in-one-bot/chatgpt"
 	"github.com/uerax/all-in-one-bot/cron"
 	"github.com/uerax/all-in-one-bot/crypto"
@@ -35,6 +36,7 @@ type Aio struct {
 	Utils       *utils.Utils
 	Lists       *lists.Lists
 	Track 		*crypto.Track
+	Bitcointalk *bbs.Bitcointalk
 }
 
 func (t *Aio) NewBot(token string, local string) {
@@ -58,6 +60,7 @@ func (t *Aio) NewBot(token string, local string) {
 	t.Utils = utils.NewUtils()
 	t.Lists = lists.NewLists()
 	t.Track = crypto.NewTrack()
+	t.Bitcointalk = bbs.NewBitcointalk()
 
 	go t.WaitToSend()
 }
@@ -225,6 +228,9 @@ func (t *Aio) WaitToSend() {
 			go t.SendMsg(ChatId, v)
 		// Track
 		case v := <-t.Track.C:
+			go t.SendMarkdown(ChatId, v, true)
+		// BBS
+		case v := <-t.Bitcointalk.C:
 			go t.SendMarkdown(ChatId, v, true)
 		}
 	}
