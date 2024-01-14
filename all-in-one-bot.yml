@@ -130,6 +130,7 @@ command:
     - "string2decimal - 字符串转换成十进制"
     - "decimal2string - 十进制转换成字符串"
     - "binary2string - 二进制转换成字符串"
+    - "miningCal - 挖矿收益计算"
   image:
     - "cutout - 抠图功能"
     - "sticker_download - 下载贴纸表情"
