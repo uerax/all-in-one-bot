@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -141,7 +142,7 @@ func (b *Bitcointalk) Monitor() {
 				views := s.Find("td").Eq(5).Text()
 				url, exists := td.Attr("href")
 				if exists && b.notifi {
-					b.C <- "Bitcointalk 新帖推送:\n主 题: " + td.Text() + "\n回复: " + reply + "\n点击: " + views + "\n直达链接: " + url
+					b.C <- "Bitcointalk 新帖推送:\n主 题: *" + td.Text() + "*\n回复: *" + strings.TrimSpace(reply) + "*\n点击: *" + strings.TrimSpace(views) + "*\n直达链接: " + url
 				}				
 			}
 		}
