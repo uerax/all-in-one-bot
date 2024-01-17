@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"strconv"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -140,10 +141,14 @@ func (b *Bitcointalk) Monitor() {
 				b.old[td.Text()] = struct{}{}
 				reply := s.Find("td").Eq(4).Text()
 				views := s.Find("td").Eq(5).Text()
-				url, exists := td.Attr("href")
-				if exists && b.notifi {
-					b.C <- "Bitcointalk 新帖推送:\n主 题: *" + td.Text() + "*\n回复: *" + strings.TrimSpace(reply) + "*\n点击: *" + strings.TrimSpace(views) + "*\n直达链接: " + url
-				}				
+				rpy, _ := strconv.Atoi(reply)
+				if rpy < 5 {
+					url, exists := td.Attr("href")
+					if exists && b.notifi {
+						b.C <- "Bitcointalk 新帖推送:\n主 题: *" + td.Text() + "*\n回复: *" + strings.TrimSpace(reply) + "*\n点击: *" + strings.TrimSpace(views) + "*\n直达链接: " + url
+					}	
+				}
+							
 			}
 		}
 	})
