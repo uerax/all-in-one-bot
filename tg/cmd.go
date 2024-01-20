@@ -609,9 +609,13 @@ func miningRewardCal(args string) {
 		return
 	}
 	if len(arg) == 3 {
-		arg = append(arg, "24")
+		arg = append(arg, "1", "1")
 	}
-	go api.Utils.RewardCal(arg[0], arg[1], arg[2], arg[3])
+
+	if len(arg) == 4 {
+		arg = append(arg, "1")
+	}
+	go api.Utils.RewardCal(arg[0], arg[1], arg[2], arg[3], arg[4])
 }
 
 // Lists

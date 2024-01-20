@@ -82,7 +82,7 @@ func (t *Utils) JsonFormat(str string) {
 	t.MsgC <- fmt.Sprintf("`%s`", out.String())
 }
 
-func (t *Utils) RewardCal(h, d, r, time string) {
+func (t *Utils) RewardCal(h, d, r, time, val string) {
 	hash, err := strconv.ParseFloat(h, 64)
 	if err != nil {
 		return
@@ -99,11 +99,15 @@ func (t *Utils) RewardCal(h, d, r, time string) {
 	if err != nil {
 		return
 	}
+	value, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return
+	}
 	cnt := 0.0
 	if diff < 1 {
-		cnt = hash * math.Pow(2, 10) / (diff * math.Pow(2, 32)) * reward * 60 * 60 * hour
+		cnt = hash * math.Pow(2, 10) / (diff * math.Pow(2, 32)) * reward * 60 * 60 * hour * value
 	} else {
-		cnt = hash * math.Pow(2, 10) / (diff) * reward * 60 * 60 * hour
+		cnt = hash * math.Pow(2, 10) / (diff) * reward * 60 * 60 * hour * value
 	}
 	
 	t.MsgC <- fmt.Sprintf("`%.10f`", cnt)

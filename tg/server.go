@@ -384,7 +384,7 @@ func Server() {
 			tips(update.Message.Chat.ID, "发送字符串")
 		case "mining_cal":
 			Cmd = "mining_cal"
-			tips(update.Message.Chat.ID, "发送你参数: 算力(k) Diff难度 区块奖励 时间(小时,可选) 例: `10 0.390015 2850`")
+			tips(update.Message.Chat.ID, "发送你参数: 算力(k) Diff难度 区块奖励 时间(小时,可选) 价格(可选) 例: `40 214174659009 11 24 0.00000333`")
 		// Lists
 		case "cmd_list":
 			allList()
