@@ -51,10 +51,16 @@ bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master
 * 如果需要用到聪明钱的追踪和探测, 需要添加 Etherscan 的 Api Key。在 `all-in-one-bot.yml` 添加你的 crypto etherscan keys
 > 按照目前的探测频率, 聪明钱追踪每分钟会调用20次api, 而etherscan的一个免费 apikey 只有每秒只能调用5次, 超过则会返回错误. 也就是说一个key最理想情况下可以支持15个聪明钱探测, 而极端情况只能支持3-5个, 所以如果追踪的聪明钱较多key也需要根据情况增加
 
-`更新`
+`更新稳定版`
 
 ```
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ update
+```
+
+`更新预发布`
+
+```
+bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ pre
 ```
 
 `卸载`

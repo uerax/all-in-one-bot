@@ -17,6 +17,7 @@ version=v0.0.7
 prj_name="aio"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
+prj_pre_url="https://api.github.com/repos/uerax/all-in-one-bot/releases"
 cfg_path="/usr/local/etc"
 log_url="/var/log/"
 assets="Aio-linux-64"
@@ -117,6 +118,17 @@ update_aio() {
     env
     systemctl stop aio
     v=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
+    url="https://github.com/uerax/all-in-one-bot/releases/download/$v/$assets"
+    wget -q $url -O $project_dir/$prj_name
+    chmod +x ${project_dir}/${prj_name}
+    systemctl start aio
+    echo -e "更新完成,版本:$v"
+}
+
+pre_update_aio() {
+    env
+    systemctl stop aio
+    v=$(curl -sL $prj_pre_url | grep "tag_name" | head -n 1 | cut -d '"' -f 4)
     url="https://github.com/uerax/all-in-one-bot/releases/download/$v/$assets"
     wget -q $url -O $project_dir/$prj_name
     chmod +x ${project_dir}/${prj_name}
@@ -246,6 +258,9 @@ case $1 in
         ;;
     update)
         update_aio
+        ;;
+    pre)
+        pre_update_aio
         ;;
     *)
         menu
