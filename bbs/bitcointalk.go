@@ -38,13 +38,13 @@ func NewBitcointalk() *Bitcointalk {
 		path: goconf.VarStringOrDefault("./", "bbs", "path"),
 		running: false,
 	}
-
+	go b.FilterFill()
 	b.old = b.Recover()
 	if len(b.old) == 0 {
 		b.Monitor()
 	}
 	b.notifi = true
-	go b.FilterFill()
+	
 	go b.CronDump()
 
 	return b
@@ -172,26 +172,24 @@ func (b *Bitcointalk) Monitor() {
 		td := s.Find("td").Eq(2).Find("span").Find("a")
 		if td.Text() != "" {
 			text := strings.TrimSpace(strings.ToLower(td.Text()))
-			println("1:" + text)
-			for k := range b.filter {
-				if strings.Contains(text, k) {
-					println("2:" + "包含了: ", k)
-					return
-				}
-			}
-			println("3:" + text)
 			if _, ok := b.old[text]; !ok {
 				b.old[text] = struct{}{}
-				reply := strings.TrimSpace(s.Find("td").Eq(4).Text())
-				views := strings.TrimSpace(s.Find("td").Eq(5).Text())
-				rpy, _ := strconv.Atoi(reply)
-				if rpy < 5 {
-					url, exists := td.Attr("href")
-					if exists && b.notifi {
-						b.C <- "Bitcointalk 新帖推送:\n主 题: *" + td.Text() + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url
-					}	
+				for k := range b.filter {
+					if strings.Contains(text, k) {
+						return
+					}
 				}
-							
+				if b.notifi {
+					reply := strings.TrimSpace(s.Find("td").Eq(4).Text())
+					views := strings.TrimSpace(s.Find("td").Eq(5).Text())
+					rpy, _ := strconv.Atoi(reply)
+					if rpy < 5 {
+						url, exists := td.Attr("href")
+						if exists {
+							b.C <- "Bitcointalk 新帖推送:\n主 题: *" + td.Text() + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url
+						}	
+					}
+				}			
 			}
 		}
 	})
