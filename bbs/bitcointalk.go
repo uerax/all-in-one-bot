@@ -22,6 +22,7 @@ type Bitcointalk struct {
 	ctx context.Context
 	cancel context.CancelFunc
 	C chan string
+	filter map[string]struct{}
 	notifi bool
 	path string
 	running bool
@@ -33,6 +34,7 @@ func NewBitcointalk() *Bitcointalk {
 		old: make(map[string]struct{}),
 		C: make(chan string, 5),
 		notifi: false,
+		filter: make(map[string]struct{}, 0),
 		path: goconf.VarStringOrDefault("./", "bbs", "path"),
 		running: false,
 	}
@@ -42,16 +44,48 @@ func NewBitcointalk() *Bitcointalk {
 		b.Monitor()
 	}
 	b.notifi = true
+	go b.FilterFill()
 	go b.CronDump()
 
 	return b
 
 }
 
+func (b *Bitcointalk) FilterFill() {
+	
+	// 下载JSON文件
+	url := "https://example.com/data.json"
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Println("无法下载JSON文件:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// 读取JSON文件内容
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("无法读取JSON文件:", err)
+		return
+	}
+
+	// 解析JSON为Map
+	filter := make(map[string]struct{})
+	err = json.Unmarshal(body, &filter)
+	if err != nil {
+		log.Println("无法解析JSON:", err)
+		return
+	}
+
+	// 使用解析后的Map进行操作
+	b.filter = filter
+}
+
 func (b *Bitcointalk) CronDump() {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(1 * time.Hour)
 	for range ticker.C {
-		b.Dump()
+		go b.Dump()
+		go b.FilterFill()
 	}
 }
 
@@ -137,8 +171,17 @@ func (b *Bitcointalk) Monitor() {
 	doc.Find("tr").Each(func(i int, s *goquery.Selection) {
 		td := s.Find("td").Eq(2).Find("span").Find("a")
 		if td.Text() != "" {
-			if _, ok := b.old[td.Text()]; !ok {
-				b.old[td.Text()] = struct{}{}
+			text := strings.TrimSpace(strings.ToLower(td.Text()))
+			println("1:" + text)
+			for k := range b.filter {
+				if strings.Contains(text, k) {
+					println("2:" + "包含了: ", k)
+					return
+				}
+			}
+			println("3:" + text)
+			if _, ok := b.old[text]; !ok {
+				b.old[text] = struct{}{}
 				reply := strings.TrimSpace(s.Find("td").Eq(4).Text())
 				views := strings.TrimSpace(s.Find("td").Eq(5).Text())
 				rpy, _ := strconv.Atoi(reply)
