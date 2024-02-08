@@ -1,9 +1,10 @@
 #!/bin/bash
 
 RELEASE_NOTES="Release notes"  # 发布说明
-prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
-version=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
-
+# prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
+# version=$(curl -sL $prj_url | grep "tag_name" | cut -d '"' -f 4)
+prj_pre_url="https://api.github.com/repos/uerax/all-in-one-bot/releases"
+version=$(curl -sL $prj_pre_url | grep "tag_name" | head -n 1 | cut -d '"' -f 4)
 read -rp "当前版本为: $version, 请输入新的版本号: " input
 
 read -rp "新的版本号为: $input, 请确认(y/n):" confirm
