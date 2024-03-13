@@ -50,7 +50,7 @@ func (t *Utils) QubicProfit(token string) {
 
 	sol := 1000.0 * float64(qb.SolutionsPerHour) / float64(qb.EstimatedIts)
 
-	msg := fmt.Sprintf("当前全网算力: *%d*\n当前出块: *%d / h*\n当前平均分: *%.f*\n\n本周预计平均分: *%.f*\n\n1000算力平均1小时出块: *%.3f*\n1000算力平均24小时出块: *%.3f*\n\n单个块收益预计: *%.f*\nEpoch1单块预计: *%.f*\nEpoch2单块预计: *%.f*", qb.EstimatedIts, qb.SolutionsPerHour, qb.AverageScore, totalEarning, sol, sol*24, earn1 + earn2, earn1, earn2)
+	msg := fmt.Sprintf("当前全网算力: *%d*\n当前出块: *%d / h*\n当前平均分: *%.f*\n\n本周预计平均分: *%.f*\n\n1000算力平均1小时出块: *%.3f*\n1000算力平均24小时出块: *%.3f*\n1000算力平均7天出块: *%.3f*\n\n单个块收益预计: *%.f*\nEpoch1单块预计: *%.f*\nEpoch2单块预计: *%.f*", qb.EstimatedIts, qb.SolutionsPerHour, qb.AverageScore, totalEarning, sol, sol*24, sol*24*7, earn1 + earn2, earn1, earn2)
 
 	t.MsgC <- msg
 	
