@@ -339,6 +339,7 @@ __通过 @BotFather /setcommands 发送添加__
 ```
 bitcointalk_rss - bitcointalk新帖监控
 mining_cal - 挖矿收益计算
+qubic - qubic相关收益计算, 加上token即可保存新的token
 youtube_audio_download_cut - 下载ytb音频并裁剪
 crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
@@ -424,6 +425,7 @@ utils_cmd_list - 工具类功能列表
 bitcointalk_rss - bitcointalk新帖监控
 bitcointalk_rss_stop - 关闭bitcointalk新帖监控
 mining_cal - 挖矿收益计算
+qubic - qubic相关收益计算
 ```
 
 __待实现__

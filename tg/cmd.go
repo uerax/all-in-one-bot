@@ -618,6 +618,14 @@ func miningRewardCal(args string) {
 	go api.Utils.RewardCal(arg[0], arg[1], arg[2], arg[3], arg[4])
 }
 
+func qubic(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) < 2 {
+		arg = append(arg, "")
+	}
+	go api.Utils.QubicProfit(arg[1])
+}
+
 // Lists
 func cryptoList() {
 	go api.Lists.Crypto()

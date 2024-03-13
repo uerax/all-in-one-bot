@@ -8,6 +8,7 @@
             "name": "Launch Package",
             "type": "go",
             "request": "launch",
+            "dlvFlags": ["--check-go-version=false"],
             "mode": "debug",
             "program": "main.go",
             "args": [
