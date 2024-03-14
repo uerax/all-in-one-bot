@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"sync"
 	"time"
 )
 
@@ -15,9 +17,24 @@ type Qubic struct {
 	SolutionsPerHour int64            `json:"solutionsPerHour"`
 }
 
-var defaultToken = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6ImM4NjVjNmU1LTBiOTQtNDdjNC04NzBkLThmNTRkOTQ5NzgzMiIsInN1YiI6ImRkYmVoZWFkQG91dGxvb2suY29tIiwianRpIjoiYjMwNGIxM2ItZmNjNi00MDhhLTk1MmMtODgwODMzMDgyMDk5IiwiUHVibGljIjoiIiwibmJmIjoxNzEwMzUwMDc1LCJleHAiOjE3MTA0MzY0NzUsImlhdCI6MTcxMDM1MDA3NSwiaXNzIjoiaHR0cHM6Ly9xdWJpYy5saS8iLCJhdWQiOiJodHRwczovL3F1YmljLmxpLyJ9.rT7y3FASfSSNIeBOKVVaxzWEixMvL7XkmfSzHNpmritvNc_Gpa3K9UKz0q-8mkLOo8et369daxe3HLVyelGaZw"
+var defaultToken = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6ImM4NjVjNmU1LTBiOTQtNDdjNC04NzBkLThmNTRkOTQ5NzgzMiIsInN1YiI6ImRkYmVoZWFkQG91dGxvb2suY29tIiwianRpIjoiYzE1N2Y2OTYtNzU0ZS00MjNlLTg4ZTctZmJjOGYwZDQ5MDkyIiwiUHVibGljIjoiIiwibmJmIjoxNzEwNDM5NDAxLCJleHAiOjE3MTA1MjU4MDEsImlhdCI6MTcxMDQzOTQwMSwiaXNzIjoiaHR0cHM6Ly9xdWJpYy5saS8iLCJhdWQiOiJodHRwczovL3F1YmljLmxpLyJ9.ApfPALfEVSquUe_OzgTPSqFQNTOQybfEYAlBiHN1tNGvHhd8vG_LpjtedMBLasv4XgzP5fJiCdb4hoVmOrUwGg"
 
 func (t *Utils) QubicProfit(token string) {
+	it := 1000
+	if len(token) < 50 {
+		i, err := strconv.Atoi(token)
+		if err == nil {
+			it = i
+		}
+		token = ""
+	}
+	wait := sync.WaitGroup{}
+	wait.Add(1)
+	price := 0.0
+	go func() {
+		price = qubicPrice()
+		wait.Done()
+	}()
 	qb, err := QubicInfo(token)
 	if err != nil {
 		t.ErrC <- err.Error()
@@ -48,11 +65,14 @@ func (t *Utils) QubicProfit(token string) {
 	totalEarning := float64(earningPerHour * (7 * 24))
 	earn1, earn2 := ep1 / (totalEarning * 1.06), ep2 / (totalEarning * 1.06)
 
-	sol := 1000.0 * float64(qb.SolutionsPerHour) / float64(qb.EstimatedIts)
+	sol := float64(it) * float64(qb.SolutionsPerHour) / float64(qb.EstimatedIts)
 
-	msg := fmt.Sprintf("当前全网算力: *%d*\n当前出块: *%d / h*\n当前平均分: *%.f*\n\n本周预计平均分: *%.f*\n\n1000算力平均1小时出块: *%.3f*\n1000算力平均24小时出块: *%.3f*\n1000算力平均7天出块: *%.3f*\n\n单个块收益预计: *%.f*\nEpoch1单块预计: *%.f*\nEpoch2单块预计: *%.f*", qb.EstimatedIts, qb.SolutionsPerHour, qb.AverageScore, totalEarning, sol, sol*24, sol*24*7, earn1 + earn2, earn1, earn2)
+	msg := fmt.Sprintf("当前全网算力: *%d it/s*\n当前出块速度: *%d / h*\n当前平均分: *%.f*\n\n本周预计平均分: *%.f*\n\n%d算力预计1小时出块: *%.3f*\n%d算力预计24小时出块: *%.3f*\n%d算力预计7天出块: *%.3f*\n\n%d算力当前预计出块: *%.3f*\n\n单个块预计收益: *%.f qubic*\nEp1单块预计收益: *%.f qubic*\nEp2单块预计收益: *%.f qubic*", qb.EstimatedIts, qb.SolutionsPerHour, qb.AverageScore, totalEarning, it, sol, it, sol*24, it, sol*24*7, it, float64(totalHours)*sol, earn1 + earn2, earn1, earn2)
 
-	t.MsgC <- msg
+	wait.Wait()
+	priceMsg := fmt.Sprintf("\n\n当前Qubic价格: *%.12f U*\n单个块预计收益: *%.3f U*\n%d算力预计本周收益: *%.3f U*", price, (earn1 + earn2)*price, it, (earn1 + earn2)*price*sol*24*7)
+
+	t.MsgC <- msg + priceMsg
 	
 }
 
@@ -102,4 +122,52 @@ func QubicInfo(token string) (*Qubic, error) {
 	err = json.Unmarshal(body, &qb)
 
 	return &qb, err
+}
+
+func qubicPrice() float64 {
+
+	url := "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?id=29169"
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	//req.Header.Add("Accept", "*/*")
+	req.Header.Add("User-Agent", "Thunder Client (https://www.thunderclient.com)")
+	req.Header.Add("X-CMC_PRO_API_KEY", "2fd0cde2-ea61-4c5c-96df-ee34f6d6e256")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return 0
+	}
+
+	type Usd struct {
+		Price float64 `json:"price"`
+	}
+
+	type Quote struct {
+		Usd Usd `json:"USD"`
+	}
+
+	type Qb struct {
+		Quote Quote `json:"quote"`
+	}
+
+	type Data struct {
+		Qb Qb `json:"29169"`
+	}
+
+	type QbResp struct {
+		Data Data `json:"data"`
+	}
+
+	qb := QbResp{}
+
+	json.Unmarshal(body, &qb)
+	
+	return qb.Data.Qb.Quote.Usd.Price
+
 }
