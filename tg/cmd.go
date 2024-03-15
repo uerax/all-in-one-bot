@@ -626,6 +626,10 @@ func qubic(args string) {
 	go api.Utils.QubicProfit(arg[1])
 }
 
+func qubicTokenRefresh() {
+	go api.Utils.QubicToken()
+}
+
 // Lists
 func cryptoList() {
 	go api.Lists.Crypto()

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -17,7 +18,11 @@ type Qubic struct {
 	SolutionsPerHour int64            `json:"solutionsPerHour"`
 }
 
-var defaultToken = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJJZCI6ImM4NjVjNmU1LTBiOTQtNDdjNC04NzBkLThmNTRkOTQ5NzgzMiIsInN1YiI6ImRkYmVoZWFkQG91dGxvb2suY29tIiwianRpIjoiYzE1N2Y2OTYtNzU0ZS00MjNlLTg4ZTctZmJjOGYwZDQ5MDkyIiwiUHVibGljIjoiIiwibmJmIjoxNzEwNDM5NDAxLCJleHAiOjE3MTA1MjU4MDEsImlhdCI6MTcxMDQzOTQwMSwiaXNzIjoiaHR0cHM6Ly9xdWJpYy5saS8iLCJhdWQiOiJodHRwczovL3F1YmljLmxpLyJ9.ApfPALfEVSquUe_OzgTPSqFQNTOQybfEYAlBiHN1tNGvHhd8vG_LpjtedMBLasv4XgzP5fJiCdb4hoVmOrUwGg"
+var defaultToken = ""
+
+func init() {
+	go QubicTokenAutoRefresh()
+}
 
 func (t *Utils) QubicProfit(token string) {
 	it := 1000
@@ -170,4 +175,79 @@ func qubicPrice() float64 {
 	
 	return qb.Data.Qb.Quote.Usd.Price
 
+}
+
+func QubicTokenAutoRefresh() {
+	refresh := func()  {
+		type Token struct {
+			Token        string `json:"token"`
+			Success      bool   `json:"success"`
+		}
+	
+		url := "https://api.qubic.li/Auth/Login"
+	
+		payload := strings.NewReader("{\n  \"password\": \"guest13@Qubic.li\",\n  \"userName\": \"guest@qubic.li\",\n  \"twoFactorCode\": \"\"\n}")
+	
+		req, _ := http.NewRequest("POST", url, payload)
+	
+		req.Header.Add("Content-Type", "application/json")
+	
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return 
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return 
+		}
+		qb := Token{}
+		err = json.Unmarshal(body, &qb)
+		if err != nil || !qb.Success {
+			return 
+		}
+	
+		defaultToken = qb.Token
+	}
+	tk := time.NewTicker(12 * time.Hour)
+	refresh()
+	for range tk.C {
+		go refresh()
+	}
+}
+
+func (t *Utils) QubicToken() {
+	type Token struct {
+		Token        string `json:"token"`
+		Success      bool   `json:"success"`
+	}
+
+	url := "https://api.qubic.li/Auth/Login"
+
+	payload := strings.NewReader("{\n  \"password\": \"guest13@Qubic.li\",\n  \"userName\": \"guest@qubic.li\",\n  \"twoFactorCode\": \"\"\n}")
+
+	req, _ := http.NewRequest("POST", url, payload)
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.ErrC <- err.Error()
+		return 
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.ErrC <- err.Error()
+		return 
+	}
+	qb := Token{}
+	err = json.Unmarshal(body, &qb)
+	if err != nil || !qb.Success {
+		t.ErrC <- err.Error()
+		return 
+	}
+
+	defaultToken = qb.Token
+	t.MsgC <- "Token 刷新成功"
 }
