@@ -389,6 +389,8 @@ func Server() {
 			qubic(update.Message.Text)
 		case "qubic_token_refresh":
 			qubicTokenRefresh()
+		case "orge_withdraw":
+			orgeWithdraw(update.Message.Text)
 		// Lists
 		case "cmd_list":
 			allList()

@@ -10,11 +10,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/uerax/all-in-one-bot/crypto"
 )
 
 type Utils struct {
 	format string
 	MsgC   chan string
+	bn    *crypto.Crypto
 	ErrC   chan string
 }
 

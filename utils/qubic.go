@@ -19,6 +19,7 @@ type Qubic struct {
 }
 
 var (
+	orgeApi = "https://tradeogre.com/api/v1"
 	defaultToken = ""
 	defaultIt = 1000
 )
@@ -253,4 +254,73 @@ func (t *Utils) QubicToken() {
 
 	defaultToken = qb.Token
 	t.MsgC <- "Token 刷新成功"
+}
+
+
+type Orge struct {
+	Success      bool   `json:"success"`
+	Initialprice string `json:"initialprice"`
+	Price        string `json:"price"`
+	High         string `json:"high"`
+	Low          string `json:"low"`
+	Volume       string `json:"volume"`
+	Bid          string `json:"bid"`
+	Ask          string `json:"ask"`
+}
+
+func OrgePrice(coin string) float64 {
+	url := orgeApi + "/ticker/" + coin + "-usdt"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return 0
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0
+	}
+
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return 0
+	}
+
+	price := Orge{}
+
+	err = json.Unmarshal(body, &price)
+	if err != nil {
+		return 0
+	}
+
+	p, _ := strconv.ParseFloat(price.Price, 64)
+
+	return p
+}
+
+func (t *Utils) Compare(usdt string) {
+	u := 500.0
+	if usdt != "" {
+		if t, err := strconv.ParseFloat(usdt, 64); err == nil {
+			u = t
+		}
+	}
+	ltc, xrp, doge, matic := OrgePrice("ltc"),OrgePrice("xrp"),OrgePrice("doge"),OrgePrice("matic")
+	bn := t.bn.Price(`LTCUSDT","XRPUSDT","DOGEUSDT","MATICUSDT`)
+	bn_ltc, _ := strconv.ParseFloat(bn["LTCUSDT"], 64)
+	bn_xrp, _ := strconv.ParseFloat(bn["XRPUSDT"], 64)
+	bn_doge, _ := strconv.ParseFloat(bn["DOGEUSDT"], 64)
+	bn_matic, _ := strconv.ParseFloat(bn["MATICUSDT"], 64)
+	
+	ltc_loss := u - (u / ltc * bn_ltc)
+	xrp_loss := u - (u / xrp * bn_xrp)
+	doge_loss := u - (u / doge * bn_doge)
+	matic_loss := u - (u / matic * bn_matic)
+
+	msg := fmt.Sprintf("LTC 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nXRP 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nDOGE 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nMATIC 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\n", ltc_loss, ltc, bn_ltc, xrp_loss, xrp, bn_xrp, doge_loss, doge, bn_doge, matic_loss, matic, bn_matic)
+
+	t.MsgC <- msg
+
 }

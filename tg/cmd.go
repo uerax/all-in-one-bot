@@ -630,6 +630,14 @@ func qubicTokenRefresh() {
 	go api.Utils.QubicToken()
 }
 
+func orgeWithdraw(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) < 2 {
+		arg = append(arg, "")
+	}
+	go api.Utils.Compare(arg[1])
+}
+
 // Lists
 func cryptoList() {
 	go api.Lists.Crypto()
