@@ -18,7 +18,7 @@ import (
 
 var (
 	// apiUrl  = "https://api.binance.com"
-	dataUrl          = "https://data.binance.com"
+	dataUrl          = "https://api.binance.com"
 	fapiUrl          = "https://fapi.binance.com"
 	memeUrl          = "https://api.dexscreener.com/latest/dex/search/?q="
 	memeCheckUrl     = "https://api.gopluslabs.io/api/v1/token_security/%s?contract_addresses=%s"
