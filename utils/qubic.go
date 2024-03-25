@@ -20,6 +20,7 @@ type Qubic struct {
 
 var (
 	orgeApi = "https://tradeogre.com/api/v1"
+	mexcApi = "https://www.mexc.com/open/api/v2"
 	defaultToken = ""
 	defaultIt = 1000
 )
@@ -268,6 +269,56 @@ type Orge struct {
 	Ask          string `json:"ask"`
 }
 
+type MexcResp struct {
+	Code int64   `json:"code"`
+	Data []Mexc `json:"data"`
+}
+
+type Mexc struct {
+	Symbol     string `json:"symbol"`
+	Volume     string `json:"volume"`
+	Amount     string `json:"amount"`
+	High       string `json:"high"`
+	Low        string `json:"low"`
+	Bid        string `json:"bid"`
+	Ask        string `json:"ask"`
+	Open       string `json:"open"`
+	Last       string `json:"last"`
+	Time       int64  `json:"time"`
+	ChangeRate string `json:"change_rate"`
+}
+
+func MexcPrice(coin string) float64 {
+	url := mexcApi + "/market/ticker?symbol=" + coin + "_usdt"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return 0
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0
+	}
+
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return 0
+	}
+
+	price := MexcResp{}
+
+	err = json.Unmarshal(body, &price)
+	if err != nil || price.Code != 200 || len(price.Data) == 0 {
+		return 0
+	}
+	p, _ := strconv.ParseFloat(price.Data[0].Last, 64)
+	return p
+	
+}
+
 func OrgePrice(coin string) float64 {
 	url := orgeApi + "/ticker/" + coin + "-usdt"
 
@@ -307,19 +358,35 @@ func (t *Utils) Compare(usdt string) {
 			u = t
 		}
 	}
-	ltc, xrp, doge, matic := OrgePrice("ltc"),OrgePrice("xrp"),OrgePrice("doge"),OrgePrice("matic")
-	bn := t.bn.Price(`LTCUSDT","XRPUSDT","DOGEUSDT","MATICUSDT`)
+	bn := t.bn.Price(`LTCUSDT","XRPUSDT","BTCUSDT`)
 	bn_ltc, _ := strconv.ParseFloat(bn["LTCUSDT"], 64)
 	bn_xrp, _ := strconv.ParseFloat(bn["XRPUSDT"], 64)
-	bn_doge, _ := strconv.ParseFloat(bn["DOGEUSDT"], 64)
-	bn_matic, _ := strconv.ParseFloat(bn["MATICUSDT"], 64)
+	bn_btc, _ := strconv.ParseFloat(bn["BTCUSDT"], 64)
 	
-	ltc_loss := u - (u / ltc * bn_ltc)
-	xrp_loss := u - (u / xrp * bn_xrp)
-	doge_loss := u - (u / doge * bn_doge)
-	matic_loss := u - (u / matic * bn_matic)
+	ltc, xrp, pyi, xmr, btc := 0.0, 0.0, 0.0, 0.0, 0.0
+	
+	mexc_ltc, mexc_pyi, mexc_xmr := 0.0, 0.0, 0.0
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func ()  {
+		ltc, xrp, pyi, xmr, btc = OrgePrice("ltc"),OrgePrice("xrp"),OrgePrice("pyi"),OrgePrice("xmr"),OrgePrice("btc")
+		wg.Done()
+	}()
+	go func ()  {
+		mexc_ltc, mexc_pyi, mexc_xmr = MexcPrice("ltc"), MexcPrice("pyi"), MexcPrice("xmr")
+		wg.Done()
+	}()
+	wg.Wait()
 
-	msg := fmt.Sprintf("LTC 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nXRP 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nDOGE 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nMATIC 提现损耗为: %.4f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\n", ltc_loss, ltc, bn_ltc, xrp_loss, xrp, bn_xrp, doge_loss, doge, bn_doge, matic_loss, matic, bn_matic)
+	bn_ltc_loss := u - (u / ltc * bn_ltc)
+	bn_xrp_loss := u - (u / xrp * bn_xrp)
+	bn_btc_loss := u - (u / btc * bn_btc)
+
+	mexc_ltc_loss := u - (u / ltc * mexc_ltc)
+	mexc_pyi_loss := u - (u / pyi * mexc_pyi)
+	mexc_xmr_loss := u - (u / xmr * mexc_xmr)
+
+	msg := fmt.Sprintf("%.1f U 从Orge提现手续费分析:\n\nLTC 提现 Binance 损耗: %.3f U + %.3f U\n总计损耗为: %.3f U\nLTC 提现 Mexc 损耗: %.4f U + 1 U + %.3f U\n总计损耗为: %.3f U\nOgre 价格: %.5f\nBinance 价格: %.5f\nMexc 价格: %.5f\n\nXRP 提现 Binance 损耗: %.3f U + %.3f U\n总计损耗为: %.3f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nPYI 提现 Mexc 损耗: %.2f U + 1 U + %.2f U\n总计损耗为: %.2f U\nOgre 价格: %.5f\nMexc 价格: %.5f\n\nXMR 提现 Mexc 损耗: %.3f U + 1 U + %.3f U\n总计损耗为: %.4f U\nOgre 价格: %.5f\nMexc 价格: %.5f\n\nBTC 提现 Binance 损耗: %.4f U + %.4f U\n总计损耗为: %.4f U\nOgre 价格: %.2f\nMexc 价格: %.2f", u, bn_ltc_loss, 0.001*ltc, mexc_ltc_loss+(0.001*ltc), mexc_ltc_loss, 0.001*ltc, mexc_ltc_loss+(0.001*ltc) + 1, ltc, bn_ltc, mexc_ltc, bn_xrp_loss, 0.001*xrp,bn_xrp_loss+(0.001*xrp), xrp, bn_xrp, mexc_pyi_loss, pyi * 5, mexc_pyi_loss + (pyi * 5) + 1, pyi, mexc_pyi, mexc_xmr_loss, 0.00021917*xmr, mexc_xmr_loss+(0.00021917*xmr)+1, xmr, mexc_xmr,bn_btc_loss, 0.00011225*btc, bn_btc_loss + (0.00011225*btc), btc, bn_btc)
 
 	t.MsgC <- msg
 
