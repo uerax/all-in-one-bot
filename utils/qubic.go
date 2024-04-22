@@ -15,7 +15,7 @@ import (
 type Qubic struct {  
 	AverageScore     float64          `json:"averageScore"`    
 	EstimatedIts     int64            `json:"estimatedIts"`    
-	SolutionsPerHour int64            `json:"solutionsPerHour"`
+	SolutionsPerHour int64            `json:"solutionsPerHourCalculated"`
 }
 
 var (
@@ -77,7 +77,7 @@ func (t *Utils) QubicProfit(token string) {
 
 	sol := float64(it) * float64(qb.SolutionsPerHour) / float64(qb.EstimatedIts)
 
-	msg := fmt.Sprintf("当前全网算力: *%d it/s*\n当前出块速度: *%d / h*\n当前平均分: *%.f*\n\n本周预计平均分: *%.f*\n\n%d算力预计1小时出块: *%.3f*\n%d算力预计1天出块: *%.3f*\n%d算力预计7天出块: *%.3f*\n\n%d算力当前预计出块: *%.3f*\n\n单个块预计总收益: *%.f qubic*\nEp1单块预计收益: *%.f qubic*\nEp2单块预计收益: *%.f qubic*\n\n纪元预计总收益: *%d qubic*\nEp1预计总收益: *%d qubic*\nEp2预计总收益: *%d qubic*", qb.EstimatedIts, qb.SolutionsPerHour, qb.AverageScore, totalEarning, it, sol, it, sol*24, it, sol*24*7, it, float64(totalHours)*sol, earn1 + earn2, earn1, earn2, int(sol * 24 * 7 * (earn1 + earn2)), int(sol * 24 * 7 * earn1), int(sol * 24 * 7 * earn2))
+	msg := fmt.Sprintf("当前全网算力: *%d it/s*\n平均出块速度: *%d / h*\n当前平均分: *%.f*\n\n本周预计平均分: *%.f*\n\n%d算力预计1小时出块: *%.3f*\n%d算力预计1天出块: *%.3f*\n%d算力预计7天出块: *%.3f*\n\n%d算力当前预计出块: *%.3f*\n\n单个块预计总收益: *%.f qubic*\nEp1单块预计收益: *%.f qubic*\nEp2单块预计收益: *%.f qubic*\n\n纪元预计总收益: *%d qubic*\nEp1预计总收益: *%d qubic*\nEp2预计总收益: *%d qubic*", qb.EstimatedIts, qb.SolutionsPerHour, qb.AverageScore, totalEarning, it, sol, it, sol*24, it, sol*24*7, it, float64(totalHours)*sol, earn1 + earn2, earn1, earn2, int(sol * 24 * 7 * (earn1 + earn2)), int(sol * 24 * 7 * earn1), int(sol * 24 * 7 * earn2))
 
 	wait.Wait()
 	priceMsg := fmt.Sprintf("\n\n当前Qubic价格: *%.12f U*\n单个块预计收益: *%.3f U*\n纪元预计总收益: *%.3f U*\n\nEp1预计收益: *%.3f U*\nEp2预计收益: *%.3f U*", price, (earn1 + earn2)*price, (earn1 + earn2)*price*sol*24*7, earn1*price*sol*24*7, earn2*price*sol*24*7)
