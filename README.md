@@ -92,9 +92,7 @@ systemctl status aio
 
 * 功能太多太杂导致我自己使用都会有些混乱, 整理一些常用的组合用法
 
-### 如何找聪明钱包v2
-
-__首先找到一个金狗(涨幅巨大),使用smart_addr_finder去找出早期购买且收益高的钱包地址, 我这边随便找一个作为示例__
+### 如何找聪明钱包v2(失效)
 
 `发送命令`
 
@@ -364,7 +362,6 @@ tracking_lastest_tx - 获取正在追踪的钱包最后一次交易的时间
 analyze_addr_token_profit - 分析钱包的指定加密货币总收益情况(钱包地址 加加密货币合约地址) 例:0x1c8075cfc18cd17f5fb7743fba811603b819234c 0x808a57ef754c18e1d2cea5d6cf30f00eeeaa1273
 smart_addr_analyze - 分析最早买入的钱包近期40次交易收益 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 10 1
 smart_addr_finder - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
-smart_addr_finder_v2 - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 list_wallet_tracking - 列出正在追踪的聪明钱包地址
 list_smart_addr_probe - 列出正在探测的聪明钱包地址
 dump_tracking_list - dump追踪地址列表(建议每次准备重启服务的时候执行一次)
@@ -430,15 +427,10 @@ qubic - qubic相关收益计算
 qubic_token_refresh - qubic的api的token刷新
 ```
 
-__待实现__
-
-```
-twitter_download - 下载twitter的视频
-```
-
 __弃用__
 
 ```
+smart_addr_finder_v2 - 分析高涨幅度币的地址收益来寻找聪明地址 例:  0x2890df158d76e584877a1d17a85fea3aeeb85aa6 50 1
 vps_monitor_supported_list - 查看支持监控的网站
 add_vps_monitor - 添加VPS库存监控 例: URL(vps_monitor_supported_list里的)
 vps_add_supported_list - 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
