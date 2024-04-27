@@ -841,7 +841,7 @@ func (t *Track) SmartAddrFinder(token, offset, page string) {
 	}
 
 	if len(analyze) > 0 {
-		msg := fmt.Sprintf("*合约地址:* `%s`\n *------------分析完毕:------------*", token)
+		msg := fmt.Sprintf("*合约地址:* `%s`\n *-----分析完毕(B:buy; S:sell; C:cost; P:profit; Unit:ETH):-----*", token)
 		for k, v := range analyze {
 			if len(msg) > 3500 {
 				msg += "\n*------内容过长进行裁剪------*"
