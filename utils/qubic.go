@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/andybalholm/brotli"
 )
 
 type Qubic struct {  
@@ -117,17 +119,31 @@ func QubicInfo(token string) (*Qubic, error) {
 	}
 	defer res.Body.Close()
 	reader := res.Body
+	var body []byte
 	if res.Header.Get("Content-Encoding") == "gzip" {
 		reader, err = gzip.NewReader(res.Body)
         if err != nil {
             return nil, err
         }
         defer reader.Close()
+		body, err = io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+	} else if res.Header.Get("Content-Encoding") == "br" {
+		reader := brotli.NewReader(res.Body)
+        body, err = io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		body, err = io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
 	}
-	body, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
+
+
 	qb := Qubic{}
 	err = json.Unmarshal(body, &qb)
 
