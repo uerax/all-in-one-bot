@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/andybalholm/brotli v1.1.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/iawia002/lux v0.19.0
 	github.com/kkdai/youtube/v2 v2.8.3
@@ -14,7 +15,6 @@ require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/MercuryEngineering/CookieMonster v0.0.0-20180304172713-1584578b3403 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/bitly/go-simplejson v0.5.1 // indirect
 	github.com/cheggaaa/pb/v3 v3.1.4 // indirect
