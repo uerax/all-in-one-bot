@@ -152,13 +152,9 @@ func QubicInfo(token string) (*Qubic, error) {
 
 func qubicPrice() float64 {
 
-	url := "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?id=29169"
+	url := "https://www.gate.io/json_svr/currency/price?type=gate_spot&pair=QUBIC_USDT"
 
 	req, _ := http.NewRequest("GET", url, nil)
-
-	//req.Header.Add("Accept", "*/*")
-	req.Header.Add("User-Agent", "Thunder Client (https://www.thunderclient.com)")
-	req.Header.Add("X-CMC_PRO_API_KEY", "2fd0cde2-ea61-4c5c-96df-ee34f6d6e256")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -170,31 +166,17 @@ func qubicPrice() float64 {
 		return 0
 	}
 
-	type Usd struct {
-		Price float64 `json:"price"`
-	}
-
-	type Quote struct {
-		Usd Usd `json:"USD"`
-	}
-
-	type Qb struct {
-		Quote Quote `json:"quote"`
-	}
-
-	type Data struct {
-		Qb Qb `json:"29169"`
-	}
-
 	type QbResp struct {
-		Data Data `json:"data"`
+		LastPrice string `json:"last_price"`
 	}
 
 	qb := QbResp{}
 
 	json.Unmarshal(body, &qb)
+
+	price, _ := strconv.ParseFloat(qb.LastPrice, 64)
 	
-	return qb.Data.Qb.Quote.Usd.Price
+	return price
 
 }
 
