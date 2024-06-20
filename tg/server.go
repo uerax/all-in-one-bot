@@ -387,6 +387,8 @@ func Server() {
 			tips(update.Message.Chat.ID, "发送你参数: 算力(k) Diff难度 区块奖励 时间(小时,可选) 价格(可选) 例: `40 214174659009 11 24 0.00000333`")
 		case "qubic":
 			qubic(update.Message.Text)
+		case "qubic_sol":
+			qubicSol(update.Message.Text)
 		case "qubic_token_refresh":
 			qubicTokenRefresh()
 		case "orge_withdraw":

@@ -338,6 +338,7 @@ __通过 @BotFather /setcommands 发送添加__
 bitcointalk_rss - bitcointalk新帖监控
 mining_cal - 挖矿收益计算
 qubic - qubic相关收益计算参数为token会更换token, 为算力则计算算力
+qubic_sol - qubic挖矿详情
 youtube_audio_download_cut - 下载ytb音频并裁剪
 crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
@@ -423,6 +424,7 @@ bitcointalk_rss - bitcointalk新帖监控
 bitcointalk_rss_stop - 关闭bitcointalk新帖监控
 mining_cal - 挖矿收益计算
 qubic - qubic相关收益计算
+qubic_sol - qubic挖矿详情
 qubic_token_refresh - qubic的api的token刷新
 ```
 
