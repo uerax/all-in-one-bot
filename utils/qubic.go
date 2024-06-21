@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -186,6 +187,9 @@ func (t *Utils) QubicEarning(addr string) {
 	json.Unmarshal(body, &sol)
 	its := 0
 	msg := ""
+	sort.Slice(sol.Miners, func(i, j int) bool {
+		return sol.Miners[i].Alias < sol.Miners[j].Alias
+	})
 	for _, v := range sol.Miners {
 		if v.IsActive {
 			msg += fmt.Sprintf("*%d    %d    %v    %s*\n", v.Sol, v.Its, v.LastActive, v.Alias)
