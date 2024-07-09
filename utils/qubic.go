@@ -27,6 +27,8 @@ var (
 	defaultToken = ""
 	defaultIt    = 1000
 	defaultAddr  = "YOGHCTPVRAOHZFXLSIAJIGQNEAEDMTIKMEAKIAXIZCBKNPXUMWJMFLZDRGOI"
+	qliUser      = "guest@qubic.li"
+	qliPass      = "guest13@Qubic.li"
 )
 
 func init() {
@@ -151,6 +153,63 @@ func QubicInfo(token string) (*Qubic, error) {
 	return &qb, err
 }
 
+func (t *Utils) QubicAccEarning(user, pass string) {
+	if len(user) != 0 && len(pass) != 0 {
+		qliUser = user
+		qliPass = pass
+		t.QubicToken()
+	}
+
+	url := "https://api.qubic.li/My/MinerControl"
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("Authorization", "Bearer "+defaultToken)
+	req.Header.Add("Accept", "application/json")
+
+	res, _ := http.DefaultClient.Do(req)
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return
+	}
+
+	type miner struct {
+		Alias          string `json:"alias"`
+		LastActive     string `json:"lastActive"`
+		CurrentIts     int64  `json:"currentIts"`
+		SolutionsFound int64  `json:"solutionsFound"`
+		IsActive       bool   `json:"isActive"`
+	}
+
+	type qli struct {
+		Miners         []miner `json:"miners"`
+		Its            int64   `json:"currentIts"`
+		ActiveMiners   int64   `json:"activeMiners"`
+		TotalSolutions int64   `json:"totalSolutions"`
+	}
+
+	sol := qli{}
+	json.Unmarshal(body, &sol)
+
+	msg := ""
+
+	sort.Slice(sol.Miners, func(i, j int) bool {
+		return sol.Miners[i].Alias < sol.Miners[j].Alias
+	})
+
+	for _, v := range sol.Miners {
+		if v.IsActive {
+			msg += fmt.Sprintf("*%d    %d    %v    %s*\n", v.SolutionsFound, v.CurrentIts, v.LastActive, v.Alias)
+		}
+	}
+
+	msg = fmt.Sprintf("Total it/s: *%d*   Total Solutions Found: *%d*\n\n", sol.Its, sol.TotalSolutions) + msg
+
+	t.MsgC <- msg
+
+}
+
 func (t *Utils) QubicEarning(addr string) {
 	if len(addr) != 0 {
 		defaultAddr = addr
@@ -241,7 +300,7 @@ func QubicTokenAutoRefresh() {
 
 		url := "https://api.qubic.li/Auth/Login"
 
-		payload := strings.NewReader("{\n  \"password\": \"guest13@Qubic.li\",\n  \"userName\": \"guest@qubic.li\",\n  \"twoFactorCode\": \"\"\n}")
+		payload := strings.NewReader("{\n  \"password\": \"" + qliPass + "\",\n  \"userName\": \"" + qliUser + "\",\n  \"twoFactorCode\": \"\"\n}")
 
 		req, _ := http.NewRequest("POST", url, payload)
 
@@ -279,7 +338,7 @@ func (t *Utils) QubicToken() {
 
 	url := "https://api.qubic.li/Auth/Login"
 
-	payload := strings.NewReader("{\n  \"password\": \"guest13@Qubic.li\",\n  \"userName\": \"guest@qubic.li\",\n  \"twoFactorCode\": \"\"\n}")
+	payload := strings.NewReader("{\n  \"password\": \"" + qliPass + "\",\n  \"userName\": \"" + qliUser + "\",\n  \"twoFactorCode\": \"\"\n}")
 
 	req, _ := http.NewRequest("POST", url, payload)
 

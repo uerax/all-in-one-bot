@@ -634,7 +634,14 @@ func qubicSol(args string) {
 	go api.Utils.QubicEarning(arg[1])
 }
 
-
+func qubicAccSol(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) < 3 {
+		arg = append(arg, "")
+		arg = append(arg, "")
+	}
+	go api.Utils.QubicAccEarning(arg[1], arg[2])
+}
 
 func qubicTokenRefresh() {
 	go api.Utils.QubicToken()

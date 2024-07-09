@@ -62,7 +62,6 @@ install() {
 
 start() {
     systemctl restart aio
-    
 }
 
 stop() {
