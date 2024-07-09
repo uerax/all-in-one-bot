@@ -200,6 +200,10 @@ func (t *Utils) QubicAccEarning(user, pass string) {
 
 	for _, v := range sol.Miners {
 		if v.IsActive {
+			date, err := time.Parse("2006-01-02T15:04:05", v.LastActive)
+			if err == nil {
+				v.LastActive = date.Format("01-02 15:04:05")
+			}
 			msg += fmt.Sprintf("*%d    %d    %v    %s*\n", v.SolutionsFound, v.CurrentIts, v.LastActive, v.Alias)
 		}
 	}
@@ -251,6 +255,10 @@ func (t *Utils) QubicEarning(addr string) {
 	})
 	for _, v := range sol.Miners {
 		if v.IsActive {
+			date, err := time.Parse("2006-01-02T15:04:05", v.LastActive)
+			if err == nil {
+				v.LastActive = date.Format("01-02 15:04:05")
+			}
 			msg += fmt.Sprintf("*%d    %d    %v    %s*\n", v.Sol, v.Its, v.LastActive, v.Alias)
 			its += int(v.Its)
 		}
