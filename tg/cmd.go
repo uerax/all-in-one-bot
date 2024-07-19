@@ -643,6 +643,11 @@ func qubicAccSol(args string) {
 	go api.Utils.QubicAccEarning(arg[1], arg[2])
 }
 
+func qubicAccAll() {
+	go api.Utils.QubicEarning("")
+	go api.Utils.QubicAccEarning("", "")
+}
+
 func qubicTokenRefresh() {
 	go api.Utils.QubicToken()
 }

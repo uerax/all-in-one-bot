@@ -391,6 +391,8 @@ func Server() {
 			qubicSol(update.Message.Text)
 		case "qubic_sol_acc":
 			qubicAccSol(update.Message.Text)
+		case "qubic_sol_all":
+			qubicAccAll()
 		case "qubic_token_refresh":
 			qubicTokenRefresh()
 		case "orge_withdraw":

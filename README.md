@@ -346,6 +346,7 @@ video_cmd_list - 音视频下载处理功能列表
 image_cmd_list - 图片处理/下载功能列表
 utils_cmd_list - 工具类功能列表
 list_cmd_list - 功能分类列表
+qubic_sol_all - qubic全部详情
 ```
 
 `全部命令`
@@ -428,6 +429,7 @@ qubic - qubic相关收益计算
 qubic_sol - qubic挖矿详情
 qubic_token_refresh - qubic的api的token刷新
 qubic_sol_acc - qubic账号挖矿详情
+qubic_sol_all - qubic全部详情
 ```
 
 __弃用__
