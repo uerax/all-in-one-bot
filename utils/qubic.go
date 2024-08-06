@@ -208,7 +208,7 @@ func (t *Utils) QubicAccEarning(user, pass string) {
 		}
 	}
 
-	msg = fmt.Sprintf("Total it/s: *%d*   Total Solutions Found: *%d*\n\n", sol.Its, sol.TotalSolutions) + msg
+	msg = fmt.Sprintf("Total it/s: *%d*   Total Sols: *%d*\n\n", sol.Its, sol.TotalSolutions) + msg
 
 	t.MsgC <- msg
 
@@ -263,7 +263,7 @@ func (t *Utils) QubicEarning(addr string) {
 			its += int(v.Its)
 		}
 	}
-	msg = fmt.Sprintf("*Miner*: [%s](https://app.qubic.li/public/pool/%s)\n\n", defaultAddr, defaultAddr) + fmt.Sprintf("Total it/s: *%d*   Total Solutions Found: *%d*\n\n", its, sol.Sol) + msg
+	msg = fmt.Sprintf("*Miner*: [%s](https://app.qubic.li/public/pool/%s)\n\n", defaultAddr, defaultAddr) + fmt.Sprintf("Total it/s: *%d*   Total Sols: *%d*\n\n", its, sol.Sol) + msg
 
 	t.MsgC <- msg
 

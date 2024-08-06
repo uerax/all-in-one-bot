@@ -170,12 +170,18 @@ func (b *Bitcointalk) Monitor() {
 	}
 	doc.Find("tr").Each(func(i int, s *goquery.Selection) {
 		td := s.Find("td").Eq(2).Find("span").Find("a")
+		topic := ""
+		link, exists := td.Attr("href")
+		if exists && strings.Contains(link, "topic=") {
+			idx := strings.Index(link, "topic=")
+			topic = link[idx+6:]
+		}
 		if td.Text() != "" {
-			text := strings.TrimSpace(strings.ToLower(td.Text()))
-			if _, ok := b.old[text]; !ok {
-				b.old[text] = struct{}{}
+			text := strings.TrimSpace(td.Text())
+			if _, ok := b.old[topic]; !ok {
+				b.old[topic] = struct{}{}
 				for k := range b.filter {
-					if strings.Contains(text, k) {
+					if strings.Contains(topic, k) {
 						return
 					}
 				}
@@ -186,7 +192,7 @@ func (b *Bitcointalk) Monitor() {
 					if rpy < 5 {
 						url, exists := td.Attr("href")
 						if exists {
-							b.C <- "Bitcointalk 新帖推送:\n主 题: *" + td.Text() + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url
+							b.C <- "Bitcointalk 新帖推送:\n主 题: *" + text + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url
 						}	
 					}
 				}			
