@@ -365,8 +365,12 @@ func (t *Utils) QubicToken() {
 	}
 	qb := Token{}
 	err = json.Unmarshal(body, &qb)
-	if err != nil || !qb.Success {
+	if err != nil {
 		t.ErrC <- err.Error()
+		return
+	}
+	if !qb.Success {
+		t.ErrC <- "账号密码错误或者Qli系统有误"
 		return
 	}
 
