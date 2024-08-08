@@ -35,7 +35,7 @@ func NewBitcointalk() *Bitcointalk {
 		C: make(chan string, 5),
 		notifi: false,
 		filter: make(map[string]struct{}, 0),
-		path: goconf.VarStringOrDefault("./", "bbs", "path"),
+		path: goconf.VarStringOrDefault("/usr/local/share/aio/", "bbs", "path"),
 		running: false,
 	}
 	go b.FilterFill()
@@ -115,7 +115,7 @@ func (b *Bitcointalk) Dump() {
 
 func (b *Bitcointalk) Recover() map[string]struct{} {
 	dump := make(map[string]struct{})
-	body, err := os.ReadFile(goconf.VarStringOrDefault("", "bbs", "path") + "bitcointalk.json")
+	body, err := os.ReadFile(goconf.VarStringOrDefault("/usr/local/share/aio/", "bbs", "path") + "bitcointalk.json")
 	if err != nil {
 		return dump
 	}
