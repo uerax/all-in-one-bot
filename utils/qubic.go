@@ -193,6 +193,7 @@ func (t *Utils) QubicAccEarning(user, pass string) {
 	json.Unmarshal(body, &sol)
 
 	msg := ""
+	its := 0
 
 	sort.Slice(sol.Miners, func(i, j int) bool {
 		return sol.Miners[i].Alias < sol.Miners[j].Alias
@@ -201,6 +202,7 @@ func (t *Utils) QubicAccEarning(user, pass string) {
 	for _, v := range sol.Miners {
 		if v.IsActive {
 			date, err := time.Parse("2006-01-02T15:04:05", v.LastActive)
+			its += int(v.CurrentIts)
 			if err == nil {
 				v.LastActive = date.Format("01-02 15:04:05")
 			}
@@ -208,7 +210,7 @@ func (t *Utils) QubicAccEarning(user, pass string) {
 		}
 	}
 
-	msg = fmt.Sprintf("Total it/s: *%d*   Total Sols: *%d*\n\n", sol.Its, sol.TotalSolutions) + msg
+	msg = fmt.Sprintf("Total it/s: *%d*   Total Sols: *%d*\n\n", its, sol.TotalSolutions) + msg
 
 	t.MsgC <- msg
 
