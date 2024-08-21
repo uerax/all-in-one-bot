@@ -56,7 +56,7 @@ func (t *Utils) QubicProfit(token string) {
 		t.ErrC <- err.Error()
 		return
 	}
-	ep1, ep2 := 1035502957.0, 281213017.0
+	ep1, ep2 := 880177514.0, 239031064.0
 
 	now := time.Now()
 
