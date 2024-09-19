@@ -11,11 +11,15 @@ import (
 
 // BBS
 func bitcointalkMoniter() {
-	go api.Bitcointalk.Start()
+	go api.Bbs.Bitcointalk.Start()
 }
 
 func stopBitcointalkMoniter() {
-	go api.Bitcointalk.Stop()
+	go api.Bbs.Bitcointalk.Stop()
+}
+
+func nodeseekMoniter() {
+	go api.Bbs.Nodeseek.Monitor()
 }
 
 // Crypto Start

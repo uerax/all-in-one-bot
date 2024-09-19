@@ -184,6 +184,8 @@ func Server() {
 		// Cmd Tip
 		switch update.Message.Command() {
 		// BBS
+		case "nodeseek_rss":
+			nodeseekMoniter()
 		case "bitcointalk_rss":
 			bitcointalkMoniter()
 		case "bitcointalk_rss_stop":

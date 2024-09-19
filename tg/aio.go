@@ -36,7 +36,7 @@ type Aio struct {
 	Utils       *utils.Utils
 	Lists       *lists.Lists
 	Track 		*crypto.Track
-	Bitcointalk *bbs.Bitcointalk
+	Bbs 		*bbs.Bbs
 }
 
 func (t *Aio) NewBot(token string, local string) {
@@ -60,7 +60,7 @@ func (t *Aio) NewBot(token string, local string) {
 	t.Utils = utils.NewUtils()
 	t.Lists = lists.NewLists()
 	t.Track = crypto.NewTrack()
-	t.Bitcointalk = bbs.NewBitcointalk()
+	t.Bbs = bbs.NewBbs()
 
 	go t.WaitToSend()
 }
@@ -230,7 +230,9 @@ func (t *Aio) WaitToSend() {
 		case v := <-t.Track.C:
 			go t.SendMarkdown(ChatId, v, true)
 		// BBS
-		case v := <-t.Bitcointalk.C:
+		case v := <-t.Bbs.Bitcointalk.C:
+			go t.SendMarkdown(ChatId, v, true)
+		case v := <-t.Bbs.Nodeseek.C:
 			go t.SendMarkdown(ChatId, v, true)
 		}
 	}
