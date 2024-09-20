@@ -11,7 +11,7 @@ import (
 
 type Nodeseek struct {
 	C chan string
-	latest time.Time
+	latest string
 	keyword []string
 }
 
@@ -19,7 +19,7 @@ func NewNodeseek() *Nodeseek {
 	k := []string{"甲骨文", "升级号", "oracle"}
 	n := &Nodeseek{
 		C: make(chan string),
-		latest: time.Now(),
+		latest: "",
 		keyword: k,
 	}	
 	return n
@@ -40,6 +40,7 @@ func (t *Nodeseek) nodeseek() {
 		Description string `xml:"description"`
 		Link        string `xml:"link"`
 		PubDate     string `xml:"pubDate"`
+		Guid     string `xml:"guid"`
 	}
 	type Channel struct {
 		Item []*Item `xml:"item"`
@@ -65,28 +66,23 @@ func (t *Nodeseek) nodeseek() {
 		return
 	}
 	msg := ""
-	for _, v := range bbs.Channel.Item {
-		time, err := time.Parse(time.RFC1123, v.PubDate)
+	for i, v := range bbs.Channel.Item {
+		if t.latest == v.Guid {
+			break
+		}
+		if i == 0 {
+			t.latest = v.Guid
+		}
 		v.Title = strings.ToLower(strings.TrimSpace(v.Title))
-		if err == nil {
-			if t.latest.Before(time) {
-				for _, k := range t.keyword {
-					if strings.Contains(v.Title, k) {
-						msg += fmt.Sprintf("[%s](%s)\n", v.Title, v.Link)
-						break
-					}
-				}
-			} else {
+		for _, k := range t.keyword {
+			if strings.Contains(v.Title, k) {
+				msg += fmt.Sprintf("[%s](%s)\n", v.Title, v.Link)
 				break
 			}
 		}
 	}
 	
 	if msg != "" {
-		newdate, err := time.Parse(time.RFC1123, bbs.Channel.Item[0].PubDate)
-		if err != nil {
-			t.latest = newdate
-		}
 		t.C <- "*NodeSeek新帖:*\n" + msg
 	}
 
