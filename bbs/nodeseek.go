@@ -68,7 +68,7 @@ func (t *Nodeseek) nodeseek() {
 	msg := ""
 	latest := t.latest
 	for _, v := range bbs.Channel.Item {
-		if t.latest > v.Guid {
+		if t.latest >= v.Guid {
 			continue
 		}
 		if latest < v.Guid {
