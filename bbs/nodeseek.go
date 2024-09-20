@@ -11,7 +11,7 @@ import (
 
 type Nodeseek struct {
 	C chan string
-	latest string
+	latest int64
 	keyword []string
 }
 
@@ -19,7 +19,7 @@ func NewNodeseek() *Nodeseek {
 	k := []string{"甲骨文", "升级号", "oracle"}
 	n := &Nodeseek{
 		C: make(chan string),
-		latest: "",
+		latest: 0,
 		keyword: k,
 	}	
 	return n
@@ -40,7 +40,7 @@ func (t *Nodeseek) nodeseek() {
 		Description string `xml:"description"`
 		Link        string `xml:"link"`
 		PubDate     string `xml:"pubDate"`
-		Guid     string `xml:"guid"`
+		Guid     int64 `xml:"guid"`
 	}
 	type Channel struct {
 		Item []*Item `xml:"item"`
@@ -66,13 +66,14 @@ func (t *Nodeseek) nodeseek() {
 		return
 	}
 	msg := ""
-	for i, v := range bbs.Channel.Item {
-		if t.latest == v.Guid {
-			break
+	latest := t.latest
+	for _, v := range bbs.Channel.Item {
+		if t.latest > v.Guid {
+			continue
 		}
-		if i == 0 {
-			t.latest = v.Guid
-		}
+		if latest < v.Guid {
+			latest = v.Guid
+		}	
 		v.Title = strings.ToLower(strings.TrimSpace(v.Title))
 		for _, k := range t.keyword {
 			if strings.Contains(v.Title, k) {
@@ -82,6 +83,10 @@ func (t *Nodeseek) nodeseek() {
 		}
 	}
 	
+	if latest > t.latest {
+		t.latest = latest
+	}
+
 	if msg != "" {
 		t.C <- "*NodeSeek新帖:*\n" + msg
 	}
