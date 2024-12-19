@@ -86,7 +86,7 @@ func (t *Track) clearInactiveAddr() {
 	c := time.NewTicker(24 * time.Hour)
 	defer c.Stop()
 
-	handle := func(addr string, cl context.CancelFunc) {
+	handle := func(addr string) {
 		if t.Keys.IsNull() {
 			return
 		}
@@ -130,8 +130,8 @@ func (t *Track) clearInactiveAddr() {
 	}
 
 	for range c.C {
-		for addr, cl := range t.Task {
-			go handle(addr, cl)
+		for addr := range t.Task {
+			go handle(addr)
 		}
 	}
 }

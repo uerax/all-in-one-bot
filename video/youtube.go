@@ -23,7 +23,15 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 
 	filename := v.path + replaceSpecialChars(video.Title)
 
-	formats := video.Formats.FindByItag(140)
+	video.Formats.Itag(140)
+
+	var formats *youtube.Format
+
+	for i := range video.Formats {
+		if video.Formats[i].ItagNo == 140 {
+			formats = &video.Formats[i]
+		}
+	}
 
 	stream, _, err := client.GetStream(video, formats)
 	if err != nil {
