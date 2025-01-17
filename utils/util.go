@@ -6,18 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/uerax/all-in-one-bot/crypto"
 )
 
 type Utils struct {
 	format string
 	MsgC   chan string
-	bn    *crypto.Crypto
 	ErrC   chan string
 }
 
@@ -85,34 +81,4 @@ func (t *Utils) JsonFormat(str string) {
 	t.MsgC <- fmt.Sprintf("`%s`", out.String())
 }
 
-func (t *Utils) RewardCal(h, d, r, time, val string) {
-	hash, err := strconv.ParseFloat(h, 64)
-	if err != nil {
-		return
-	}
-	diff, err := strconv.ParseFloat(d, 64)
-	if err != nil {
-		return
-	}
-	reward, err := strconv.ParseFloat(r, 64)
-	if err != nil {
-		return
-	}
-	hour, err := strconv.ParseFloat(time, 64)
-	if err != nil {
-		return
-	}
-	value, err := strconv.ParseFloat(val, 64)
-	if err != nil {
-		return
-	}
-	cnt := 0.0
-	if diff < 1 {
-		cnt = hash * math.Pow(2, 10) / (diff * math.Pow(2, 32)) * reward * 60 * 60 * hour * value
-	} else {
-		cnt = hash * math.Pow(2, 10) / (diff) * reward * 60 * 60 * hour * value
-	}
-	
-	t.MsgC <- fmt.Sprintf("`%.10f`", cnt)
-}
 
