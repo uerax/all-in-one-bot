@@ -27,9 +27,7 @@ func (t *Task) Once(itv string, msg string) {
 		return
 	}
 
-	loc, _ := time.LoadLocation("Asia/Shanghai")
-
-	t.C <- fmt.Sprintf("%s, %s", time.Now().In(loc).Format("2006年1月2日 15:04"), msg)
+	t.C <- fmt.Sprintf("%s, %s", time.Now().Format("2006年1月2日 15:04"), msg)
 
 	time.Sleep(time.Duration(i) * time.Hour)
 
