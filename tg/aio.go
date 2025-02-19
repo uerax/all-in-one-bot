@@ -48,10 +48,6 @@ func (t *Aio) NewBot(token string, local string) {
 	t.bot = bot
 	t.local = local
 
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("/once"),
-	)
-
 	t.CryptoApi = crypto.NewCryptoMonitor()
 	t.ChatGPTApi = chatgpt.NewChatGPT()
 	t.VpsApi = vps.NewVpsMonitor()
@@ -113,7 +109,7 @@ func (t *Aio) AppendMsg(id int64, msgId int, msg string) {
 	mc := tgbotapi.NewEditMessageText(id, msgId, msg)
 	mc.ParseMode = "Markdown"
 	mc.DisableWebPagePreview = true
-	t.bot.Send(tgbotapi.NewEditMessageText(id, msgId, msg))
+	t.bot.Send(mc)
 }
 
 func (t *Aio) SendImg(id int64, img string) {

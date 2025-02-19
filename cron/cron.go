@@ -27,11 +27,11 @@ func (t *Task) Once(itv string, msg string) {
 		return
 	}
 
+	t.C <- msg
+
 	time.Sleep(time.Duration(i) * time.Hour)
 
-	m := fmt.Sprintf("%d 小时了, %s", i, msg)
-
-	t.C <- m
+	t.C <- fmt.Sprintf("%d 小时了, %s", i, msg)
 
 }
 
