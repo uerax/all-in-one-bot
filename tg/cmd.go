@@ -429,6 +429,23 @@ func chatid(id int64) {
 }
 
 // Cron
+func onceCron(args string) {
+	arg := strings.Split(args, " ")
+	if len(arg) == 1 {
+		arg = append(arg, "4")
+		arg = append(arg, "吃药")
+	}
+	if len(arg) == 2 {
+		arg = append(arg, "吃药")
+	}
+	if len(arg) != 3 {
+		log.Printf("onceCron 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+	go api.Cron.Once(arg[1], arg[2])
+}
+
 func addCron(args string) {
 	arg := strings.Split(args, " ")
 	if len(arg) != 2 {

@@ -21,6 +21,20 @@ func NewTask() *Task {
 	}
 }
 
+func (t *Task) Once(itv string, msg string) {
+	i, err := strconv.ParseInt(itv, 10, 64)
+	if err != nil {
+		return
+	}
+
+	time.Sleep(time.Duration(i) * time.Hour)
+
+	m := fmt.Sprintf("%d 小时了, %s", i, msg)
+
+	t.C <- m
+
+}
+
 func (t *Task) AddTask(itv string, msg string) {
 	i, err := strconv.ParseInt(itv, 10, 64)
 	if err != nil {

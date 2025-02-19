@@ -48,6 +48,10 @@ func (t *Aio) NewBot(token string, local string) {
 	t.bot = bot
 	t.local = local
 
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("/once"),
+	)
+
 	t.CryptoApi = crypto.NewCryptoMonitor()
 	t.ChatGPTApi = chatgpt.NewChatGPT()
 	t.VpsApi = vps.NewVpsMonitor()

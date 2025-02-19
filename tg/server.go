@@ -113,6 +113,8 @@ func Server() {
 				if update.Message.Photo != nil {
 					cutouts(update.Message.Chat.ID, update.Message.Photo)
 				}
+			case "once":
+				onceCron(update.Message.Text)
 			case "delete_cron":
 				deleteCron(update.Message.Text)
 			case "add_cron":
@@ -309,6 +311,8 @@ func Server() {
 		case "chatid":
 			chatid(update.Message.Chat.ID)
 		// Cron
+		case "once":
+			onceCron(update.Message.Text)
 		case "add_cron":
 			Cmd = "add_cron"
 			tips(update.Message.Chat.ID, "每隔多久一次提醒,单位/秒 例: `15 提醒内容(必填)`")
