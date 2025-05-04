@@ -181,7 +181,7 @@ func (b *Bitcointalk) Monitor() {
 			if _, ok := b.old[topic]; !ok {
 				b.old[topic] = struct{}{}
 				for k := range b.filter {
-					if strings.Contains(topic, k) {
+					if strings.Contains(strings.ToLower(text), strings.ToLower(k)) {
 						return
 					}
 				}
