@@ -443,8 +443,6 @@ add_vps_monitor - 添加VPS库存监控 例: URL(vps_monitor_supported_list里�
 vps_add_supported_list - 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
 ```
 
-[<img src="https://api.gitsponsors.com/api/badge/img?id=620421443" height="20">](https://api.gitsponsors.com/api/badge/link?p=/XiYC5OF8xHwXcPeuQSbBKn31OT1TrwrWJy2wzxjykTS1nhLzIKbv1wwNux/j3keBNA1QWqP0bw5CxO0EYT22cs/xKPu5Osuq/N+7sl/s4NXl/Wcho1k2R+JJ+2Lh/7eK+1PMfDARaxaf7HFms6rmg==)
-
 ### 💰赞助商
 
 [![yxvm_support.png](https://s2.loli.net/2025/04/09/JMyQZUKY2bX4G3q.png)](https://yxvm.com/)
