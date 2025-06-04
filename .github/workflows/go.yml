@@ -14,6 +14,8 @@ on:
 jobs:
   build-go-binary:
     runs-on: ubuntu-latest
+    permissions: 
+      contents: write
     strategy:
       matrix:
         goos: [linux, windows, darwin] # 需要打包的系统
@@ -58,5 +60,3 @@ jobs:
       with:
         files: |
           build/${{ steps.get_version.outputs.version }}/*
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
