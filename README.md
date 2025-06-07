@@ -443,8 +443,6 @@ add_vps_monitor - 添加VPS库存监控 例: URL(vps_monitor_supported_list里�
 vps_add_supported_list - 添加支持监控的网站 例: url keyword name desc(有空格需要引号)
 ```
 
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
-
 ### 💰赞助商
 
 [![yxvm_support.png](https://s2.loli.net/2025/04/09/JMyQZUKY2bX4G3q.png)](https://yxvm.com/)
