@@ -13,14 +13,14 @@ GreenBG="\033[42;37m"
 RedBG="\033[41;37m"
 Font="\033[0m"
 
-version=v0.0.7
+version=v0.0.8
 prj_name="aio"
 project_dir="/usr/local/bin"
 prj_url="https://api.github.com/repos/uerax/all-in-one-bot/releases/latest"
 prj_pre_url="https://api.github.com/repos/uerax/all-in-one-bot/releases"
 cfg_path="/usr/local/etc"
 log_url="/var/log/"
-assets="Aio-linux-64"
+assets="Aio-linux-amd64"
 
 env() {
     apt install -y curl
