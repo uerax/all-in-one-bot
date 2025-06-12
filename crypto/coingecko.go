@@ -1,11 +1,13 @@
 package crypto
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/uerax/goconf"
 )
@@ -14,6 +16,9 @@ type Coingecko struct {
 	api string
 	list map[string]float64
 	price map[string]MarketData
+	C      chan string
+	ctx context.Context
+	cancel context.CancelFunc
 }
 
 func getList() map[string]float64 {
@@ -40,11 +45,12 @@ func getList() map[string]float64 {
 	return filter
 }
 
-func NewCoingecko() *Coingecko {	
+func NewCoingecko() *Coingecko {
 	return &Coingecko{
-	     goconf.VarStringOrDefault("", "crypto", "coingecko"),
-		 getList(),
-		 make(map[string]MarketData),
+	     api: goconf.VarStringOrDefault("", "crypto", "coingecko"),
+		 list: getList(),
+		 price: make(map[string]MarketData),
+		 C: make(chan string, 5),
 	}
 }
 
@@ -97,7 +103,51 @@ func (t *Coingecko) Price(coin string, count float64) {
 }
 
 func (t *Coingecko) SyncPrice() {
+	t.price = make(map[string]MarketData)
 	for i := range t.list {
+		time.Sleep(2 * time.Second)
 		t.Price(i, t.list[i])
+	}
+}
+
+func (t *Coingecko) Handle() {
+	t.SyncPrice()
+	if len(t.price) != 0 {
+		msg := ""
+		total := 0.0
+		for k, v := range t.price {
+			msg += fmt.Sprintf("\n%s 当前价格为 %fu 持有价值为 %fu", k, v.CurrentPrice.Usd, v.TotalPrice)
+			total += v.TotalPrice
+		}
+		t.C <- fmt.Sprintf("当前总持有价值为 %fu%s", total, msg)
+		println(fmt.Sprintf("当前总持有价值为 %fu%s", total, msg))
+	}
+}
+
+func (t *Coingecko) Stop() {
+	t.cancel()
+}
+
+func (t *Coingecko) Monitor() {
+	if t.cancel != nil {
+		t.C <- "已开启监控Bitcointalk新帖, 无需重复开启"
+		return
+	}
+	t.ctx, t.cancel = context.WithCancel(context.Background())
+	ticker := time.NewTicker(24 * time.Hour)
+
+	log.Println("开启定时监控持有币的价格")
+	t.C <- "开启定时监控持有币的价格"
+
+	for {
+		select {
+		case <-ticker.C:
+			t.Monitor()
+		case <-t.ctx.Done():
+			log.Println("关闭定时监控Bitcointalk新帖")
+			t.C <- "关闭定时监控Bitcointalk新帖"
+			t.cancel = nil
+			return
+		}
 	}
 }
