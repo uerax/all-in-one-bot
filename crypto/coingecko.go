@@ -115,11 +115,10 @@ func (t *Coingecko) Handle() {
 		msg := ""
 		total := 0.0
 		for k, v := range t.price {
-			msg += fmt.Sprintf("\n%s 当前价格为 %fu 持有价值为 %fu", k, v.CurrentPrice.Usd, v.TotalPrice)
+			msg += fmt.Sprintf("\n*%s* 当前价格为 *%fu* 持有价值为 *%fu*", k, v.CurrentPrice.Usd, v.TotalPrice)
 			total += v.TotalPrice
 		}
-		t.C <- fmt.Sprintf("当前总持有价值为 %fu%s", total, msg)
-		println(fmt.Sprintf("当前总持有价值为 %fu%s", total, msg))
+		t.C <- fmt.Sprintf("当前总持有价值为 *%fu*%s", total, msg)
 	}
 }
 
