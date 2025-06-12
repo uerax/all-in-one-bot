@@ -105,7 +105,6 @@ func (t *Coingecko) Price(coin string, count float64) {
 func (t *Coingecko) SyncPrice() {
 	t.price = make(map[string]MarketData)
 	for i := range t.list {
-		time.Sleep(2 * time.Second)
 		t.Price(i, t.list[i])
 	}
 }

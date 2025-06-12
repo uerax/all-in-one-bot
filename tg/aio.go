@@ -25,6 +25,7 @@ type Aio struct {
 	local       string
 	bot         *tgbotapi.BotAPI
 	CryptoApi   *crypto.CryptoMonitor
+	Coingecko   *crypto.Coingecko
 	ChatGPTApi  *chatgpt.ChatGPT
 	VpsApi      *vps.VpsMonitor
 	PhotoApi    *photo.Cutouts
@@ -49,6 +50,7 @@ func (t *Aio) NewBot(token string, local string) {
 	t.local = local
 
 	t.CryptoApi = crypto.NewCryptoMonitor()
+	t.Coingecko = crypto.NewCoingecko()
 	t.ChatGPTApi = chatgpt.NewChatGPT()
 	t.VpsApi = vps.NewVpsMonitor()
 	t.PhotoApi = photo.NewCutouts()
@@ -156,6 +158,8 @@ func (t *Aio) LocalServerSendFile(id int64, filepath string, filename string) {
 func (t *Aio) WaitToSend() {
 	for {
 		select {
+		case v := <-t.Coingecko.C:
+			go t.SendMarkdown(ChatId, v, true)
 		case v := <-t.CryptoApi.C:
 			for id, cryptoToPrice := range v {
 				if len(cryptoToPrice) == 0 {

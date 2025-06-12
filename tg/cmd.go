@@ -23,6 +23,18 @@ func nodeseekMoniter() {
 }
 
 // Crypto Start
+func coingeckoMoniter() {
+	go api.Coingecko.Monitor()
+}
+
+func coingeckoStop() {
+	go api.Coingecko.Stop()
+}
+
+func coingeckoNow() {
+	go api.Coingecko.Handle()
+}
+
 func trackingWalletAnalyze() {
 	go api.Track.TrackingWalletAnalyze()
 }

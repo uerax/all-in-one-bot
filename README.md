@@ -335,19 +335,15 @@ __通过 @BotFather /setcommands 发送添加__
 
 `常用命令`
 ```
-qubic - qubic相关收益计算参数为token会更换token, 为算力则计算算力
-qubic_sol - qubic挖矿详情
-qubic_sol_acc - qubic账号挖矿详情
+coin_monitor - 持有币价格监控
+coin_stop - 持有币价格监控停止
+coin_price - 持有币价格查询
 bitcointalk_rss - bitcointalk新帖监控
-nodeseek_rss - nodeseek新帖监控
-mining_cal - 挖矿收益计算
-youtube_audio_download_cut - 下载ytb音频并裁剪
 crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
 image_cmd_list - 图片处理/下载功能列表
 utils_cmd_list - 工具类功能列表
 list_cmd_list - 功能分类列表
-qubic_sol_all - qubic全部详情
 ```
 
 `全部命令`
@@ -432,6 +428,9 @@ qubic_token_refresh - qubic的api的token刷新
 qubic_sol_acc - qubic账号挖矿详情
 qubic_sol_all - qubic全部详情
 nodeseek_rss - nodeseek新帖监控
+coin_monitor - 持有币价格监控
+coin_stop - 持有币价格监控停止
+coin_price - 持有币价格查询
 ```
 
 __弃用__

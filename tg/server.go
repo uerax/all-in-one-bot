@@ -243,6 +243,12 @@ func Server() {
 			Cmd = "stop_wallet_tracking"
 			stopWalletTrackingTip("停止追踪聪明钱包买卖动态 例: \n`0xC100D16B937Cd4bD2672F3D2636602267aD65A8e`")
 		// Crypto
+		case "coin_monitor":
+			coingeckoMoniter()
+		case "coin_stop":
+			coingeckoStop()
+		case "coin_price":
+			coingeckoNow()
 		case "set_smart_addr_probe_itv":
 			Cmd = "set_smart_addr_probe_itv"
 			tips(update.Message.Chat.ID, "修改聪明地址探测频率(1-60分钟) 例: \n`15`")
