@@ -12,6 +12,7 @@ bbs:
 
 # 加密货币配置项
 crypto:
+  coingecko: 
   etherscan:
     # Use the wallet tracking or analyze, keys required
     # 追踪聪明地址需要添加keys 前往 https://etherscan.io/myapikey 注册获取
