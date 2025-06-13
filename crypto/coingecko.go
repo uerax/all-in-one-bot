@@ -140,7 +140,7 @@ func (t *Coingecko) Monitor() {
 	for {
 		select {
 		case <-ticker.C:
-			t.Monitor()
+			t.Handle()
 		case <-t.ctx.Done():
 			log.Println("关闭定时监控Bitcointalk新帖")
 			t.C <- "关闭定时监控Bitcointalk新帖"
