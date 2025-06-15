@@ -103,10 +103,15 @@ func (t *Coingecko) Price(coin string, count float64) {
 }
 
 func (t *Coingecko) SyncPrice() {
+	t.SyncList()
 	t.price = make(map[string]MarketData)
 	for i := range t.list {
 		t.Price(i, t.list[i])
 	}
+}
+
+func (t *Coingecko) SyncList() {
+	t.list = getList()
 }
 
 func (t *Coingecko) Handle() {
