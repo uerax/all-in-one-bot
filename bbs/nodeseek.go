@@ -16,7 +16,7 @@ type Nodeseek struct {
 }
 
 func NewNodeseek() *Nodeseek {
-	k := []string{"甲骨文", "升级号", "oracle"}
+	k := []string{"升级号"}
 	n := &Nodeseek{
 		C: make(chan string),
 		latest: 0,
