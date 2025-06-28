@@ -16,13 +16,24 @@ type Nodeseek struct {
 }
 
 func NewNodeseek() *Nodeseek {
-	k := []string{"升级号"}
+	k := []string{"升级号","抽奖"}
 	n := &Nodeseek{
-		C: make(chan string),
+		C: make(chan string, 2),
 		latest: 0,
 		keyword: k,
-	}	
+	}
 	return n
+}
+
+func (t *Nodeseek) AddKeyword(keywd string) {
+	t.keyword = append(t.keyword, keywd)
+}
+
+func (t *Nodeseek) ShowKeyword() {
+	keywd := fmt.Sprintf("%v", t.keyword)
+	t.C <- keywd
+	fmt.Print(keywd)
+	
 }
 
 func (t *Nodeseek) Monitor() {
