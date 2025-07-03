@@ -9,6 +9,36 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+type Command struct {
+    Name        string
+    Handler     func(chatID int64, args ...string)
+    Help        string
+    ArgsMin     int // 可选，最短长度
+	ArgsDef		[]string
+}
+
+func (c *Command) Run(args string, chatID int64) {
+	l := strings.Split(args, " ")
+	if len(l) < c.ArgsMin {
+		log.Printf("%s 参数有误: %s", c.Name,args)
+		return
+	}
+	// 如果有默认参数进行下一步处理 
+	// 如果参数个数小于默认参数个数，补齐默认参数
+	if len(c.ArgsDef) != 0 && len(c.ArgsDef) > len(l) {
+		l = append(l, c.ArgsDef[len(l):]...)
+	}
+	c.Handler(chatID, l...)
+}
+
+func (c *Command) RunTip(args string, chatID int64) {
+	if len(c.Help) == 0 {
+		log.Printf("%s", c.Help)
+	} else {
+		c.Run(args, chatID)
+	}
+}
+
 // BBS
 func bitcointalkMoniter() {
 	go api.Bbs.Bitcointalk.Start()
