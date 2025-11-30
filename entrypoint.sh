@@ -2,12 +2,58 @@
 set -eu
 
 # Configurable variables:
-# ASSET_NAME - name of the release asset to download (default Aio-linux-amd64)
+# ASSET_NAME - name of the release asset to download (auto-detect by default)
 # REPO - owner/repo (default uerax/all-in-one-bot)
 # RELEASE_URL - optional full URL to download (overrides REPO/ASSET_NAME)
 # CONFIG_PATH - path to config file passed to binary
 
-ASSET_NAME=${ASSET_NAME:-Aio-linux-amd64}
+# Auto-detect platform and set default asset name
+ARCH=$(uname -m)
+OS=$(uname -s)
+case "$OS" in
+    Linux)
+        case "$ARCH" in
+            x86_64)
+                DEFAULT_ASSET="Aio-linux-amd64"
+                ;;
+            aarch64|arm64)
+                DEFAULT_ASSET="Aio-linux-arm64"
+                ;;
+            *)
+                echo "Unsupported Linux architecture: $ARCH" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+    Darwin)
+        case "$ARCH" in
+            arm64)
+                DEFAULT_ASSET="Aio-darwin-arm64"
+                ;;
+            *)
+                echo "Unsupported macOS architecture: $ARCH" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+    MINGW64*|MSYS*)
+        case "$ARCH" in
+            x86_64)
+                DEFAULT_ASSET="Aio-windows-amd64.exe"
+                ;;
+            *)
+                echo "Unsupported Windows architecture: $ARCH" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+    *)
+        echo "Unsupported OS: $OS" >&2
+        exit 1
+        ;;
+esac
+
+ASSET_NAME=${ASSET_NAME:-$DEFAULT_ASSET}
 REPO=${REPO:-uerax/all-in-one-bot}
 RELEASE_URL=${RELEASE_URL:-}
 CONFIG_PATH=${CONFIG_PATH:-/usr/local/etc/aio/all-in-one-bot.yml}
