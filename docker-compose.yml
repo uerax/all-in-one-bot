@@ -10,12 +10,12 @@ services:
       # Config directory: on first startup, if config doesn't exist,
       # entrypoint copies the default from image here. Edit the config
       # and restart the container with: docker compose restart bot
-      - ./config:/usr/local/etc/aio
+      - ./config:/var/lib/aio
       - ./logs:/var/log/aio
     networks:
       - botnet
     healthcheck:
-      test: ["CMD-SHELL", "test -x /usr/local/bin/aio || exit 1"]
+      test: ["CMD-SHELL", "test -x /var/lib/aio || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
