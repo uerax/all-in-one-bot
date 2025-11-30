@@ -15,7 +15,7 @@ services:
     networks:
       - botnet
     healthcheck:
-      test: ["CMD-SHELL", "test -x /var/lib/aio || exit 1"]
+      test: ["CMD-SHELL", "test -x /usr/local/bin/aio || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
