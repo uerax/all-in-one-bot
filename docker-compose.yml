@@ -1,9 +1,6 @@
 # Docker Compose configuration for all-in-one-bot
 # The image is pulled from Docker Hub (uerax/aio:latest by default)
 # No need to build locally; just run: docker compose up -d
-
-version: "3.8"
-
 services:
   bot:
     image: uerax/aio:latest
