@@ -23,7 +23,7 @@ RUN set -e; \
   chmod +x /var/lib/aio; \
   if [ ! -f /etc/aio/all-in-one-bot.yml ]; then \
     curl -L "https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml" -o /etc/aio/all-in-one-bot.yml; \
-    echo "Configuration downloaded. Please edit /var/lib/aio/all-in-one-bot.yml and restart the container."; \
+    echo "Configuration downloaded. Please edit /etc/aio/all-in-one-bot.yml and restart the container."; \
     exit 0; \
   fi
 
@@ -31,4 +31,4 @@ VOLUME ["/var/log/aio"]
 
 ENV TZ=Asia/Shanghai
 
-CMD ["/usr/local/bin/aio", "-c", "/var/lib/aio/all-in-one-bot.yml"]
+CMD ["/var/lib/aio", "-c", "/etc/aio/all-in-one-bot.yml"]

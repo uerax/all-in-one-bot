@@ -10,7 +10,7 @@ services:
       # Config directory: on first startup, if config doesn't exist,
       # entrypoint copies the default from image here. Edit the config
       # and restart the container with: docker compose restart bot
-      - ./config:/var/lib/aio
+      - ./config:/etc/aio
       - ./logs:/var/log/aio
     networks:
       - botnet
