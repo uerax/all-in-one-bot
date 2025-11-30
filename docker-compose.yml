@@ -10,8 +10,10 @@ services:
     container_name: all-in-one-bot
     restart: unless-stopped
     volumes:
-      # Optional: uncomment to override the default config with a host file
-      - ./config:/usr/local/etc/aio:ro
+      # Config directory: on first startup, if config doesn't exist,
+      # entrypoint copies the default from image here. Edit the config
+      # and restart the container with: docker compose restart bot
+      - ./config:/usr/local/etc/aio
       - ./logs:/var/log/aio
     networks:
       - botnet

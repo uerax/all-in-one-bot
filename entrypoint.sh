@@ -31,6 +31,18 @@ download() {
 # Ensure config dir and logs exist
 mkdir -p "$(dirname "$CONFIG_PATH")" /var/log/aio
 
+# On first startup, if host config doesn't exist, copy default from image
+if [ ! -f "$CONFIG_PATH" ]; then
+    DEFAULT_CONFIG="/usr/local/etc/aio/all-in-one-bot.yml.default"
+    if [ -f "$DEFAULT_CONFIG" ]; then
+        echo "First startup: Creating default config at $CONFIG_PATH"
+        cp "$DEFAULT_CONFIG" "$CONFIG_PATH"
+        echo "Config created from image default. Please edit and restart container."
+    else
+        echo "WARNING: No config file found and no default available." >&2
+    fi
+fi
+
 if [ ! -x "$BIN" ]; then
     if ! download; then
         echo "Download failed and no local binary present. Exiting." >&2

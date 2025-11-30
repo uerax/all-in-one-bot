@@ -14,10 +14,11 @@ WORKDIR /
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Provide a default config baked into the image so 'docker compose up'
-# works out of the box. Users can override by mounting a host directory.
+# Provide a default config baked into the image. On first startup, entrypoint
+# copies this to the host mount if it doesn't exist. Users can then edit
+# ./config/all-in-one-bot.yml and restart the container.
 RUN mkdir -p /usr/local/etc/aio && chmod 0755 /usr/local/etc/aio
-COPY all-in-one-bot.yml /usr/local/etc/aio/all-in-one-bot.yml
+COPY all-in-one-bot.yml /usr/local/etc/aio/all-in-one-bot.yml.default
 
 # Keep logs as a volume so logs can be persisted by the host if desired
 VOLUME ["/var/log/aio"]
