@@ -1,15 +1,17 @@
 FROM alpine:3.18
 
+# 引入 TARGETARCH 变量
+ARG TARGETARCH
+
 RUN apk add --no-cache curl ca-certificates bash
 
 WORKDIR /
 
 # 根据架构下载二进制文件、创建配置文件和日志目录
 RUN set -e; \
-  ARCH=$(uname -m); \
-  if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then \
+  if [ "$TARGETARCH" = "x86_64" ] || [ "$TARGETARCH" = "amd64" ]; then \
     AIO_BIN="Aio-linux-amd64"; \
-  elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+  elif [ "$TARGETARCH" = "aarch64" ] || [ "$TARGETARCH" = "arm64" ]; then \
     AIO_BIN="Aio-linux-arm64"; \
   else \
     echo "Unsupported architecture: $ARCH"; exit 1; \
