@@ -1,0 +1,26 @@
+# Docker Compose configuration for all-in-one-bot
+# The image is pulled from Docker Hub (uerax/aio:latest by default)
+# No need to build locally; just run: docker compose up -d
+
+version: "3.8"
+
+services:
+  bot:
+    image: uerax/aio:latest
+    container_name: all-in-one-bot
+    restart: unless-stopped
+    volumes:
+      # Optional: uncomment to override the default config with a host file
+      - ./config:/usr/local/etc/aio:ro
+      - ./logs:/var/log/aio
+    networks:
+      - botnet
+    healthcheck:
+      test: ["CMD-SHELL", "test -x /usr/local/bin/aio || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  botnet:
+    driver: bridge
