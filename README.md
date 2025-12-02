@@ -9,6 +9,8 @@ __Telegram机器人, 目前支持监控加密货币价格, ChatGPT, 自动抠图
 - [Tutorial](#tutorial)
   * [Introduce](#introduce)
   * [Usage](#usage)
+    + [Docker安装(推荐)](#1.Docker安装(推荐))
+    + [脚本安装](#2.脚本安装)
   * [Demo](#demo)
     + [如何找聪明钱包v2](#如何找聪明钱包v2)
     + [如何找聪明钱包](#如何找聪明钱包)
@@ -36,7 +38,11 @@ __同时会分析超过初始价格的K线数, 如果少于2根K线也就是10�
 
 ## Usage
 
-`安装`
+### 1.Docker安装(推荐)
+
+`下载 docker-compose.yml` -> `下载 .env.example 文件` -> `.env.example 文件改名为 .env` -> `ID 和 ChatID 填进去` -> `docker compose up -d`
+
+### 2.脚本安装
 
 ```
 bash -c "$(curl -L https://raw.githubusercontent.com/uerax/all-in-one-bot/master/install.sh)" @ install
