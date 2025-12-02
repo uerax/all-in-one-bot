@@ -1,7 +1,7 @@
 telegram:
   # Required
-  token:
-  chatId:
+  token: TG_TOKEN
+  chatId: TG_CHATID
   # local telegram api地址,结尾必须包含/
   local: http://localhost:8081/
 

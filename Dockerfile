@@ -24,10 +24,16 @@ RUN set -e; \
   if [ ! -f /etc/aio/all-in-one-bot.yml ]; then \
     curl -L "https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml" -o /etc/aio/all-in-one-bot.yml; \
     echo "Configuration downloaded. Please edit /etc/aio/all-in-one-bot.yml and restart the container."; \
-    exit 0; \
+    if [ -n "$TG_TOKEN" ]; then \
+        sed -i "s/{{TG_TOKEN}}/${TG_TOKEN}/g" "/etc/aio/all-in-one-bot.yml"; \
+    fi; \
+    if [ -n "$TG_CHATID" ]; then \
+        sed -i "s/{{TG_CHATID}}/${TG_CHATID}/g" "/etc/aio/all-in-one-bot.yml"; \
+    fi; \
   fi
 
 VOLUME ["/var/log/aio"]
+VOLUME ["/etc/aio"]
 
 ENV TZ=Asia/Shanghai
 
