@@ -1,9 +1,9 @@
-FROM alpine:3.18
+FROM alpine:latest
 
 # 引入 TARGETARCH 变量
 ARG TARGETARCH
 
-RUN apk add --no-cache curl ca-certificates bash
+RUN apk add --no-cache curl ca-certificates bash libc6-compat libgcc libstdc++
 
 WORKDIR /
 
