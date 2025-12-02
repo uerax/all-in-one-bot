@@ -2,7 +2,7 @@
 # The image is pulled from Docker Hub (uerax/aio:latest by default)
 # No need to build locally; just run: docker compose up -d
 services:
-  bot:
+  aio:
     image: uerax/aio:latest
     container_name: all-in-one-bot
     restart: unless-stopped
