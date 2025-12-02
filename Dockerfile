@@ -2,8 +2,6 @@ FROM alpine:latest
 
 # 引入 TARGETARCH 变量
 ARG TARGETARCH
-ARG TG_TOKEN
-ARG TG_CHATID
 
 RUN apk add --no-cache curl ca-certificates bash libc6-compat libgcc libstdc++
 
@@ -22,17 +20,7 @@ RUN set -e; \
   chmod 0755 /var/log/aio /etc/aio; \
   LATEST=$(curl -sL https://api.github.com/repos/uerax/all-in-one-bot/releases/latest | grep "tag_name" | cut -d '"' -f 4); \
   curl -L "https://github.com/uerax/all-in-one-bot/releases/download/$LATEST/$AIO_BIN" -o /usr/local/bin/aio; \
-  chmod +x /usr/local/bin/aio; \
-  if [ ! -f /etc/aio/all-in-one-bot.yml ]; then \
-    curl -L "https://raw.githubusercontent.com/uerax/all-in-one-bot/master/all-in-one-bot.yml" -o /etc/aio/all-in-one-bot.yml; \
-    echo "Configuration downloaded. Please edit /etc/aio/all-in-one-bot.yml and restart the container."; \
-    if [ -n "$TG_TOKEN" ]; then \
-        sed -i "s/TG_TOKEN/${TG_TOKEN}/g" "/etc/aio/all-in-one-bot.yml"; \
-    fi; \
-    if [ -n "$TG_CHATID" ]; then \
-        sed -i "s/TG_CHATID/${TG_CHATID}/g" "/etc/aio/all-in-one-bot.yml"; \
-    fi; \
-  fi
+  chmod +x /usr/local/bin/aio; 
 
 VOLUME ["/var/log/aio"]
 VOLUME ["/etc/aio"]

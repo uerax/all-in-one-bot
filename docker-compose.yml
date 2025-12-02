@@ -14,9 +14,6 @@ services:
       - ./logs:/var/log/aio
     networks:
       - botnet
-    environment:
-      - TG_TOKEN=${TG_TOKEN}    # <--- 新增
-      - TG_CHATID=${TG_CHATID}  # <--- 新增
     healthcheck:
       test: ["CMD-SHELL", "test -x /usr/local/bin/aio || exit 1"]
       interval: 30s
