@@ -12,6 +12,9 @@ services:
       # and restart the container with: docker compose restart bot
       - ./config:/etc/aio
       - ./logs:/var/log/aio
+    environment:
+      TG_TOKEN: ${TG_TOKEN} 
+      TG_CHATID: ${TG_CHATID}
     networks:
       - botnet
     healthcheck:

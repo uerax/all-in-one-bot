@@ -2,6 +2,8 @@ package tg
 
 import (
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -13,14 +15,30 @@ var ChatId int64
 
 func Server() {
 	// Create a new bot instance
-	token, err := goconf.VarString("telegram", "token")
-	if err != nil {
-		log.Println("启动失败: 没有填写bot的token")
-		return
-	}
-	id := goconf.VarIntOrDefault(0, "telegram", "chatId")
+	token, _ := goconf.VarString("telegram", "token")
 
+	envToken := os.Getenv("TG_TOKEN")
+	if envToken != "" {	
+		token = envToken
+	}
+
+	if token == "" {
+    	// 此时，无论是 goconf 还是 TG_TOKEN 都没有提供有效的非空值
+    	log.Println("启动失败: 没有填写bot的token，请检查配置文件或TG_TOKEN环境变量")
+    	return
+	}
+
+	id := goconf.VarIntOrDefault(0, "telegram", "chatId")
 	ChatId = int64(id)
+	envID := os.Getenv("TG_CHATID")
+	if envID != "" {	
+		id, err := strconv.ParseInt(envID, 10, 64)
+		if err != nil {
+			log.Printf("ChatId转换失败: %v\n", err)
+		} else {
+			ChatId = id
+		}
+	}
 
 	api.NewBot(token, goconf.VarStringOrDefault("http://localhost:8081/", "telegram", "local"))
 

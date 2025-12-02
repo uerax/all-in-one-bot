@@ -20,7 +20,8 @@ RUN set -e; \
   chmod 0755 /var/log/aio /etc/aio; \
   LATEST=$(curl -sL https://api.github.com/repos/uerax/all-in-one-bot/releases/latest | grep "tag_name" | cut -d '"' -f 4); \
   curl -L "https://github.com/uerax/all-in-one-bot/releases/download/$LATEST/$AIO_BIN" -o /usr/local/bin/aio; \
-  chmod +x /usr/local/bin/aio; 
+  chmod +x /usr/local/bin/aio; \ 
+  curl -L "https://raw.githubusercontent.com/uerax/all-in-one-bot/refs/heads/master/all-in-one-bot.yml" -o /etc/aio/all-in-one-bot.yml; 
 
 VOLUME ["/var/log/aio"]
 VOLUME ["/etc/aio"]
