@@ -21,7 +21,11 @@ func int64OrDefault(key string, defaultVal int64) int64 {
 	val, err := strconv.ParseInt(envStr, 10, 64)
 	if err != nil {
         // 记录警告日志，并返回默认值 (Fail Safe)
-        slog.Warn("WARN: Failed to parse '%s' as int64, using default value %d. Error: %v", envStr, defaultVal, err)
+        slog.Warn(
+			"Configuration parsing failed, using default value", 
+			"env_value", envStr, 
+			"default_value", defaultVal, 
+			"error", err)
         return defaultVal
     }
 	return val

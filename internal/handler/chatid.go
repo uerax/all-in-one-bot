@@ -19,5 +19,23 @@ func (h *ChatIDHandle) Cmd() string {
 
 func (h *ChatIDHandle) Handle(c tb.Context) error {
 	chat := c.Chat()
-	return c.Send(fmt.Sprintf("This chat ID is: %d", chat.ID))
+
+	h.Logger.Info(
+        "command processed",
+		"command", h.Cmd(),
+        "chat_id", chat.ID, 
+        "chat_type", chat.Type, // 例如：private, group
+    )
+
+	err := c.Send(fmt.Sprintf("This chat ID is: %d", chat.ID))
+
+	if err != nil {
+        h.Logger.Error(
+            "Failed to send response",
+            "chat_id", chat.ID,
+            "error", err,
+        )
+    }
+
+	return err
 }

@@ -1,8 +1,7 @@
 package telegram
 
 import (
-	"log/slog"
-	"os"
+	"errors"
 	"time"
 
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
@@ -11,11 +10,9 @@ import (
 
 func NewBot(cfg config.Telegram) (*tb.Bot, error) {
 
-
 	// 1. 确保 Token 存在
 	if cfg.Token == "" {
-		slog.Error("FATAL: Telegram Token is required")
-		os.Exit(1)
+		return nil, errors.New("telegram bot token cannot be empty")
 	}
 
     settings := tb.Settings{
