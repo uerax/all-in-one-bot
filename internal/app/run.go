@@ -1,28 +1,21 @@
 package app
 
 import (
-	"time"
+	_ "github.com/joho/godotenv/autoload"
 
+	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
 	"github.com/uerax/all-in-one-bot/lite/internal/router"
-
-	tb "gopkg.in/telebot.v4"
+	"github.com/uerax/all-in-one-bot/lite/internal/telegram"
 )
 
-func Run(token string) {
+func Run() {
+
 	log := logger.NewLogger()
-		// 1. 确保 Token 存在
-	if token == "" {
-		log.Error("FATAL: Bot Token not set. Please update the token constant.")
-	}
 
-	// 2. Telebot 初始化设置
-	settings := tb.Settings{
-		Token:  token,
-		Poller: &tb.LongPoller{Timeout: 10 * time.Second}, // 使用 LongPoller 或 Webhook
-	}
+	cfg := config.LoadConfig()
 
-	b, err := tb.NewBot(settings)
+	b, err := telegram.NewBot(cfg.Telegram)
 	if err != nil {
 		log.Error("FATAL: Could not create bot:", err)
 	}
@@ -30,6 +23,7 @@ func Run(token string) {
 	// 3. 确保依赖注入
 	dependencies := &router.Dependencies{}
 	dependencies.Logger = log
+	dependencies.Config = cfg
 
 	// 3. 核心步骤：注册所有 Handler
 	// 由于我们导入了 handlers 包，所有 init() 函数都已经运行，GlobalHandlers 已填充完毕。
