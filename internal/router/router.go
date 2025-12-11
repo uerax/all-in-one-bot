@@ -1,20 +1,25 @@
 package router
 
 import (
-	"github.com/uerax/all-in-one-bot/lite/internal/handler"
+	"github.com/uerax/all-in-one-bot/lite/internal/handler/telegram"
 
 	tb "gopkg.in/telebot.v4"
 )
 
+type Handler interface {
+	Cmd() string
+	Handle(c tb.Context) error
+}
 
-func Handlers(deps *Dependencies) []handler.Handler {
+
+func Handlers(deps *Dependencies) []Handler {
 	
-	var handlers []handler.Handler
+	var handlers []Handler
 
-	handlers = append(handlers, &handler.ChatIDHandle{
+	// telegram handlers
+	handlers = append(handlers, &telegram.ChatIDHandle{
 		Logger: deps.Logger,
 	})
-
 	
 	return handlers
 }
@@ -27,6 +32,6 @@ func RegisterHandlers(b *tb.Bot, deps *Dependencies) {
     handlers := Handlers(deps)
 
     for _, h := range handlers {
-        b.Handle(h.Cmd(), h.Handle) 
+        b.Handle(h.Cmd(), h.Handle)
     }
 }

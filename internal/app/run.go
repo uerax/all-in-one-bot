@@ -20,21 +20,21 @@ func Run() {
 	b, err := telegram.NewBot(cfg.Telegram)
 	if err != nil {
 		log.Error(
-            "FATAL: Application initialization failed",
-            "error", err,
-        )
-        os.Exit(1)
+			"FATAL: Application initialization failed",
+			"error", err,
+		)
+		os.Exit(1)
 	}
 
-	// 3. 确保依赖注入
+	// 依赖注入
 	dependencies := &router.Dependencies{}
 	dependencies.Logger = log
 	dependencies.Config = cfg
 
-	// 3. 核心步骤：注册所有 Handler
+	// 注册所有 Handler
 	router.RegisterHandlers(b, dependencies)
 
-	// 4. 启动 Bot
+	// 启动 Bot
 	log.Info("🚀 Bot is starting up...")
 	b.Start() // Bot 会阻塞在这里，直到程序停止
 }
