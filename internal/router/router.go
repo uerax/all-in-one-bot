@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/bitcointalk"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/telegram"
 
 	tb "gopkg.in/telebot.v4"
@@ -17,10 +18,17 @@ func Handlers(deps *Dependencies) []Handler {
 	var handlers []Handler
 
 	// telegram handlers
-	handlers = append(handlers, &telegram.ChatIDHandle{
-		Logger: deps.Logger,
-	})
+	// chatid
+	handlers = append(handlers, telegram.NewChatIDHandle(deps.Logger))
 	
+	// bitcointalk handlers
+	bitcointalkService := bitcointalk.NewBitcointalkHandle(deps.Config, deps.Logger)
+	// bitcointalk_start	
+	handlers = append(handlers, bitcointalk.NewBitcointalkStartHandle(bitcointalkService))
+	// bitcointalk_stop	
+	handlers = append(handlers, bitcointalk.NewBitcointalkStopHandle(bitcointalkService))
+	
+
 	return handlers
 }
 

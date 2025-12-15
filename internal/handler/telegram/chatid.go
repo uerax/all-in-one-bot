@@ -12,6 +12,12 @@ type ChatIDHandle struct {
 	Logger logger.Log
 }
 
+func NewChatIDHandle(logger logger.Log) *ChatIDHandle {
+	return &ChatIDHandle{
+		Logger: logger,
+	}
+}
+
 func (h *ChatIDHandle) Cmd() string {
 	return "/chatid"
 }
