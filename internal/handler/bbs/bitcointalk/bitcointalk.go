@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
+	"github.com/uerax/all-in-one-bot/lite/internal/models"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
 	"github.com/uerax/all-in-one-bot/lite/internal/store"
 
@@ -26,13 +27,13 @@ type BitcointalkHandle struct {
 	mu     sync.Mutex
 	active bool
 	notified store.NotifyCache
-	C       chan string
+	C      chan models.Message
 	cancel context.CancelFunc
 	Logger logger.Log
 	Config *config.Config
 }
 
-func NewBitcointalkHandle(cfg *config.Config, logger logger.Log) *BitcointalkHandle {
+func NewBitcointalkHandle(cfg *config.Config, logger logger.Log, c chan models.Message) *BitcointalkHandle {
 	return &BitcointalkHandle{
 		url:    cfg.Bitcointalk.Url,
 		limit:  cfg.Bitcointalk.Limit,
@@ -40,13 +41,13 @@ func NewBitcointalkHandle(cfg *config.Config, logger logger.Log) *BitcointalkHan
 		mu:     sync.Mutex{},
 		notified: store.NewLRU(50),
 		active: false,
-		C: 	 make(chan string, 10),
+		C: 	 c,
 		Logger: logger,
 		Config: cfg,
 	}
 }
 
-func (t *BitcointalkHandle) StartMonitor() error {
+func (t *BitcointalkHandle) StartMonitor(ctx context.Context, chatID int64)	error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.active {
@@ -54,9 +55,9 @@ func (t *BitcointalkHandle) StartMonitor() error {
 		return errors.New("Bitcointalk 监控已在运行中，跳过重复启动")
 	}
 	// 过滤列表更新
-	t.monitor()
+	t.monitor(chatID)
 	t.active = true
-	go t.runMonitor()
+	go t.runMonitor(ctx, chatID)
 	return nil
 }
 
@@ -72,9 +73,9 @@ func (t *BitcointalkHandle) StopMonitor() {
 	}
 }
 
-func (t *BitcointalkHandle) runMonitor() {
-	ctx, cf := context.WithCancel(context.Background())
-
+func (t *BitcointalkHandle) runMonitor(ctx context.Context, chatID int64) {
+	
+	ctx, cf := context.WithCancel(ctx)
 	interval := time.Duration(t.Config.Bitcointalk.Interval) * time.Second
 	t.cancel = cf
 	ticker := time.NewTicker(interval)
@@ -84,14 +85,15 @@ func (t *BitcointalkHandle) runMonitor() {
         select {
         case <-ticker.C:
             // 收到计时器信号，执行监控动作
-			t.monitor()
+			t.monitor(chatID)
 		case <-ctx.Done():
 			t.Logger.Info("收到终止信号，Bitcointalk 监控循环停止")
+			return
 		}
 	}
 }
 
-func (b *BitcointalkHandle) monitor() {
+func (b *BitcointalkHandle) monitor(chatID int64) {
 	r, err := http.Get(b.url)
 	if err != nil {
 		return
@@ -130,7 +132,10 @@ func (b *BitcointalkHandle) monitor() {
 					if rpy < 5 {
 						url, exists := td.Attr("href")
 						if exists {
-							b.C <- "Bitcointalk 新帖推送:\n主 题: *" + text + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url
+							b.C <- models.Message{
+								ChatID: chatID,
+								Text: "Bitcointalk 新帖推送:\n主 题: *" + text + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url,
+							}
 						}
 					}
 				}			
