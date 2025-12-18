@@ -15,10 +15,10 @@ func NewBot(cfg config.Telegram) (*tb.Bot, error) {
 		return nil, errors.New("telegram bot token cannot be empty")
 	}
 
-    settings := tb.Settings{
-        Token:  cfg.Token,
-        Poller: &tb.LongPoller{Timeout: time.Duration(cfg.Timeout) * time.Second}, // 👈 从配置中读取 Timeout
-    }
+	settings := tb.Settings{
+		Token:  cfg.Token,
+		Poller: &tb.LongPoller{Timeout: time.Duration(cfg.Timeout) * time.Second}, // 👈 从配置中读取 Timeout
+	}
 
-    return tb.NewBot(settings)
+	return tb.NewBot(settings)
 }

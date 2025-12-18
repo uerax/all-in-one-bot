@@ -39,7 +39,6 @@ func Run() {
 	dispatcher := bot.NewDispatcher(b, c)
 	dispatcher.Start(context.Background())
 
-
 	// 注册所有 Handler
 	router := router.NewRouter(b, c)
 	router.RegisterHandlers(b, dependencies)

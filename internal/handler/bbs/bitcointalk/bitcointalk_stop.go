@@ -17,7 +17,7 @@ func NewBitcointalkStopHandle(bitcointalk *BitcointalkHandle) *BitcointalkStopHa
 }
 
 func (h *BitcointalkStopHandle) Cmd() string {
-	return "/bitcointalk_start"
+	return "/bitcointalk_stop"
 }
 
 func (h *BitcointalkStopHandle) Handle(c tb.Context) error {
@@ -30,15 +30,10 @@ func (h *BitcointalkStopHandle) Handle(c tb.Context) error {
 		"chat_type", chat.Type, // 例如：private, group
 	)
 
-	err := c.Send(fmt.Sprintf("This chat ID is: %d", chat.ID))
-
+	err := h.Bitcointalk.StopMonitor()
 	if err != nil {
-		h.Bitcointalk.Logger.Error(
-			"Failed to send response",
-			"chat_id", chat.ID,
-			"error", err,
-		)
+		return c.Send(fmt.Sprintf("%v", err))
 	}
 
-	return err
+	return c.Send("Bitcointalk 监控已停止")
 }

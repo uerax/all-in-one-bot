@@ -8,8 +8,8 @@ import (
 )
 
 type Dispatcher struct {
-    bot   *tb.Bot
-    msgCh <-chan models.Message
+	bot   *tb.Bot
+	msgCh <-chan models.Message
 }
 
 func NewDispatcher(b *tb.Bot, msgCh <-chan models.Message) *Dispatcher {
@@ -20,13 +20,13 @@ func NewDispatcher(b *tb.Bot, msgCh <-chan models.Message) *Dispatcher {
 }
 
 func (d *Dispatcher) Start(ctx context.Context) {
-	go func ()  {
+	go func() {
 		for {
 			select {
-			case msg := <-d.msgCh:
-				d.bot.Send(tb.ChatID(msg.ChatID), msg.Text)
 			case <-ctx.Done():
 				return
+			case msg := <-d.msgCh:
+				d.bot.Send(tb.ChatID(msg.ChatID), msg.Text)
 			}
 		}
 	}()

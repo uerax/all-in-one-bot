@@ -2,6 +2,7 @@ package bitcointalk
 
 import (
 	"context"
+	"fmt"
 
 	tb "gopkg.in/telebot.v4"
 )
@@ -22,7 +23,7 @@ func (h *BitcointalkStartHandle) Cmd() string {
 
 func (h *BitcointalkStartHandle) Handle(c tb.Context) error {
 	chat := c.Chat()
-	
+
 	h.Bitcointalk.Logger.Info(
 		"command processed",
 		"command", h.Cmd(),
@@ -32,13 +33,8 @@ func (h *BitcointalkStartHandle) Handle(c tb.Context) error {
 	err := h.Bitcointalk.StartMonitor(context.Background(), chat.ID)
 
 	if err != nil {
-		c.Send(err.Error())
-		h.Bitcointalk.Logger.Error(
-			"Failed to send response",
-			"chat_id", chat.ID,
-			"error", err,
-		)
+		return c.Send(fmt.Sprintf("%v", err))
 	}
 
-	return err
+	return c.Send("Bitcointalk 监控已启动")
 }
