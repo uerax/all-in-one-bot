@@ -54,7 +54,7 @@ func NewBitcointalk() *Bitcointalk {
 func (b *Bitcointalk) FilterFill() {
 	
 	// 下载JSON文件
-	url := "https://raw.githubusercontent.com/uerax/all-in-one-bot/master/bbs/bitcointalk/filter.json"
+	url := "https://raw.githubusercontent.com/uerax/all-in-one-bot/v2/bbs/bitcointalk/filter.json"
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Println("无法下载JSON文件:", err)

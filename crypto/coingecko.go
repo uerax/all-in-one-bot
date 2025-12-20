@@ -25,7 +25,7 @@ type Coingecko struct {
 func getList() map[string]float64 {
 	
 	// 下载JSON文件
-	url := "https://raw.githubusercontent.com/uerax/all-in-one-bot/master/crypto/list/list.json"
+	url := "https://raw.githubusercontent.com/uerax/all-in-one-bot/v2/crypto/list/list.json"
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil

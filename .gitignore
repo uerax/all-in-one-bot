@@ -31,3 +31,5 @@ pairs_dump.json
 
 # Debug file
 __debug_bin*
+
+.env
