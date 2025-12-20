@@ -29,24 +29,55 @@ type BitcointalkHandle struct {
 	mu       sync.Mutex
 	active   bool
 	notified store.NotifyCache
+	db       store.Store
 	C        chan models.Message
 	cancel   context.CancelFunc
 	Logger   logger.Log
 	Config   *config.Config
 }
 
-func NewBitcointalkHandle(cfg *config.Config, logger logger.Log, c chan models.Message) *BitcointalkHandle {
+func NewBitcointalkHandle(db store.Store, cfg *config.Config, logger logger.Log, c chan models.Message) *BitcointalkHandle {
 	return &BitcointalkHandle{
 		url:      cfg.Bitcointalk.Url,
 		limit:    cfg.Bitcointalk.Limit,
 		filter:   make(map[string]struct{}),
 		mu:       sync.Mutex{},
+		db:       db,	
 		notified: store.NewLRU(50),
 		active:   false,
 		C:        c,
 		Logger:   logger,
 		Config:   cfg,
 	}
+}
+
+func (t *BitcointalkHandle) syncFilter() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if m, err := t.db.Set("bitcointalk", "filter"); err != nil {
+		t.Logger.Error("同步过滤列表失败", "error:", err)
+	} else {
+		t.filter = m
+	}
+}
+
+
+func (f *BitcointalkHandle) dailySync(ctx context.Context)  {
+	go func() {
+		for {
+			timer := time.NewTimer(time.Hour * 24)
+			f.Logger.Info("已开启 filter 每24小时定时同步")
+
+			select {
+			case <-timer.C:
+				f.Logger.Info("触发 filter 定时同步", "时间:", time.Now().Format("2006-01-02 15:04:05"))
+				f.syncFilter()
+			case <-ctx.Done():
+				timer.Stop()
+				return
+			}
+		}
+	}()
 }
 
 func (t *BitcointalkHandle) StartMonitor(ctx context.Context, chatID int64) error {
@@ -56,6 +87,7 @@ func (t *BitcointalkHandle) StartMonitor(ctx context.Context, chatID int64) erro
 		return ErrAlreadyRunning
 	}
 	// 过滤列表更新
+	t.syncFilter()
 	t.monitor(chatID)
 	t.active = true
 	go t.runMonitor(ctx, chatID)
@@ -78,6 +110,7 @@ func (t *BitcointalkHandle) StopMonitor() error {
 func (t *BitcointalkHandle) runMonitor(ctx context.Context, chatID int64) {
 
 	ctx, cf := context.WithCancel(ctx)
+	t.dailySync(ctx)
 	interval := time.Duration(t.Config.Bitcointalk.Interval) * time.Second
 	t.cancel = cf
 	ticker := time.NewTicker(interval)

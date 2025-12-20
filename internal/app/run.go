@@ -11,6 +11,7 @@ import (
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
 	"github.com/uerax/all-in-one-bot/lite/internal/router"
+	"github.com/uerax/all-in-one-bot/lite/internal/store"
 	"github.com/uerax/all-in-one-bot/lite/internal/telegram"
 )
 
@@ -29,10 +30,13 @@ func Run() {
 		os.Exit(1)
 	}
 
+	db := store.NewStore(cfg)
+
 	// 依赖注入
 	dependencies := &router.Dependencies{}
 	dependencies.Logger = log
 	dependencies.Config = cfg
+	dependencies.Store = db
 
 	// 创建 Dispatcher 用于消息分发
 	c := make(chan models.Message, 20)

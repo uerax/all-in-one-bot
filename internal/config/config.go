@@ -18,12 +18,25 @@ func LoadConfig() *Config {
 
 	config.Bitcointalk = *bitcointalk
 
+	database := &Database{
+		Type: strOrDefault("DATABASE_TYPE", "file"),
+		FilePath: strOrDefault("DATABASE_FILE_PATH", "https://raw.githubusercontent.com/uerax/all-in-one-bot/refs/heads/lite/bbs/"),
+	}
+
+	config.Database = *database
+
 	return config
 }
 
 type Config struct {
 	Telegram Telegram
 	Bitcointalk Bitcointalk
+	Database Database
+}
+
+type Database struct {
+	Type string
+	FilePath string
 }
 
 type Bitcointalk struct {
