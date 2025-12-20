@@ -40,7 +40,7 @@ func (f *FileStore) Set(database string, key string) (map[string]struct{}, error
         return nil, ErrorPathNotSet
     }
 
-	resp, err := http.Get(f.path + database + "/" + key)
+	resp, err := http.Get("/" + f.path + database + "/" + key + ".dat")
 	if err != nil {
 		f.log.Error("无法下载JSON文件:", "error:", err.Error())
 		return nil, ErrorDownloadFailed

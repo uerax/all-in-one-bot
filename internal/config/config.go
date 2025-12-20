@@ -20,7 +20,7 @@ func LoadConfig() *Config {
 
 	database := &Database{
 		Type: strOrDefault("DATABASE_TYPE", "file"),
-		FilePath: strOrDefault("DATABASE_FILE_PATH", "https://raw.githubusercontent.com/uerax/all-in-one-bot/refs/heads/lite/bbs/"),
+		FilePath: strOrDefault("DATABASE_FILE_PATH", "https://raw.githubusercontent.com/uerax/all-in-one-bot/refs/heads/lite/data"),
 	}
 
 	config.Database = *database
