@@ -87,14 +87,14 @@ func (t *Aio) DeleteAfterSendMessage(msg string) {
 
 func (t *Aio) SendMarkdown(id int64, msg string, preview bool) (tgbotapi.Message, error) {
 	mc := tgbotapi.NewMessage(id, msg)
-	mc.ParseMode = tgbotapi.ModeMarkdownV2
+	mc.ParseMode = tgbotapi.ModeMarkdown
 	mc.DisableWebPagePreview = preview
 	return t.bot.Send(mc)
 }
 
 func (t *Aio) DeleteAfterSendMarkdown(id int64, msg string, preview bool) {
 	mc := tgbotapi.NewMessage(id, msg)
-	mc.ParseMode = tgbotapi.ModeMarkdownV2
+	mc.ParseMode = tgbotapi.ModeMarkdown
 	mc.DisableWebPagePreview = preview
 	m, err := t.bot.Send(mc)
 	if err == nil {
