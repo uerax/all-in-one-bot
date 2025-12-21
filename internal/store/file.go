@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
@@ -23,6 +24,7 @@ type FileStore struct {
     path     string // GitHub Raw URL
     data     map[string]struct{}
 	log		 logger.Log
+	client   *http.Client
 }
 
 func NewFileStore(cfg *config.Config) *FileStore {
@@ -30,6 +32,7 @@ func NewFileStore(cfg *config.Config) *FileStore {
     file := &FileStore{
         path:   cfg.Database.FilePath,
         data:   make(map[string]struct{}),
+		client: &http.Client{Timeout: 10 * time.Second},
     }
 	return file
 }
@@ -40,7 +43,7 @@ func (f *FileStore) Set(database string, key string) (map[string]struct{}, error
         return nil, ErrorPathNotSet
     }
 
-	resp, err := http.Get("/" + f.path + database + "/" + key + ".dat")
+	resp, err := f.client.Get(f.path + "/" + database + "/" + key + ".dat")
 	if err != nil {
 		f.log.Error("无法下载JSON文件:", "error:", err.Error())
 		return nil, ErrorDownloadFailed

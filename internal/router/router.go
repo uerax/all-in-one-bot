@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/bitcointalk"
+	"github.com/uerax/all-in-one-bot/lite/internal/handler/nodeseek"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/telegram"
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
 
@@ -34,7 +35,12 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	handlers = append(handlers, bitcointalk.NewBitcointalkStopHandle(bitcointalkService))
 
 	// nodeseek
-	//nodeseekService := nodeseek.NewNodeseek(deps.Store, r.MsgCh, deps.Config.Nodeseek, deps.Logger)
+	nodeseekService := nodeseek.NewNodeseek(deps.Store, r.msgCh, deps.Config.Nodeseek, deps.Logger)
+
+	// nodeseek_start
+	handlers = append(handlers, nodeseek.NewNodeseekStartHandle(nodeseekService))
+	// nodeseek_stop
+	handlers = append(handlers, nodeseek.NewNodeseekStopHandle(nodeseekService))
 
 
 	return handlers
