@@ -1,6 +1,9 @@
 package store
 
-import "github.com/uerax/all-in-one-bot/lite/internal/config"
+import (
+	"github.com/uerax/all-in-one-bot/lite/internal/config"
+	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
+)
 
 type Store interface {
     //Add(item string) error
@@ -11,11 +14,11 @@ type Store interface {
     // Sync() error // 预留给 GitHub 下载或刷盘逻辑
 }
 
-func NewStore(cfg *config.Config) Store {
-    switch cfg.Database.Type {
+func NewStore(cfg config.Database, logger logger.Log) Store {
+    switch cfg.Type {
     case "file":
-        return NewFileStore(cfg)
+        return NewFileStore(cfg, logger)
     default:
-        return NewFileStore(cfg)
+        return NewFileStore(cfg, logger)
     }
 }

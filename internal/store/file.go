@@ -27,12 +27,13 @@ type FileStore struct {
 	client   *http.Client
 }
 
-func NewFileStore(cfg *config.Config) *FileStore {
+func NewFileStore(cfg config.Database, logger logger.Log) *FileStore {
 	
     file := &FileStore{
-        path:   cfg.Database.FilePath,
+        path:   cfg.FilePath,
         data:   make(map[string]struct{}),
 		client: &http.Client{Timeout: 10 * time.Second},
+		log: 	logger,
     }
 	return file
 }

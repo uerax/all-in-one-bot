@@ -30,7 +30,7 @@ func Run() {
 		os.Exit(1)
 	}
 
-	db := store.NewStore(cfg)
+	db := store.NewStore(cfg.Database, log)
 
 	// 依赖注入
 	dependencies := &router.Dependencies{}
