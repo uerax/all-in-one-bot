@@ -33,6 +33,10 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	// bitcointalk_stop
 	handlers = append(handlers, bitcointalk.NewBitcointalkStopHandle(bitcointalkService))
 
+	// nodeseek
+	//nodeseekService := nodeseek.NewNodeseek(deps.Store, r.MsgCh, deps.Config.Nodeseek, deps.Logger)
+
+
 	return handlers
 }
 
