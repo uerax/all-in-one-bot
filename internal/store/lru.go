@@ -7,38 +7,45 @@ import (
 
 type Value any
 
+type LRU interface {
+    Seen(key string) bool
+}
+
 type Entry struct {
     Key   string
     Value Value
 }
 
-type LRU struct {
+type LRUCache struct {
 	cap int
 	list *list.List
 	cache map[string]*list.Element
 	mu sync.Mutex
 }
 
-func NewLRU(capacity int) *LRU {
+func NewLRUCache(capacity int) *LRUCache {
     if capacity <= 0 {
         capacity = 1 // 确保容量至少为 1
     }
-    return &LRU{
+    return &LRUCache{
         cap: 	  capacity,
         list:     list.New(),
         cache:    make(map[string]*list.Element, capacity),
     }
 }
 
-func (c *LRU) LRUExists(key string) bool {
-    _, ok := c.Get(key)
-    return ok
-}
-func (c *LRU) LRUAdd(key string) {
+func (c *LRUCache) Seen(key string) bool {
+
+    if _, ok := c.Get(key); ok {
+        return true
+    }
+
     c.Set(key, struct{}{})
+
+    return false
 }
 
-func (c *LRU) Get(key string) (Value, bool) {
+func (c *LRUCache) Get(key string) (Value, bool) {
     c.mu.Lock()
     defer c.mu.Unlock()
 
@@ -53,7 +60,7 @@ func (c *LRU) Get(key string) (Value, bool) {
     return nil, false
 }
 
-func (c *LRU) Set(key string, value Value) {
+func (c *LRUCache) Set(key string, value Value) {
     c.mu.Lock()
     defer c.mu.Unlock()
 
@@ -77,7 +84,7 @@ func (c *LRU) Set(key string, value Value) {
     c.cache[key] = element
 }
 
-func (c *LRU) removeOldest() {
+func (c *LRUCache) removeOldest() {
     // 获取尾部元素 (Tail)
     if tail := c.list.Back(); tail != nil {
         // 1. 从链表中移除节点

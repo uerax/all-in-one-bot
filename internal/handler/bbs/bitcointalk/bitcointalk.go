@@ -28,9 +28,10 @@ type BitcointalkHandle struct {
 	limit    int
 	mu       sync.Mutex
 	active   bool
-	notified store.NotifyCache
+	notified store.LRU
 	db       store.Store
 	C        chan models.Message
+	client   *http.Client
 	cancel   context.CancelFunc
 	Logger   logger.Log
 	Config   *config.Config
@@ -42,9 +43,10 @@ func NewBitcointalkHandle(db store.Store, cfg *config.Config, logger logger.Log,
 		limit:    cfg.Bitcointalk.Limit,
 		filter:   make(map[string]struct{}),
 		mu:       sync.Mutex{},
-		db:       db,	
-		notified: store.NewLRU(50),
+		db:       db,
+		notified: nil,
 		active:   false,
+		client:   &http.Client{Timeout: 10 * time.Second},
 		C:        c,
 		Logger:   logger,
 		Config:   cfg,
@@ -55,14 +57,13 @@ func (t *BitcointalkHandle) syncFilter() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if m, err := t.db.Set("bitcointalk", "filter"); err != nil {
-		t.Logger.Error("同步过滤列表失败", "error:", err)
+		t.Logger.Error("bitcointalk 同步过滤列表失败", "error:", err)
 	} else {
 		t.filter = m
 	}
 }
 
-
-func (f *BitcointalkHandle) dailySync(ctx context.Context)  {
+func (f *BitcointalkHandle) dailySync(ctx context.Context) {
 	go func() {
 		for {
 			timer := time.NewTimer(time.Hour * 24)
@@ -86,6 +87,7 @@ func (t *BitcointalkHandle) StartMonitor(ctx context.Context, chatID int64) erro
 	if t.active {
 		return ErrAlreadyRunning
 	}
+	t.notified = store.NewLRUCache(t.limit)
 	// 过滤列表更新
 	t.syncFilter()
 	t.monitor(chatID)
@@ -129,7 +131,7 @@ func (t *BitcointalkHandle) runMonitor(ctx context.Context, chatID int64) {
 }
 
 func (b *BitcointalkHandle) monitor(chatID int64) {
-	r, err := http.Get(b.url)
+	r, err := b.client.Get(b.url)
 	if err != nil {
 		b.Logger.Error("请求Bitcointalk失败", "error:", err)
 		return
@@ -154,8 +156,7 @@ func (b *BitcointalkHandle) monitor(chatID int64) {
 		}
 		if td.Text() != "" {
 			text := strings.TrimSpace(td.Text())
-			if !b.notified.LRUExists(topic) {
-				b.notified.LRUAdd(topic)
+			if !b.notified.Seen(topic) {
 				for k := range b.filter {
 					if strings.Contains(strings.ToLower(text), strings.ToLower(k)) {
 						return
