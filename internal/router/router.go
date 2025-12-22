@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/bitcointalk"
-	"github.com/uerax/all-in-one-bot/lite/internal/handler/nodeseek"
+	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/nodeseek"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/telegram"
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
 
