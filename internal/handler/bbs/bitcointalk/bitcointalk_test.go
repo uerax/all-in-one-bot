@@ -3,7 +3,6 @@ package bitcointalk
 import (
 	"errors"
 	"maps"
-	"sync"
 	"testing"
 
 	"github.com/uerax/all-in-one-bot/lite/internal/mocks"
@@ -15,7 +14,6 @@ func TestBitcointalkHandle_syncFilter(t *testing.T) {
 	// 💡 优化点 1: 仅保留 syncFilter 逻辑中真正用到的依赖
 	type fields struct {
 		db     store.Store
-		mu     sync.Mutex
 		logger logger.Log
 		// filter 的初始状态（可选，用于测试是否正确覆盖旧数据）
 		initialFilter map[string]struct{}
@@ -35,7 +33,6 @@ func TestBitcointalkHandle_syncFilter(t *testing.T) {
 					},
 				},
 				logger:        &mocks.MockLogger{},
-				mu:            sync.Mutex{},
 				initialFilter: map[string]struct{}{"old_data": {}}, // 模拟已有旧数据
 			},
 			want: map[string]struct{}{"coldwater": {}, "STRONGS Coin": {}},
@@ -49,7 +46,6 @@ func TestBitcointalkHandle_syncFilter(t *testing.T) {
 					},
 				},
 				logger:        &mocks.MockLogger{},
-				mu:            sync.Mutex{},
 				initialFilter: map[string]struct{}{"stay_safe": {}},
 			},
 			want: map[string]struct{}{"stay_safe": {}}, // 期望保持原样
