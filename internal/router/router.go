@@ -28,7 +28,7 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	handlers = append(handlers, telegram.NewChatIDHandle(deps.Logger))
 
 	// bitcointalk handlers
-	bitcointalkService := bitcointalk.NewBitcointalkHandle(deps.Store, deps.Config, deps.Logger, r.msgCh)
+	bitcointalkService := bitcointalk.NewBitcointalkHandle(deps.Store, &deps.Config.Bitcointalk, deps.Logger, r.msgCh)
 	// bitcointalk_start
 	handlers = append(handlers, bitcointalk.NewBitcointalkStartHandle(bitcointalkService))
 	// bitcointalk_stop

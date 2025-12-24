@@ -34,13 +34,13 @@ type BitcointalkHandle struct {
 	client   *http.Client
 	cancel   context.CancelFunc
 	Logger   logger.Log
-	Config   *config.Config
+	Config   *config.Bitcointalk
 }
 
-func NewBitcointalkHandle(db store.Store, cfg *config.Config, logger logger.Log, c chan models.Message) *BitcointalkHandle {
+func NewBitcointalkHandle(db store.Store, cfg *config.Bitcointalk, logger logger.Log, c chan models.Message) *BitcointalkHandle {
 	return &BitcointalkHandle{
-		url:      cfg.Bitcointalk.Url,
-		limit:    cfg.Bitcointalk.Limit,
+		url:      cfg.Url,
+		limit:    cfg.Limit,
 		filter:   make(map[string]struct{}),
 		mu:       sync.Mutex{},
 		db:       db,
@@ -113,7 +113,7 @@ func (t *BitcointalkHandle) runMonitor(ctx context.Context, chatID int64) {
 
 	ctx, cf := context.WithCancel(ctx)
 	t.dailySync(ctx)
-	interval := time.Duration(t.Config.Bitcointalk.Interval) * time.Second
+	interval := time.Duration(t.Config.Interval) * time.Second
 	t.cancel = cf
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
