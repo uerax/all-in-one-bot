@@ -65,17 +65,16 @@ func (t *BitcointalkHandle) syncFilter() {
 
 func (f *BitcointalkHandle) dailySync(ctx context.Context) {
 	go func() {
+		ticker := time.NewTicker(time.Hour * 24)
+		f.Logger.Info("已开启 filter 每24小时定时同步")
 		for {
-			timer := time.NewTimer(time.Hour * 24)
-			f.Logger.Info("已开启 filter 每24小时定时同步")
-
 			select {
-			case <-timer.C:
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			case <-ticker.C:
 				f.Logger.Info("触发 filter 定时同步", "时间:", time.Now().Format("2006-01-02 15:04:05"))
 				f.syncFilter()
-			case <-ctx.Done():
-				timer.Stop()
-				return
 			}
 		}
 	}()

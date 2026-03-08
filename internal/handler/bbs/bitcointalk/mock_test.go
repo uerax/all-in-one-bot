@@ -13,3 +13,15 @@ func (m *MockStore) Set(db string, k string) (map[string]struct{}, error) {
     }
     return nil, nil
 }
+
+type MockLRU struct {
+    store.LRU
+    SeenFunc func(key string) bool 
+}
+
+func (m *MockLRU) Seen(key string) bool {
+    if m.SeenFunc != nil {
+        return m.SeenFunc(key)
+    }
+    return false
+}

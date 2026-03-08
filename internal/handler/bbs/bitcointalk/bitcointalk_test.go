@@ -3,9 +3,15 @@ package bitcointalk
 import (
 	"errors"
 	"maps"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/mocks"
+	"github.com/uerax/all-in-one-bot/lite/internal/models"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
 	"github.com/uerax/all-in-one-bot/lite/internal/store"
 )
@@ -71,3 +77,82 @@ func TestBitcointalkHandle_syncFilter(t *testing.T) {
 	}
 }
 
+func TestBitcointalkHandle_monitor(t *testing.T) {
+	path := filepath.Join("testdata", "testdata.txt")
+	content, err := os.ReadFile(path)
+    if err != nil {
+        t.Fatalf("无法读取测试样本文件: %v", err)
+    }
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(http.StatusOK)
+        w.Write(content)
+    }))
+	defer server.Close()
+
+	mockChan := make(chan models.Message, 100) // 真实数据多，通道开大点
+	type fields struct {
+		url      string
+		filter   map[string]struct{}
+		limit    int
+		active   bool
+		notified store.LRU
+		C        chan models.Message
+		client   *http.Client
+		Logger   logger.Log
+		Config   *config.Bitcointalk
+	}
+	type args struct {
+		chatID int64
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   chan <- models.Message
+	}{
+		// TODO: Add test cases.
+		{
+			name: "正常启动测试",
+			fields: fields{
+				url:      server.URL,
+				filter:   map[string]struct{}{
+					"privacy-focused": {},
+					"CPU Mineable": {},
+				},
+				limit:    100,
+				active:   true,
+				notified: &MockLRU{
+					SeenFunc: func(key string) bool {
+						return false
+					},
+				},
+				C:        mockChan,
+				client:   server.Client(),
+				Logger:   &mocks.MockLogger{},
+				Config:   &config.Bitcointalk{},
+			},
+			want: mockChan,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &BitcointalkHandle{
+				url:      tt.fields.url,
+				filter:   tt.fields.filter,
+				limit:    tt.fields.limit,
+				active:   tt.fields.active,
+				notified: tt.fields.notified,
+				C:        tt.fields.C,
+				client:   tt.fields.client,
+				Logger:   tt.fields.Logger,
+				Config:   tt.fields.Config,
+			}
+			b.monitor(tt.args.chatID)
+			expectedCount := 9
+			actualCount := len(mockChan)
+			if actualCount != expectedCount {
+				t.Errorf("解析数量不符: 期望 %d, 实际得到 %d", expectedCount, actualCount)
+			}
+		})
+	}
+}
