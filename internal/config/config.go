@@ -10,6 +10,15 @@ func LoadConfig() *Config {
 
 	config.Telegram = *telegram
 
+	polymarket := &Polymarket{
+		GammaBaseURL: strOrDefault("POLYMARKET_GAMMA_BASE_URL", "https://gamma-api.polymarket.com"),
+		ClobBaseURL:  strOrDefault("POLYMARKET_CLOB_BASE_URL", "https://clob.polymarket.com"),
+		Timeout:      intOrDefault("POLYMARKET_TIMEOUT", 10),
+		DefaultLimit: intOrDefault("POLYMARKET_DEFAULT_LIMIT", 10),
+	}
+
+	config.Polymarket = *polymarket
+
 	bitcointalk := &Bitcointalk{
 		Limit:    intOrDefault("BITCOINTALK_LIMIT", 60),
 		Url:      strOrDefault("BITCOINTALK_URL", "https://bitcointalk.org/index.php?board=159.0"),
@@ -37,6 +46,7 @@ func LoadConfig() *Config {
 
 type Config struct {
 	Telegram    Telegram
+	Polymarket  Polymarket
 	Bitcointalk Bitcointalk
 	Database    Database
 	Nodeseek    Nodeseek
@@ -45,6 +55,13 @@ type Config struct {
 type Database struct {
 	Type     string
 	FilePath string
+}
+
+type Polymarket struct {
+	GammaBaseURL string
+	ClobBaseURL  string
+	Timeout      int
+	DefaultLimit int
 }
 
 type Bitcointalk struct {
