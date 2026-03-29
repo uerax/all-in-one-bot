@@ -1,41 +1,48 @@
 package polymarket
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	pm "github.com/uerax/polymarket-go/polymarket"
+
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/mocks"
 )
+
+func newTestService(serverURL string, defaultLimit int) *Service {
+	return NewService(config.Polymarket{
+		GammaBaseURL: serverURL,
+		ClobBaseURL:  serverURL,
+		Timeout:      1,
+		DefaultLimit: defaultLimit,
+	}, &mocks.MockLogger{})
+}
 
 func TestServiceListMarkets(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/markets" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		if got := r.URL.Query().Get("limit"); got != "2" {
-			t.Fatalf("unexpected limit: %s", got)
+		if got := r.URL.Query().Get("next_cursor"); got != pm.InitialCursor {
+			t.Fatalf("unexpected next_cursor: %s", got)
 		}
-		if got := r.URL.Query().Get("active"); got != "true" {
-			t.Fatalf("unexpected active: %s", got)
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`[
-			{"id":"1","question":"Will BTC hit 200k?","slug":"btc-200k","active":true,"closed":false},
-			{"id":"2","question":"Will ETH hit 10k?","slug":"eth-10k","active":true,"closed":false}
-		]`))
+		_, _ = w.Write([]byte(`{
+			"limit":2,
+			"count":2,
+			"next_cursor":"LTE=",
+			"data":[
+				{"id":"1","question":"Will BTC hit 200k?","slug":"btc-200k","active":true,"closed":false},
+				{"id":"2","question":"Will ETH hit 10k?","slug":"eth-10k","active":true,"closed":false}
+			]
+		}`))
 	}))
 	defer server.Close()
 
-	svc := NewService(config.Polymarket{
-		GammaBaseURL: server.URL,
-		ClobBaseURL:  server.URL,
-		Timeout:      1,
-		DefaultLimit: 10,
-	}, &mocks.MockLogger{})
-
+	svc := newTestService(server.URL, 10)
 	active := true
 	markets, err := svc.ListMarkets(ListMarketsOptions{Limit: 2, Active: &active, Query: "btc"})
 	if err != nil {
@@ -59,13 +66,7 @@ func TestServiceGetMarketByID(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewService(config.Polymarket{
-		GammaBaseURL: server.URL,
-		ClobBaseURL:  server.URL,
-		Timeout:      1,
-		DefaultLimit: 10,
-	}, &mocks.MockLogger{})
-
+	svc := newTestService(server.URL, 10)
 	market, err := svc.GetMarketByID("42")
 	if err != nil {
 		t.Fatalf("GetMarketByID() error = %v", err)
@@ -77,27 +78,73 @@ func TestServiceGetMarketByID(t *testing.T) {
 
 func TestServiceGetMarketBySlug(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/markets/slug/test-market" {
+		if r.URL.Path != "/markets" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
+		if got := r.URL.Query().Get("next_cursor"); got != pm.InitialCursor {
+			t.Fatalf("unexpected next_cursor: %s", got)
+		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"id":"42","question":"Test market","slug":"test-market"}`))
+		_, _ = w.Write([]byte(`{
+			"limit":2,
+			"count":2,
+			"next_cursor":"LTE=",
+			"data":[
+				{"id":"41","question":"Other market","slug":"other-market","active":true,"closed":false},
+				{"id":"42","question":"Test market","slug":"test-market","active":true,"closed":false}
+			]
+		}`))
 	}))
 	defer server.Close()
 
-	svc := NewService(config.Polymarket{
-		GammaBaseURL: server.URL,
-		ClobBaseURL:  server.URL,
-		Timeout:      1,
-		DefaultLimit: 10,
-	}, &mocks.MockLogger{})
-
+	svc := newTestService(server.URL, 10)
 	market, err := svc.GetMarketBySlug("test-market")
 	if err != nil {
 		t.Fatalf("GetMarketBySlug() error = %v", err)
 	}
 	if market.ID != "42" {
 		t.Fatalf("GetMarketBySlug() id = %s, want 42", market.ID)
+	}
+}
+
+func TestServiceListEventsAggregatesByEventSlug(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/markets" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{
+			"limit":3,
+			"count":3,
+			"next_cursor":"LTE=",
+			"data":[
+				{"id":"1","question":"Q1","slug":"m1","active":true,"closed":false,"event_id":"e-1","event_slug":"event-a","event_title":"Event A","event_category":"Politics"},
+				{"id":"2","question":"Q2","slug":"m2","active":false,"closed":true,"event_id":"e-1","event_slug":"event-a","event_title":"Event A","event_category":"Politics"},
+				{"id":"3","question":"Q3","slug":"m3","active":true,"closed":false,"event_id":"e-2","event_slug":"event-b","event_title":"Event B","event_category":"Sports"}
+			]
+		}`))
+	}))
+	defer server.Close()
+
+	svc := newTestService(server.URL, 10)
+	events, err := svc.ListEvents(10)
+	if err != nil {
+		t.Fatalf("ListEvents() error = %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("ListEvents() len = %d, want 2", len(events))
+	}
+	if events[0].Slug != "event-a" {
+		t.Fatalf("first event slug = %s, want event-a", events[0].Slug)
+	}
+	if len(events[0].Markets) != 2 {
+		t.Fatalf("event-a markets len = %d, want 2", len(events[0].Markets))
+	}
+	if !events[0].Active {
+		t.Fatal("event-a active = false, want true")
+	}
+	if events[0].Closed {
+		t.Fatal("event-a closed = true, want false")
 	}
 }
 
@@ -117,13 +164,7 @@ func TestServiceGetTokenPrice(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewService(config.Polymarket{
-		GammaBaseURL: server.URL,
-		ClobBaseURL:  server.URL,
-		Timeout:      1,
-		DefaultLimit: 10,
-	}, &mocks.MockLogger{})
-
+	svc := newTestService(server.URL, 10)
 	price, err := svc.GetTokenPrice("token-1", PriceSideBuy)
 	if err != nil {
 		t.Fatalf("GetTokenPrice() error = %v", err)
@@ -134,13 +175,7 @@ func TestServiceGetTokenPrice(t *testing.T) {
 }
 
 func TestServiceGetTokenPriceRejectsInvalidSide(t *testing.T) {
-	svc := NewService(config.Polymarket{
-		GammaBaseURL: "https://gamma-api.polymarket.com",
-		ClobBaseURL:  "https://clob.polymarket.com",
-		Timeout:      1,
-		DefaultLimit: 10,
-	}, &mocks.MockLogger{})
-
+	svc := newTestService("https://clob.polymarket.com", 10)
 	_, err := svc.GetTokenPrice("token-1", "hold")
 	if err != ErrInvalidPriceSide {
 		t.Fatalf("GetTokenPrice() error = %v, want %v", err, ErrInvalidPriceSide)
@@ -166,13 +201,7 @@ func TestServiceGetOrderBook(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewService(config.Polymarket{
-		GammaBaseURL: server.URL,
-		ClobBaseURL:  server.URL,
-		Timeout:      1,
-		DefaultLimit: 10,
-	}, &mocks.MockLogger{})
-
+	svc := newTestService(server.URL, 10)
 	book, err := svc.GetOrderBook("token-1")
 	if err != nil {
 		t.Fatalf("GetOrderBook() error = %v", err)
@@ -187,23 +216,89 @@ func TestServiceGetOrderBook(t *testing.T) {
 
 func TestServiceHandlesAPIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/markets/42" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(`{"error":"bad request"}`))
 	}))
 	defer server.Close()
 
-	svc := NewService(config.Polymarket{
-		GammaBaseURL: server.URL,
-		ClobBaseURL:  server.URL,
-		Timeout:      1,
-		DefaultLimit: 10,
-	}, &mocks.MockLogger{})
-
+	svc := newTestService(server.URL, 10)
 	_, err := svc.GetMarketByID("42")
 	if err == nil {
 		t.Fatal("GetMarketByID() error = nil, want error")
 	}
 	if err.Error() != "polymarket api error: bad request" {
 		t.Fatalf("GetMarketByID() error = %v", err)
+	}
+}
+
+func TestServiceGetMarketBySlugNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/markets" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"limit":1,"count":1,"next_cursor":"LTE=","data":[{"id":"1","slug":"other"}]}`))
+	}))
+	defer server.Close()
+
+	svc := newTestService(server.URL, 10)
+	_, err := svc.GetMarketBySlug("missing")
+	if err == nil {
+		t.Fatal("GetMarketBySlug() error = nil, want error")
+	}
+	if got := err.Error(); got != "polymarket api error: market not found" {
+		t.Fatalf("GetMarketBySlug() error = %s, want market not found", got)
+	}
+}
+
+func TestServiceFetchMarketsPaginatesWhenLimitZero(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/markets" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		calls++
+		cursor := r.URL.Query().Get("next_cursor")
+		if calls == 1 {
+			if cursor != pm.InitialCursor {
+				t.Fatalf("first cursor = %s, want %s", cursor, pm.InitialCursor)
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"limit":1,"count":1,"next_cursor":"MQ==","data":[{"id":"1","slug":"m1","event_slug":"e1","event_title":"E1"}]}`))
+			return
+		}
+		if calls == 2 {
+			if cursor != "MQ==" {
+				t.Fatalf("second cursor = %s, want MQ==", cursor)
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"limit":1,"count":1,"next_cursor":"LTE=","data":[{"id":"2","slug":"m2","event_slug":"e2","event_title":"E2"}]}`))
+			return
+		}
+		t.Fatalf("unexpected call count: %d", calls)
+	}))
+	defer server.Close()
+
+	svc := newTestService(server.URL, 10)
+	events, err := svc.ListEvents(0)
+	if err != nil {
+		t.Fatalf("ListEvents() error = %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("ListEvents() len = %d, want 2", len(events))
+	}
+	if calls != 2 {
+		t.Fatalf("calls = %d, want 2", calls)
+	}
+}
+
+func TestServiceMapSDKErrorStatusFallback(t *testing.T) {
+	svc := newTestService("https://clob.polymarket.com", 10)
+	err := svc.mapSDKError(&pm.ApiError{Status: 500})
+	if got := fmt.Sprint(err); got != "polymarket api status: 500" {
+		t.Fatalf("mapSDKError() = %s, want polymarket api status: 500", got)
 	}
 }
