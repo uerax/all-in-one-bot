@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 )
 
 var ErrInvalidPriceSide = errors.New("invalid price side")
+var ErrInvalidAddress = errors.New("invalid address")
+var ErrMissingL2Credentials = errors.New("polymarket l2 credentials not configured")
 
 const (
 	PriceSideBuy  = "buy"
@@ -26,6 +29,7 @@ type Service struct {
 	defaultLimit int
 	gammaClient  *pm.Client
 	clobClient   *pm.Client
+	l2Enabled    bool
 	log          logger.Log
 }
 
@@ -109,11 +113,22 @@ func NewService(cfg config.Polymarket, log logger.Log) *Service {
 		pm.WithThrowOnError(true),
 	)
 
+	var signer pm.ClobSigner
+	var creds *pm.ApiKeyCreds
+	if strings.TrimSpace(cfg.Address) != "" && strings.TrimSpace(cfg.ApiKey) != "" && strings.TrimSpace(cfg.ApiSecret) != "" && strings.TrimSpace(cfg.ApiPassphrase) != "" {
+		signer = &staticAddressSigner{address: strings.TrimSpace(cfg.Address)}
+		creds = &pm.ApiKeyCreds{
+			Key:        strings.TrimSpace(cfg.ApiKey),
+			Secret:     strings.TrimSpace(cfg.ApiSecret),
+			Passphrase: strings.TrimSpace(cfg.ApiPassphrase),
+		}
+	}
+
 	clobClient := pm.NewClient(
 		strings.TrimRight(cfg.ClobBaseURL, "/"),
 		pm.ChainPolygon,
-		nil,
-		nil,
+		signer,
+		creds,
 		pm.WithHTTPClient(httpClient),
 		pm.WithThrowOnError(true),
 	)
@@ -122,6 +137,7 @@ func NewService(cfg config.Polymarket, log logger.Log) *Service {
 		defaultLimit: cfg.DefaultLimit,
 		gammaClient:  gammaClient,
 		clobClient:   clobClient,
+		l2Enabled:    signer != nil && creds != nil,
 		log:          log,
 	}
 }
@@ -319,6 +335,62 @@ func (s *Service) GetOrderBook(tokenID string) (*OrderBook, error) {
 	}, nil
 }
 
+func (s *Service) ListAddressUnresolvedMarkets(address string, limit int) ([]Market, error) {
+	normalized, err := normalizeAddress(address)
+	if err != nil {
+		return nil, err
+	}
+	if !s.l2Enabled {
+		return nil, ErrMissingL2Credentials
+	}
+
+	trades, err := s.clobClient.GetTrades(context.Background(), &pm.TradeParams{MakerAddress: normalized}, false, pm.InitialCursor)
+	if err != nil {
+		s.log.Error("polymarket get trades failed", "address", normalized, "error", err)
+		return nil, s.mapSDKError(err)
+	}
+
+	conditionIDs := make(map[string]struct{})
+	for _, trade := range trades {
+		conditionID := strings.TrimSpace(trade.Market)
+		if conditionID == "" {
+			continue
+		}
+		conditionIDs[conditionID] = struct{}{}
+	}
+
+	resolvedLimit := s.normalizeLimit(limit)
+	markets := make([]Market, 0, resolvedLimit)
+	for conditionID := range conditionIDs {
+		market, getErr := s.GetMarketByID(conditionID)
+		if getErr != nil {
+			s.log.Error("polymarket get market by condition id failed", "condition_id", conditionID, "error", getErr)
+			continue
+		}
+		if market.Closed {
+			continue
+		}
+		markets = append(markets, *market)
+		if len(markets) >= resolvedLimit {
+			break
+		}
+	}
+
+	return markets, nil
+}
+
+func (s *Service) CheckL2Credentials() error {
+	if !s.l2Enabled {
+		return ErrMissingL2Credentials
+	}
+	_, err := s.clobClient.GetTrades(context.Background(), &pm.TradeParams{}, false, pm.InitialCursor)
+	if err != nil {
+		s.log.Error("polymarket check l2 credentials failed", "error", err)
+		return s.mapSDKError(err)
+	}
+	return nil
+}
+
 func (s *Service) fetchRawMarkets(limit int) ([]map[string]any, error) {
 	resolvedLimit := limit
 	fetchAll := resolvedLimit <= 0
@@ -447,6 +519,39 @@ func decodeAny[T any](value any) (T, error) {
 		return out, err
 	}
 	return out, nil
+}
+
+var addressPattern = regexp.MustCompile(`(?i)^0x[0-9a-f]{40}$`)
+
+type staticAddressSigner struct {
+	address string
+}
+
+func (s *staticAddressSigner) Address(ctx context.Context) (string, error) {
+	_ = ctx
+	return s.address, nil
+}
+
+func (s *staticAddressSigner) SignClobAuth(ctx context.Context, chainID pm.Chain, timestamp int64, nonce int64) (string, error) {
+	_ = ctx
+	_ = chainID
+	_ = timestamp
+	_ = nonce
+	return "", nil
+}
+
+func (s *staticAddressSigner) SignOrderTypedData(ctx context.Context, payload pm.OrderTypedDataPayload) (string, error) {
+	_ = ctx
+	_ = payload
+	return "", nil
+}
+
+func normalizeAddress(address string) (string, error) {
+	trimmed := strings.TrimSpace(address)
+	if !addressPattern.MatchString(trimmed) {
+		return "", ErrInvalidAddress
+	}
+	return strings.ToLower(trimmed), nil
 }
 
 type stripAcceptEncodingTransport struct {

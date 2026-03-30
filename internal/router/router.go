@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/bitcointalk"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/nodeseek"
+	"github.com/uerax/all-in-one-bot/lite/internal/handler/polymarket"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/telegram"
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
 
@@ -42,6 +43,10 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	// nodeseek_stop
 	handlers = append(handlers, nodeseek.NewNodeseekStopHandle(nodeseekService))
 
+	// polymarket
+	polymarketService := polymarket.NewService(deps.Config.Polymarket, deps.Logger)
+	handlers = append(handlers, polymarket.NewPolymarketHoldingsHandle(polymarketService, deps.Logger))
+	handlers = append(handlers, polymarket.NewPolymarketL2CheckHandle(polymarketService, deps.Logger))
 
 	return handlers
 }

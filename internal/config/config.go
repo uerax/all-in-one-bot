@@ -11,10 +11,14 @@ func LoadConfig() *Config {
 	config.Telegram = *telegram
 
 	polymarket := &Polymarket{
-		GammaBaseURL: strOrDefault("POLYMARKET_GAMMA_BASE_URL", "https://gamma-api.polymarket.com"),
-		ClobBaseURL:  strOrDefault("POLYMARKET_CLOB_BASE_URL", "https://clob.polymarket.com"),
-		Timeout:      intOrDefault("POLYMARKET_TIMEOUT", 10),
-		DefaultLimit: intOrDefault("POLYMARKET_DEFAULT_LIMIT", 10),
+		GammaBaseURL:  strOrDefault("POLYMARKET_GAMMA_BASE_URL", "https://gamma-api.polymarket.com"),
+		ClobBaseURL:   strOrDefault("POLYMARKET_CLOB_BASE_URL", "https://clob.polymarket.com"),
+		Timeout:       intOrDefault("POLYMARKET_TIMEOUT", 10),
+		DefaultLimit:  intOrDefault("POLYMARKET_DEFAULT_LIMIT", 10),
+		Address:       strOrDefault("POLYMARKET_ADDRESS", ""),
+		ApiKey:        strOrDefault("POLYMARKET_API_KEY", ""),
+		ApiSecret:     strOrDefault("POLYMARKET_API_SECRET", ""),
+		ApiPassphrase: strOrDefault("POLYMARKET_API_PASSPHRASE", ""),
 	}
 
 	config.Polymarket = *polymarket
@@ -58,10 +62,14 @@ type Database struct {
 }
 
 type Polymarket struct {
-	GammaBaseURL string
-	ClobBaseURL  string
-	Timeout      int
-	DefaultLimit int
+	GammaBaseURL  string
+	ClobBaseURL   string
+	Timeout       int
+	DefaultLimit  int
+	Address       string
+	ApiKey        string
+	ApiSecret     string
+	ApiPassphrase string
 }
 
 type Bitcointalk struct {

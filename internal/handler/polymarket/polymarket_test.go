@@ -302,3 +302,118 @@ func TestServiceMapSDKErrorStatusFallback(t *testing.T) {
 		t.Fatalf("mapSDKError() = %s, want polymarket api status: 500", got)
 	}
 }
+
+func TestServiceListAddressUnresolvedMarketsMissingCreds(t *testing.T) {
+	svc := newTestService("https://clob.polymarket.com", 10)
+	_, err := svc.ListAddressUnresolvedMarkets("0x1111111111111111111111111111111111111111", 5)
+	if err != ErrMissingL2Credentials {
+		t.Fatalf("ListAddressUnresolvedMarkets() error=%v, want %v", err, ErrMissingL2Credentials)
+	}
+}
+
+func TestServiceListAddressUnresolvedMarkets(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/data/trades":
+			if got := r.URL.Query().Get("maker_address"); got != "0x1111111111111111111111111111111111111111" {
+				t.Fatalf("unexpected maker_address: %s", got)
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"next_cursor":"LTE=","data":[{"market":"mkt-1"},{"market":"mkt-2"}]}`))
+		case r.URL.Path == "/markets/mkt-1":
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"id":"mkt-1","question":"Q1","slug":"s1","closed":false}`))
+		case r.URL.Path == "/markets/mkt-2":
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"id":"mkt-2","question":"Q2","slug":"s2","closed":true}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	svc := NewService(config.Polymarket{
+		GammaBaseURL:  server.URL,
+		ClobBaseURL:   server.URL,
+		Timeout:       1,
+		DefaultLimit:  10,
+		Address:       "0x1111111111111111111111111111111111111111",
+		ApiKey:        "k",
+		ApiSecret:     "c2VjcmV0",
+		ApiPassphrase: "p",
+	}, &mocks.MockLogger{})
+
+	markets, err := svc.ListAddressUnresolvedMarkets("0x1111111111111111111111111111111111111111", 10)
+	if err != nil {
+		t.Fatalf("ListAddressUnresolvedMarkets() error=%v", err)
+	}
+	if len(markets) != 1 {
+		t.Fatalf("ListAddressUnresolvedMarkets() len=%d, want 1", len(markets))
+	}
+	if markets[0].ID != "mkt-1" {
+		t.Fatalf("ListAddressUnresolvedMarkets() first id=%s, want mkt-1", markets[0].ID)
+	}
+}
+
+func TestServiceCheckL2CredentialsMissingCreds(t *testing.T) {
+	svc := newTestService("https://clob.polymarket.com", 10)
+	if err := svc.CheckL2Credentials(); err != ErrMissingL2Credentials {
+		t.Fatalf("CheckL2Credentials() error=%v, want %v", err, ErrMissingL2Credentials)
+	}
+}
+
+func TestServiceCheckL2CredentialsUnauthorized(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/data/trades" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"error":"Unauthorized/Invalid api key"}`))
+	}))
+	defer server.Close()
+
+	svc := NewService(config.Polymarket{
+		GammaBaseURL:  server.URL,
+		ClobBaseURL:   server.URL,
+		Timeout:       1,
+		DefaultLimit:  10,
+		Address:       "0x1111111111111111111111111111111111111111",
+		ApiKey:        "k",
+		ApiSecret:     "c2VjcmV0",
+		ApiPassphrase: "p",
+	}, &mocks.MockLogger{})
+
+	err := svc.CheckL2Credentials()
+	if err == nil {
+		t.Fatal("CheckL2Credentials() error=nil, want error")
+	}
+	if got := err.Error(); got != "polymarket api error: Unauthorized/Invalid api key" {
+		t.Fatalf("CheckL2Credentials() error=%s", got)
+	}
+}
+
+func TestServiceCheckL2CredentialsSuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/data/trades" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"next_cursor":"LTE=","data":[]}`))
+	}))
+	defer server.Close()
+
+	svc := NewService(config.Polymarket{
+		GammaBaseURL:  server.URL,
+		ClobBaseURL:   server.URL,
+		Timeout:       1,
+		DefaultLimit:  10,
+		Address:       "0x1111111111111111111111111111111111111111",
+		ApiKey:        "k",
+		ApiSecret:     "c2VjcmV0",
+		ApiPassphrase: "p",
+	}, &mocks.MockLogger{})
+
+	if err := svc.CheckL2Credentials(); err != nil {
+		t.Fatalf("CheckL2Credentials() error=%v", err)
+	}
+}
