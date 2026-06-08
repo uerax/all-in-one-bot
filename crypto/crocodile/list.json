@@ -1,5 +1,17 @@
 [
-    {"name":"wquil","id":"wrapped-quil"},
-    {"name":"auki","id":"auki-labs"},
-    {"name":"tig","id":"the-innovation-game"}
+  {
+    "name": "wquil",
+    "id": "wrapped-quil",
+    "rule": ""
+  },
+  {
+    "name": "auki",
+    "id": "auki-labs",
+    "rule": ""
+  },
+  {
+    "name": "tig",
+    "id": "the-innovation-game",
+    "rule": ""
+  }
 ]

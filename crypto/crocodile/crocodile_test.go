@@ -118,6 +118,44 @@ func TestRuleTipDescribesCurrentRule(t *testing.T) {
 	}
 }
 
+func TestFormatChartRuleLabelsUsesSignalRuleConfig(t *testing.T) {
+	today, avg := formatChartRuleLabels(Signal{
+		RuleConfig:     RuleConfig{Lookback: 7, YesterdayMultiple: 4.5, AverageMultiple: 3.2},
+		YesterdayRatio: 5.5,
+		AverageRatio:   4.4,
+	})
+
+	if today != "today: 5.5x >= 4.5x" {
+		t.Fatalf("unexpected today label: %s", today)
+	}
+	if avg != "avg(7d): 4.4x >= 3.2x" {
+		t.Fatalf("unexpected average label: %s", avg)
+	}
+}
+
+func TestFormatSignalsUsesSignalRuleConfigLookback(t *testing.T) {
+	c := NewCrocodileWithSource(fakeKlineSource{})
+	msg := c.formatSignals([]Signal{{
+		Item:                  Item{Name: "BTC", ID: "bitcoin"},
+		Rule:                  defaultRuleName,
+		RuleConfig:            RuleConfig{Lookback: 7, YesterdayMultiple: 4.5, AverageMultiple: 3.2},
+		Time:                  time.Date(2024, 6, 6, 0, 0, 0, 0, time.UTC),
+		Close:                 13,
+		Volume:                350,
+		PreviousVolume:        100,
+		PreviousAverageVolume: 110,
+		YesterdayRatio:        3.5,
+		AverageRatio:          3.18,
+	}})
+
+	if !strings.Contains(msg, "前7日均量: 110.00") {
+		t.Fatalf("formatSignals should use lookback from signal rule config:\n%s", msg)
+	}
+	if strings.Contains(msg, "前5日均量") {
+		t.Fatalf("formatSignals should not use fixed 5-day wording:\n%s", msg)
+	}
+}
+
 func TestSetRuleConfigUpdatesEvaluation(t *testing.T) {
 	c := NewCrocodileWithSource(fakeKlineSource{
 		data: map[string][]crypto.CoingeckoKline{
@@ -195,8 +233,8 @@ func TestCheckContinuesWhenOneItemFails(t *testing.T) {
 
 	select {
 	case event := <-ch:
-		if event.Kind != common.EventMarkdown || event.Text != "[BTC触发买入信号](https://www.coingecko.com/en/coins/bitcoin)" {
-			t.Fatalf("expected buy signal markdown, got %+v", event)
+		if event.Kind != common.EventMarkdown || event.Text != "[BTC触发买入信号](https://www.coingecko.com/en/coins/bitcoin)" || !event.DisableWebPreview {
+			t.Fatalf("expected buy signal markdown without preview, got %+v", event)
 		}
 	default:
 		t.Fatal("expected signal message")

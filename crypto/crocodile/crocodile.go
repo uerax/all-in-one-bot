@@ -208,7 +208,7 @@ func (t *Crocodile) loop(ctx context.Context) {
 		t.mu.Unlock()
 	}()
 
-	t.check(false, false, true)
+	t.check(true, false, true)
 
 	ticker := time.NewTicker(t.interval)
 	defer ticker.Stop()
@@ -218,7 +218,7 @@ func (t *Crocodile) loop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			t.check(false, false, true)
+			t.check(true, false, true)
 		}
 	}
 }
@@ -335,6 +335,12 @@ func loadRuleConfig() RuleConfig {
 }
 
 func configFloat(defaultValue float64, keys ...string) float64 {
+	if value, err := goconf.VarFloat64(keys...); err == nil {
+		return value
+	}
+	if value, err := goconf.VarInt(keys...); err == nil {
+		return float64(value)
+	}
 	raw := goconf.VarStringOrDefault(strconv.FormatFloat(defaultValue, 'f', -1, 64), keys...)
 	value, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
 	if err != nil {
@@ -645,6 +651,7 @@ func (t *Crocodile) formatSignals(signals []Signal) string {
 	sb.WriteString(fmt.Sprintf("crocodile命中 %d 个标的:", len(signals)))
 
 	for _, sig := range signals {
+		cfg := sig.RuleConfig.normalize()
 		sb.WriteString("\n\n")
 		sb.WriteString(displayName(sig.Item))
 		sb.WriteString("\nID: ")
@@ -656,7 +663,7 @@ func (t *Crocodile) formatSignals(signals []Signal) string {
 		sb.WriteString(fmt.Sprintf("\n收盘价: %.8f", sig.Close))
 		sb.WriteString(fmt.Sprintf("\n今日成交量: %.2f", sig.Volume))
 		sb.WriteString(fmt.Sprintf("\n昨日成交量: %.2f", sig.PreviousVolume))
-		sb.WriteString(fmt.Sprintf("\n前5日均量: %.2f", sig.PreviousAverageVolume))
+		sb.WriteString(fmt.Sprintf("\n前%d日均量: %.2f", cfg.Lookback, sig.PreviousAverageVolume))
 		sb.WriteString(fmt.Sprintf("\n昨日倍数: %.2fx", sig.YesterdayRatio))
 		sb.WriteString(fmt.Sprintf("\n均量倍数: %.2fx", sig.AverageRatio))
 	}

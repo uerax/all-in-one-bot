@@ -53,7 +53,7 @@ func (t *Crocodile) sendSignalMessages(results []inspectionResult) {
 		name := displayName(item)
 		link := "https://www.coingecko.com/en/coins/" + url.PathEscape(item.ID)
 		msg := fmt.Sprintf("[%s触发买入信号](%s)", escapeMarkdownLinkText(name), link)
-		common.Send(t.ch, common.Markdown(msg, false))
+		common.Send(t.ch, common.Markdown(msg, true))
 	}
 }
 
@@ -100,9 +100,9 @@ func renderChart(path string, sig Signal, klines []crypto.CoingeckoKline) error 
 	fillRect(img, left, volumeTop, width-right, volumeBottom, chartPanel)
 
 	drawLabel(img, left, headerTop, fmt.Sprintf("%s (%s)", displayName(sig.Item), sig.Item.ID), chartText)
-	cfg := sig.RuleConfig.normalize()
-	drawLabel(img, left, headerTop+24, fmt.Sprintf("today: %.1fx >= %.1fx", sig.YesterdayRatio, cfg.YesterdayMultiple), chartSubText)
-	drawLabel(img, left, headerTop+46, fmt.Sprintf("avg: %.1fx >= %.1fx", sig.AverageRatio, cfg.AverageMultiple), chartSubText)
+	todayLabel, averageLabel := formatChartRuleLabels(sig)
+	drawLabel(img, left, headerTop+24, todayLabel, chartSubText)
+	drawLabel(img, left, headerTop+46, averageLabel, chartSubText)
 
 	for i := 0; i <= 5; i++ {
 		y := priceTop + (priceBottom-priceTop)*i/5
@@ -161,6 +161,12 @@ func renderChart(path string, sig Signal, klines []crypto.CoingeckoKline) error 
 	}
 	defer f.Close()
 	return png.Encode(f, img)
+}
+
+func formatChartRuleLabels(sig Signal) (string, string) {
+	cfg := sig.RuleConfig.normalize()
+	return fmt.Sprintf("today: %.1fx >= %.1fx", sig.YesterdayRatio, cfg.YesterdayMultiple),
+		fmt.Sprintf("avg(%dd): %.1fx >= %.1fx", cfg.Lookback, sig.AverageRatio, cfg.AverageMultiple)
 }
 
 func recentKlines(klines []crypto.CoingeckoKline, limit int) []crypto.CoingeckoKline {
