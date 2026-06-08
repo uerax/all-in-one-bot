@@ -7,22 +7,30 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/uerax/all-in-one-bot/common"
 )
 
 type Nodeseek struct {
-	C chan string
-	latest int64
+	ch      chan<- common.AioEvent
+	latest  int64
 	keyword []string
 }
 
-func NewNodeseek() *Nodeseek {
-	k := []string{"升级号","抽奖"}
-	n := &Nodeseek{
-		C: make(chan string, 2),
-		latest: 0,
-		keyword: k,
+func NewNodeseek(ch ...chan<- common.AioEvent) *Nodeseek {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
 	}
-	return n
+	return &Nodeseek{
+		ch:      eventCh,
+		latest:  0,
+		keyword: []string{"升级码", "抽奖"},
+	}
+}
+
+func (t *Nodeseek) sendMarkdown(msg string) {
+	common.Send(t.ch, common.Markdown(msg, true))
 }
 
 func (t *Nodeseek) AddKeyword(keywd string) {
@@ -31,13 +39,12 @@ func (t *Nodeseek) AddKeyword(keywd string) {
 
 func (t *Nodeseek) ShowKeyword() {
 	keywd := fmt.Sprintf("%v", t.keyword)
-	t.C <- keywd
+	t.sendMarkdown(keywd)
 	fmt.Print(keywd)
-	
 }
 
 func (t *Nodeseek) Monitor() {
-	t.C <- "已开启监控Nodeseek新帖"
+	t.sendMarkdown("已开启监控Nodeseek新帖")
 	tick := time.NewTicker(time.Minute)
 	for range tick.C {
 		t.nodeseek()
@@ -45,13 +52,12 @@ func (t *Nodeseek) Monitor() {
 }
 
 func (t *Nodeseek) nodeseek() {
-
 	type Item struct {
 		Title       string `xml:"title"`
 		Description string `xml:"description"`
 		Link        string `xml:"link"`
 		PubDate     string `xml:"pubDate"`
-		Guid     int64 `xml:"guid"`
+		Guid        int64  `xml:"guid"`
 	}
 	type Channel struct {
 		Item []*Item `xml:"item"`
@@ -61,21 +67,26 @@ func (t *Nodeseek) nodeseek() {
 		Version string   `xml:"version,attr"`
 		Channel *Channel `xml:"channel"`
 	}
-	link := "https://rss.nodeseek.com"
-	r, err := http.Get(link)
-	bbs := NodeseekResp{}
+
+	r, err := http.Get("https://rss.nodeseek.com")
 	if err != nil {
-		return 
+		return
 	}
-	b, _ := io.ReadAll(r.Body)
 	defer r.Body.Close()
-	err = xml.Unmarshal(b, &bbs)
+
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return 
+		return
+	}
+
+	bbs := NodeseekResp{}
+	if err := xml.Unmarshal(body, &bbs); err != nil {
+		return
 	}
 	if bbs.Channel == nil || len(bbs.Channel.Item) == 0 {
 		return
 	}
+
 	msg := ""
 	latest := t.latest
 	for _, v := range bbs.Channel.Item {
@@ -84,7 +95,7 @@ func (t *Nodeseek) nodeseek() {
 		}
 		if latest < v.Guid {
 			latest = v.Guid
-		}	
+		}
 		v.Title = strings.ToLower(strings.TrimSpace(v.Title))
 		for _, k := range t.keyword {
 			if strings.Contains(v.Title, k) {
@@ -93,13 +104,11 @@ func (t *Nodeseek) nodeseek() {
 			}
 		}
 	}
-	
+
 	if latest > t.latest {
 		t.latest = latest
 	}
-
 	if msg != "" {
-		t.C <- "*NodeSeek新帖:*\n" + msg
+		t.sendMarkdown("*NodeSeek新帖:*\n" + msg)
 	}
-
 }

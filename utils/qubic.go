@@ -53,7 +53,7 @@ func (t *Utils) QubicProfit(token string) {
 	}()
 	qb, err := QubicInfo(token)
 	if err != nil {
-		t.ErrC <- err.Error()
+		t.sendText(err.Error())
 		return
 	}
 	ep1, ep2 := 880177514.0, 239031064.0
@@ -88,7 +88,7 @@ func (t *Utils) QubicProfit(token string) {
 	wait.Wait()
 	priceMsg := fmt.Sprintf("\n\n当前Qubic价格: *%.12f U*\n单个块预计收益: *%.3f U*\n纪元预计总收益: *%.3f U*\n\nEp1预计收益: *%.3f U*\nEp2预计收益: *%.3f U*", price, (earn1+earn2)*price, (earn1+earn2)*price*sol*24*7, earn1*price*sol*24*7, earn2*price*sol*24*7)
 
-	t.MsgC <- msg + priceMsg
+	t.sendMarkdown(msg + priceMsg)
 
 }
 
@@ -212,7 +212,7 @@ func (t *Utils) QubicAccEarning(user, pass string) {
 
 	msg = fmt.Sprintf("Total it/s: *%d*   Total Sols: *%d*\n\n", its, sol.TotalSolutions) + msg
 
-	t.MsgC <- msg
+	t.sendMarkdown(msg)
 
 }
 
@@ -267,7 +267,7 @@ func (t *Utils) QubicEarning(addr string) {
 	}
 	msg = fmt.Sprintf("*Miner*: [%s](https://app.qubic.li/public/pool/%s)\n\n", defaultAddr, defaultAddr) + fmt.Sprintf("Total it/s: *%d*   Total Sols: *%d*\n\n", its, sol.Sol) + msg
 
-	t.MsgC <- msg
+	t.sendMarkdown(msg)
 
 }
 
@@ -356,28 +356,28 @@ func (t *Utils) QubicToken() {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		t.ErrC <- err.Error()
+		t.sendText(err.Error())
 		return
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		t.ErrC <- err.Error()
+		t.sendText(err.Error())
 		return
 	}
 	qb := Token{}
 	err = json.Unmarshal(body, &qb)
 	if err != nil {
-		t.ErrC <- err.Error()
+		t.sendText(err.Error())
 		return
 	}
 	if !qb.Success {
-		t.ErrC <- "账号密码错误或者Qli系统有误"
+		t.sendText("账号密码错误或者Qli系统有误")
 		return
 	}
 
 	defaultToken = qb.Token
-	t.MsgC <- "Token 刷新成功"
+	t.sendMarkdown("Token 刷新成功")
 }
 
 type Orge struct {
@@ -510,6 +510,6 @@ func (t *Utils) Compare(usdt string) {
 
 	msg := fmt.Sprintf("%.1f U 从Orge提现手续费分析:\n\nLTC 提现 Binance 损耗: %.3f U + %.3f U\n总计损耗为: %.3f U\nLTC 提现 Mexc 损耗: %.4f U + 1 U + %.3f U\n总计损耗为: %.3f U\nOgre 价格: %.5f\nBinance 价格: %.5f\nMexc 价格: %.5f\n\nXRP 提现 Binance 损耗: %.3f U + %.3f U\n总计损耗为: %.3f U\nOgre 价格: %.5f\nBinance 价格: %.5f\n\nPYI 提现 Mexc 损耗: %.2f U + 1 U + %.2f U\n总计损耗为: %.2f U\nOgre 价格: %.5f\nMexc 价格: %.5f\n\nXMR 提现 Mexc 损耗: %.3f U + 1 U + %.3f U\n总计损耗为: %.4f U\nOgre 价格: %.5f\nMexc 价格: %.5f\n\nBTC 提现 Binance 损耗: %.4f U + %.4f U\n总计损耗为: %.4f U\nOgre 价格: %.2f\nBinance 价格: %.2f", u, bn_ltc_loss, 0.001*ltc, bn_ltc_loss+(0.001*ltc), mexc_ltc_loss, 0.001*ltc, mexc_ltc_loss+(0.001*ltc)+1, ltc, bn_ltc, mexc_ltc, bn_xrp_loss, 0.001*xrp, bn_xrp_loss+(0.001*xrp), xrp, bn_xrp, mexc_pyi_loss, pyi*5, mexc_pyi_loss+(pyi*5)+1, pyi, mexc_pyi, mexc_xmr_loss, 0.00021917*xmr, mexc_xmr_loss+(0.00021917*xmr)+1, xmr, mexc_xmr, bn_btc_loss, 0.00011225*btc, bn_btc_loss+(0.00011225*btc), btc, bn_btc)
 
-	t.MsgC <- msg
+	t.sendMarkdown(msg)
 
 }

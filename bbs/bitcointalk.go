@@ -13,29 +13,34 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 
 type Bitcointalk struct {
-	url string
-	old map[string]struct{}
-	ctx context.Context
-	cancel context.CancelFunc
-	C chan string
-	filter map[string]struct{}
-	notifi bool
-	path string
+	url     string
+	old     map[string]struct{}
+	ctx     context.Context
+	cancel  context.CancelFunc
+	ch      chan<- common.AioEvent
+	filter  map[string]struct{}
+	notifi  bool
+	path    string
 	running bool
 }
 
-func NewBitcointalk() *Bitcointalk {
+func NewBitcointalk(ch ...chan<- common.AioEvent) *Bitcointalk {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	b := &Bitcointalk{
-		url: "https://bitcointalk.org/index.php?board=159.0",
-		old: make(map[string]struct{}),
-		C: make(chan string, 5),
-		notifi: false,
-		filter: make(map[string]struct{}, 0),
-		path: goconf.VarStringOrDefault("/usr/local/share/aio/", "bbs", "path"),
+		url:     "https://bitcointalk.org/index.php?board=159.0",
+		old:     make(map[string]struct{}),
+		ch:      eventCh,
+		notifi:  false,
+		filter:  make(map[string]struct{}, 0),
+		path:    goconf.VarStringOrDefault("/usr/local/share/aio/", "bbs", "path"),
 		running: false,
 	}
 	go b.FilterFill()
@@ -44,7 +49,7 @@ func NewBitcointalk() *Bitcointalk {
 		b.Monitor()
 	}
 	b.notifi = true
-	
+
 	go b.CronDump()
 
 	return b
@@ -52,7 +57,7 @@ func NewBitcointalk() *Bitcointalk {
 }
 
 func (b *Bitcointalk) FilterFill() {
-	
+
 	// 下载JSON文件
 	url := "https://raw.githubusercontent.com/uerax/all-in-one-bot/v2/bbs/bitcointalk/filter.json"
 	resp, err := http.Get(url)
@@ -130,7 +135,7 @@ func (b *Bitcointalk) Recover() map[string]struct{} {
 
 func (b *Bitcointalk) Start() {
 	if b.running {
-		b.C <- "已开启监控Bitcointalk新帖, 无需重复开启"
+		b.sendMarkdown("已开启监控Bitcointalk新帖, 无需重复开启")
 		return
 	}
 	b.running = true
@@ -138,7 +143,7 @@ func (b *Bitcointalk) Start() {
 	ticker := time.NewTicker(1 * time.Minute)
 
 	log.Println("开启定时监控Bitcointalk新帖")
-	b.C <- "开启定时监控Bitcointalk新帖"
+	b.sendMarkdown("开启定时监控Bitcointalk新帖")
 
 	for {
 		select {
@@ -146,7 +151,7 @@ func (b *Bitcointalk) Start() {
 			b.Monitor()
 		case <-b.ctx.Done():
 			log.Println("关闭定时监控Bitcointalk新帖")
-			b.C <- "关闭定时监控Bitcointalk新帖"
+			b.sendMarkdown("关闭定时监控Bitcointalk新帖")
 			b.running = false
 			return
 		}
@@ -192,10 +197,10 @@ func (b *Bitcointalk) Monitor() {
 					if rpy < 5 {
 						url, exists := td.Attr("href")
 						if exists {
-							b.C <- "Bitcointalk 新帖推送:\n主 题: *" + text + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url
-						}	
+							b.sendMarkdown("Bitcointalk 新帖推送:\n主 题: *" + text + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url)
+						}
 					}
-				}			
+				}
 			}
 		}
 	})
@@ -203,4 +208,8 @@ func (b *Bitcointalk) Monitor() {
 
 func (b *Bitcointalk) Stop() {
 	b.cancel()
+}
+
+func (b *Bitcointalk) sendMarkdown(msg string) {
+	common.Send(b.ch, common.Markdown(msg, true))
 }

@@ -3,27 +3,29 @@ package tg
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/uerax/all-in-one-bot/crypto"
 )
 
 type Command struct {
-    Name        string
-    Handler     func(chatID int64, args ...string)
-    Help        string
-    ArgsMin     int // 可选，最短长度
-	ArgsDef		[]string
+	Name    string
+	Handler func(chatID int64, args ...string)
+	Help    string
+	ArgsMin int // 可选，最短长度
+	ArgsDef []string
 }
 
 func (c *Command) Run(args string, chatID int64) {
 	l := strings.Split(args, " ")
 	if len(l) < c.ArgsMin {
-		log.Printf("%s 参数有误: %s", c.Name,args)
+		log.Printf("%s 参数有误: %s", c.Name, args)
 		return
 	}
-	// 如果有默认参数进行下一步处理 
+	// 如果有默认参数进行下一步处理
 	// 如果参数个数小于默认参数个数，补齐默认参数
 	if len(c.ArgsDef) != 0 && len(c.ArgsDef) > len(l) {
 		l = append(l, c.ArgsDef[len(l):]...)
@@ -65,6 +67,108 @@ func coingeckoNow() {
 	go api.Coingecko.Handle()
 }
 
+func crocodileMonitor() {
+	go api.Crocodile.Monitor()
+}
+
+func crocodileStop() {
+	go api.Crocodile.Stop()
+}
+
+func crocodileCheck() {
+	go api.Crocodile.Handle()
+}
+
+func crocodileList() {
+	go api.Crocodile.ListMonitor()
+}
+
+func crocodileAdd(args string) {
+	args = strings.TrimSpace(args)
+	if args == "" {
+		log.Printf("crocodileAdd 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+
+	parts := strings.Fields(args)
+	id := parts[0]
+	name := id
+	if len(parts) > 1 {
+		name = strings.Join(parts[1:], " ")
+	}
+
+	go api.Crocodile.AddMonitor(id, name)
+}
+
+func crocodileRuleTip(id int64) {
+	go api.DeleteAfterSendMarkdown(id, api.Crocodile.RuleTip(), false)
+}
+
+func crocodileRule(args string) {
+	args = strings.TrimSpace(args)
+	if args == "" {
+		log.Printf("crocodileRule 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+
+	go func() {
+		if err := api.Crocodile.UpdateRule(args); err != nil {
+			log.Printf("crocodileRule failed: %v", err)
+			go api.SendMessage(fmt.Sprintf("Crocodile参数更新失败: %v", err))
+		}
+	}()
+}
+
+func coingeckoSearch(id int64, args string) {
+	query := strings.TrimSpace(args)
+	if query == "" {
+		log.Printf("coingeckoSearch 参数有误: %s", args)
+		go api.DeleteAfterSendMessage("参数有误")
+		return
+	}
+
+	go func() {
+		coins, err := api.Coingecko.Search(query)
+		if err != nil {
+			log.Printf("coingeckoSearch failed: %v", err)
+			go api.SendMsg(id, fmt.Sprintf("CoinGecko 搜索失败: %v", err))
+			return
+		}
+		go api.SendMarkdown(id, formatCoingeckoSearchResults(query, coins), true)
+	}()
+}
+
+func formatCoingeckoSearchResults(query string, coins []crypto.CoingeckoSearchCoin) string {
+	if len(coins) == 0 {
+		return fmt.Sprintf("未找到 CoinGecko 币种: `%s`", query)
+	}
+
+	limit := len(coins)
+	if limit > 10 {
+		limit = 10
+	}
+
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("CoinGecko 搜索结果: `%s`", query))
+	for i := 0; i < limit; i++ {
+		coin := coins[i]
+		rank := "N/A"
+		if coin.MarketCapRank != nil {
+			rank = strconv.Itoa(*coin.MarketCapRank)
+		}
+
+		sb.WriteString(fmt.Sprintf("\n\n%d. %s\nsymbol: %s\nid: `%s`\nrank: %s", i+1, coin.Name, strings.ToUpper(coin.Symbol), coin.ID, rank))
+	}
+
+	if len(coins) > limit {
+		sb.WriteString(fmt.Sprintf("\n\n... 其余 %d 条结果已省略", len(coins)-limit))
+	}
+
+	return sb.String()
+}
+
 func trackingWalletAnalyze() {
 	go api.Track.TrackingWalletAnalyze()
 }
@@ -91,7 +195,7 @@ func priceHighest(args string) {
 		go api.DeleteAfterSendMessage("参数有误")
 		return
 	}
-	
+
 	if len(arg) == 2 {
 		arg = append(arg, "now")
 	}
@@ -243,7 +347,7 @@ func stopWalletTracking(args string) {
 
 func stopWalletTrackingTip(tip string) {
 	s := api.Track.TrackingList(true)
-	go api.SendMarkdown(ChatId, s + "\n\n" + tip, true)
+	go api.SendMarkdown(ChatId, s+"\n\n"+tip, true)
 }
 
 func setSmartAddrProbeItv(args string) {
@@ -273,7 +377,7 @@ func deleteSmartAddrProbe(args string) {
 
 func deleteSmartAddrProbeTip(tip string) {
 	s := api.CryptoV2Api.ListSmartAddr(true)
-	go api.SendMarkdown(ChatId, s + "\n\n" + tip, true)
+	go api.SendMarkdown(ChatId, s+"\n\n"+tip, true)
 }
 
 func addSmartAddrProbe(args string) {

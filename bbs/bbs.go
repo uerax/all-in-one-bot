@@ -1,14 +1,19 @@
 package bbs
 
+import "github.com/uerax/all-in-one-bot/common"
+
 type Bbs struct {
 	Bitcointalk *Bitcointalk
-	Nodeseek *Nodeseek
+	Nodeseek    *Nodeseek
 }
 
-func NewBbs() *Bbs {
+func NewBbs(ch ...chan<- common.AioEvent) *Bbs {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	return &Bbs{
-		Bitcointalk: NewBitcointalk(),
-		Nodeseek: NewNodeseek(),
+		Bitcointalk: NewBitcointalk(eventCh),
+		Nodeseek:    NewNodeseek(eventCh),
 	}
 }
-

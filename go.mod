@@ -11,6 +11,7 @@ require (
 	github.com/iawia002/lux v0.19.0
 	github.com/kkdai/youtube/v2 v2.10.1
 	github.com/uerax/goconf v1.1.1
+	golang.org/x/image v0.18.0
 )
 
 require (

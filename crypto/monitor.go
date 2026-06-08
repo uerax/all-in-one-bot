@@ -28,11 +28,15 @@ type CryptoMonitor struct {
 	notifyHigherLog map[int64]map[string]int64
 	notifyLower     map[int64]map[string]string
 	notifyLowerLog  map[int64]map[string]int64
-	C               chan map[int64]map[string]string // id -> crypto -> price
+	ch              chan<- common.AioEvent
 	unit            string
 }
 
-func NewCryptoMonitor() *CryptoMonitor {
+func NewCryptoMonitor(ch ...chan<- common.AioEvent) *CryptoMonitor {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	parent, done := context.WithCancel(context.Background())
 	return &CryptoMonitor{
 		UTC:             sync.Map{},
@@ -44,7 +48,7 @@ func NewCryptoMonitor() *CryptoMonitor {
 		notifyLower:     make(map[int64]map[string]string),
 		notifyLowerLog:  make(map[int64]map[string]int64),
 		api:             NewCrypto(),
-		C:               make(chan map[int64]map[string]string, 1),
+		ch:              eventCh,
 		unit:            goconf.VarStringOrDefault("USDT", "crypto", "unit"),
 	}
 }
@@ -185,13 +189,30 @@ func (t *CryptoMonitor) probe(cryptos []string) {
 
 	}
 	if len(t.notifyHigher) != 0 && t.notifyHigher != nil {
-		t.C <- t.notifyHigher
+		t.sendPriceNotifications(t.notifyHigher)
 	}
 
 	if len(t.notifyLower) != 0 && t.notifyLower != nil {
-		t.C <- t.notifyLower
+		t.sendPriceNotifications(t.notifyLower)
 	}
 
+}
+
+func (t *CryptoMonitor) sendPriceNotifications(notifications map[int64]map[string]string) {
+	for id, cryptoToPrice := range notifications {
+		if len(cryptoToPrice) == 0 {
+			continue
+		}
+		sb := strings.Builder{}
+		sb.WriteString("有加密货币触发监控线 :")
+		for crypto, price := range cryptoToPrice {
+			sb.WriteString("\n")
+			sb.WriteString(crypto)
+			sb.WriteString(" : ")
+			sb.WriteString(price)
+		}
+		common.Send(t.ch, common.TextTo(id, sb.String()))
+	}
 }
 
 func (t *CryptoMonitor) GetPrice(id int64, crypto ...string) map[string]string {

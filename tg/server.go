@@ -18,20 +18,20 @@ func Server() {
 	token, _ := goconf.VarString("telegram", "token")
 
 	envToken := os.Getenv("TG_TOKEN")
-	if envToken != "" {	
+	if envToken != "" {
 		token = envToken
 	}
 
 	if token == "" {
-    	// 此时，无论是 goconf 还是 TG_TOKEN 都没有提供有效的非空值
-    	log.Println("启动失败: 没有填写bot的token，请检查配置文件或TG_TOKEN环境变量")
-    	return
+		// 此时，无论是 goconf 还是 TG_TOKEN 都没有提供有效的非空值
+		log.Println("启动失败: 没有填写bot的token，请检查配置文件或TG_TOKEN环境变量")
+		return
 	}
 
 	id := goconf.VarIntOrDefault(0, "telegram", "chatId")
 	ChatId = int64(id)
 	envID := os.Getenv("TG_CHATID")
-	if envID != "" {	
+	if envID != "" {
 		id, err := strconv.ParseInt(envID, 10, 64)
 		if err != nil {
 			log.Printf("ChatId转换失败: %v\n", err)
@@ -106,6 +106,12 @@ func Server() {
 				addCryptoDeclineMonitor(update.Message.Chat.ID, update.Message.Text)
 			case "get_crypto_price":
 				getCryptoPrice(update.Message.Chat.ID, update.Message.Text)
+			case "coin_search":
+				coingeckoSearch(update.Message.Chat.ID, update.Message.Text)
+			case "crocodile_add":
+				crocodileAdd(update.Message.Text)
+			case "crocodile_rule":
+				crocodileRule(update.Message.Text)
 			case "delete_crypto_minitor":
 				deleteCryptoMinitor(update.Message.Chat.ID, update.Message.Text)
 			case "get_crypto_ufutures_price":
@@ -267,6 +273,23 @@ func Server() {
 			coingeckoStop()
 		case "coin_price":
 			coingeckoNow()
+		case "crocodile_monitor":
+			crocodileMonitor()
+		case "crocodile_stop":
+			crocodileStop()
+		case "crocodile_check":
+			crocodileCheck()
+		case "crocodile_list":
+			crocodileList()
+		case "crocodile_add":
+			Cmd = "crocodile_add"
+			tips(update.Message.Chat.ID, "请输入 CoinGecko ID 和名称，例如:\n`wrapped-quil Wrapped QUIL`")
+		case "crocodile_rule":
+			Cmd = "crocodile_rule"
+			crocodileRuleTip(update.Message.Chat.ID)
+		case "coin_search":
+			Cmd = "coin_search"
+			tips(update.Message.Chat.ID, "请输入要搜索的 CoinGecko 币种，例如:\n`wquil`")
 		case "set_smart_addr_probe_itv":
 			Cmd = "set_smart_addr_probe_itv"
 			tips(update.Message.Chat.ID, "修改聪明地址探测频率(1-60分钟) 例: \n`15`")
@@ -384,7 +407,7 @@ func Server() {
 			tips(update.Message.Chat.ID, "发送你的时间搓 例: `1686384050`")
 		case "time_convert":
 			Cmd = "time_convert"
-			tips(update.Message.Chat.ID, "发送你的时间 格式为: `" + time.Now().Format("2006-01-02 15:04:05") + "`")
+			tips(update.Message.Chat.ID, "发送你的时间 格式为: `"+time.Now().Format("2006-01-02 15:04:05")+"`")
 		case "json_format":
 			Cmd = "json_format"
 			tips(update.Message.Chat.ID, "发送json内容")

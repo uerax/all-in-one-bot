@@ -344,7 +344,12 @@ __通过 @BotFather /setcommands 发送添加__
 coin_monitor - 持有币价格监控
 coin_stop - 持有币价格监控停止
 coin_price - 持有币价格查询
-bitcointalk_rss - bitcointalk新帖监控
+crocodile_monitor - Crocodile 成交量异动监控
+crocodile_stop - Crocodile 成交量异动监控停止
+crocodile_check - Crocodile 成交量异动立即扫描
+crocodile_list - 查看 Crocodile 当前监控列表
+crocodile_add - 添加 Crocodile 监控标的
+crocodile_rule - 查看并热更新 Crocodile 规则参数
 crypto_cmd_list - 加密货币相关功能列表
 video_cmd_list - 音视频下载处理功能列表
 image_cmd_list - 图片处理/下载功能列表
@@ -437,6 +442,12 @@ nodeseek_rss - nodeseek新帖监控
 coin_monitor - 持有币价格监控
 coin_stop - 持有币价格监控停止
 coin_price - 持有币价格查询
+crocodile_monitor - Crocodile 成交量异动监控
+crocodile_stop - Crocodile 成交量异动监控停止
+crocodile_check - Crocodile 成交量异动立即扫描
+crocodile_list - 查看 Crocodile 当前监控列表
+crocodile_add - 添加 Crocodile 监控标的
+crocodile_rule - 查看并热更新 Crocodile 规则参数
 ```
 
 __弃用__

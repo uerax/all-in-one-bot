@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 
@@ -22,9 +23,7 @@ type line struct {
 type Probe struct {
 	HighLine      map[string]*line
 	LowLine       map[string]*line
-	C             chan map[string]string
-	Kline         chan string
-	Meme          chan string
+	ch            chan<- common.AioEvent
 	frequency     int64
 	api           *Crypto
 	task          map[string]context.CancelFunc
@@ -34,16 +33,18 @@ type Probe struct {
 	smartBuys     map[string]map[string]struct{}
 	smartItv      int
 	smartDumpPath string
-	Keys		  *PollingKeyV2
+	Keys          *PollingKeyV2
 }
 
-func NewProbe() *Probe {
+func NewProbe(ch ...chan<- common.AioEvent) *Probe {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	p := &Probe{
 		HighLine:      make(map[string]*line),
 		LowLine:       make(map[string]*line),
-		C:             make(chan map[string]string),
-		Kline:         make(chan string, 5),
-		Meme:          make(chan string, 5),
+		ch:            eventCh,
 		frequency:     goconf.VarInt64OrDefault(600, "crypto", "monitor", "frequency"),
 		api:           NewCrypto(),
 		task:          make(map[string]context.CancelFunc),
@@ -53,7 +54,7 @@ func NewProbe() *Probe {
 		smartBuys:     recoverSmartAddrList(),
 		smartItv:      goconf.VarIntOrDefault(30, "crypto", "etherscan", "interval"),
 		smartDumpPath: goconf.VarStringOrDefault("/usr/local/share/aio/", "crypto", "etherscan", "path"),
-		Keys: NewPollingKeyV2(),
+		Keys:          NewPollingKeyV2(),
 	}
 
 	go p.DumpCron()
@@ -77,7 +78,7 @@ func (t *Probe) AddKLineProbe(crypto string) {
 		ctx, cf := context.WithCancel(context.Background())
 		t.task[crypto] = cf
 		go t.KLineProbe(crypto, ctx)
-		t.Kline <- fmt.Sprintf("永续合约: %s 监控已启动", crypto)
+		common.Send(t.ch, common.Text(fmt.Sprintf("永续合约: %s 监控已启动", crypto)))
 	}
 }
 
@@ -85,7 +86,7 @@ func (t *Probe) StopKLineProbe(crypto string) {
 	if v, ok := t.task[crypto]; ok {
 		v()
 		delete(t.task, crypto)
-		t.Kline <- fmt.Sprintf("永续合约: %s 监控已关闭", crypto)
+		common.Send(t.ch, common.Text(fmt.Sprintf("永续合约: %s 监控已关闭", crypto)))
 	}
 }
 
@@ -100,7 +101,7 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 		kline := t.api.UFutureKline("15m", 5, crypto)
 
 		if len(kline) == 5 && ((kline[4]+kline[3]+kline[2] == -3 && kline[0]+kline[1] != -2) || (kline[4]+kline[3]+kline[2] == 3 && kline[0]+kline[1] != 2)) {
-			t.Kline <- fmt.Sprintf("永续合约: %s 连续三根15m的K线走势一致", crypto)
+			common.Send(t.ch, common.Text(fmt.Sprintf("永续合约: %s 连续三根15m的K线走势一致", crypto)))
 		}
 
 	}
@@ -111,7 +112,7 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			t.Kline <- fmt.Sprintf("永续合约: %s 监控已关闭", crypto)
+			common.Send(t.ch, common.Text(fmt.Sprintf("永续合约: %s 监控已关闭", crypto)))
 			return
 		case <-ticker.C:
 			do()
@@ -119,3 +120,6 @@ func (t *Probe) KLineProbe(crypto string, ctx context.Context) {
 	}
 }
 
+func (t *Probe) sendMeme(msg string) {
+	common.Send(t.ch, common.Markdown(msg, true))
+}

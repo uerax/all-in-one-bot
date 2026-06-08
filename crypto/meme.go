@@ -26,14 +26,14 @@ func (p *Probe) MemePrice(query string, chain string) {
 			chain = "bsc"
 			pair = p.api.MemePrice(query, chain)
 			if pair == nil {
-				p.Meme <- "没有查询到相关合约"
+				p.sendMeme("没有查询到相关合约")
 				return
 			}
 		}
 	} else {
 		pair = p.api.MemePrice(query, chain)
 		if pair == nil {
-			p.Meme <- "查询失败,请检查参数"
+			p.sendMeme("查询失败,请检查参数")
 			return
 		}
 	}
@@ -43,10 +43,10 @@ func (p *Probe) MemePrice(query string, chain string) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	check := new(MemeChecker)
-	go func ()  {
+	go func() {
 		defer wg.Done()
 		isHoneypot = p.api.HoneypotCheck(query)
-		log.Println("GetPrice Honeypot耗时: ",time.Since(now))
+		log.Println("GetPrice Honeypot耗时: ", time.Since(now))
 	}()
 	go func() {
 		defer wg.Done()
@@ -59,7 +59,7 @@ func (p *Probe) MemePrice(query string, chain string) {
 				check.LpTotalSupply = check.LpTotalSupply[:strings.Index(check.LpTotalSupply, ".")]
 			}
 			s += fmt.Sprintf("\n*Honeypot:* %s\n*Buy Tax: %s   |   Sell Tax: %s   |   Locked LP: %0.2f%%*\n*Owner:* `%s`\n[Creator](https://etherscan.io/address/%s) *: Percent: %s*\n", isHoneypot, check.BuyTax, check.SellTax, check.LpLockedTotal*100.0, check.OwnerAddress, check.CreatorAddress, check.CreatorPercent)
-			log.Println("GetPrice MemeCheck耗时: ",time.Since(now))
+			log.Println("GetPrice MemeCheck耗时: ", time.Since(now))
 		}
 	}()
 	// go func() {
@@ -108,7 +108,7 @@ func (p *Probe) MemePrice(query string, chain string) {
 
 	s += fmt.Sprintf("\n*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [Honeypot](%s%s)", dextools, pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
 
-	p.Meme <- s
+	p.sendMeme(s)
 }
 
 func (p *Probe) MemeMonitorList() {
@@ -119,38 +119,38 @@ func (p *Probe) MemeMonitorList() {
 		b.WriteString(k)
 		b.WriteString("`")
 	}
-	p.Meme <- b.String()
+	p.sendMeme(b.String())
 }
 
 func (p *Probe) CloseMemeMonitor(query string, chain string) {
 	if _, ok := p.memeHighTask[query+" "+chain]; ok {
 		p.memeHighTask[query+" "+chain]()
 		delete(p.memeHighTask, query+" "+chain)
-		p.Meme <- query + " " + chain + "\n上涨监控已关闭"
+		p.sendMeme(query + " " + chain + "\n上涨监控已关闭")
 	}
 	if _, ok := p.memeLowTask[query+" "+chain]; ok {
 		p.memeHighTask[query+" "+chain]()
 		delete(p.memeLowTask, query+" "+chain)
-		p.Meme <- query + " " + chain + "\n下跌监控已关闭"
+		p.sendMeme(query + " " + chain + "\n下跌监控已关闭")
 	}
 }
 
 func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 	test := p.api.MemePrice(query, chain)
 	if test == nil {
-		p.Meme <- "token查询失败,请检查token是否有误"
+		p.sendMeme("token查询失败,请检查token是否有误")
 		return
 	}
 	t := time.NewTicker(time.Minute)
 	ctx, cf := context.WithCancel(context.Background())
 	p.memeHighTask[query+" "+chain] = cf
-	p.Meme <- "开始上涨监控: \n" + query + " " + chain
+	p.sendMeme("开始上涨监控: \n" + query + " " + chain)
 	for {
 		select {
 		case <-t.C:
 			line, err := strconv.ParseFloat(price, 64)
 			if err != nil {
-				p.Meme <- "输入的价格有误,无法识别"
+				p.sendMeme("输入的价格有误,无法识别")
 				log.Println("价格转换异常：", err)
 				delete(p.memeHighTask, query+" "+chain)
 				return
@@ -161,7 +161,7 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 			}
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
-				p.Meme <- "价格转换异常,请检查日志"
+				p.sendMeme("价格转换异常,请检查日志")
 				log.Println("价格转换异常：", err)
 				delete(p.memeHighTask, query+" "+chain)
 				return
@@ -182,7 +182,7 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 					dextools = "https://www.dextools.io/app/cn/ether/pair-explorer/"
 				}
 				s := fmt.Sprintf("*价格已上涨到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [Honeypot](%s%s)", price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24, dextools, pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
-				p.Meme <- s
+				p.sendMeme(s)
 				delete(p.memeHighTask, query+" "+chain)
 				return
 			}
@@ -195,19 +195,19 @@ func (p *Probe) MemeGrowthMonitor(query string, chain string, price string) {
 func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 	test := p.api.MemePrice(query, chain)
 	if test == nil {
-		p.Meme <- "token查询失败,请检查token是否有误"
+		p.sendMeme("token查询失败,请检查token是否有误")
 		return
 	}
 	t := time.NewTicker(time.Minute)
 	ctx, cf := context.WithCancel(context.Background())
 	p.memeLowTask[query+" "+chain] = cf
-	p.Meme <- "开始下跌监控: \n" + query + " " + chain
+	p.sendMeme("开始下跌监控: \n" + query + " " + chain)
 	for {
 		select {
 		case <-t.C:
 			line, err := strconv.ParseFloat(price, 64)
 			if err != nil {
-				p.Meme <- "输入的价格有误,无法识别"
+				p.sendMeme("输入的价格有误,无法识别")
 				log.Println("价格转换异常：", err)
 				delete(p.memeLowTask, query+" "+chain)
 				return
@@ -218,7 +218,7 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 			}
 			now, err := strconv.ParseFloat(pair.PriceUsd, 64)
 			if err != nil {
-				p.Meme <- "价格转换异常,请检查日志"
+				p.sendMeme("价格转换异常,请检查日志")
 				log.Println("价格转换异常：", err)
 				delete(p.memeLowTask, query+" "+chain)
 				return
@@ -239,7 +239,7 @@ func (p *Probe) MemeDeclineMonitor(query string, chain string, price string) {
 					dextools = "https://www.dextools.io/app/cn/ether/pair-explorer/"
 				}
 				s := fmt.Sprintf("*价格已下跌到监控位置: %s*\n\n*%s:$%s* \n*Chain:* %s | *Price:* $%s\n\n*5M:*  %0.2f%%  *:*  $%0.2f\n*1H:*  %0.2f%%  *:*  $%0.2f\n*6H:*  %0.2f%%  *:*  $%0.2f\n*1D:*  %0.2f%%  *:*  $%0.2f\n\n*Trade:* [dextools](%s%s) | [dexscreener](%s) | [ave.ai](https://ave.ai/token/%s-%s) | [dexview](https://www.dexview.com/%s/%s)\n\n`%s`\n\n*Check:* [ChainScan](%s%s) | [Moonarch](https://%smoonarch.app/token/%s) | [Honeypot](%s%s)", price, pair.BaseToken.Name, pair.BaseToken.Symbol, pair.ChainId, pair.PriceUsd, pair.PriceChange.M5, pair.Volume.M5, pair.PriceChange.H1, pair.Volume.H1, pair.PriceChange.H6, pair.Volume.H6, pair.PriceChange.H24, pair.Volume.H24, dextools, pair.PairAddress, pair.URL, pair.BaseToken.Addr, chain, chain, pair.BaseToken.Addr, pair.BaseToken.Addr, chainScan, pair.BaseToken.Addr, moonarch, pair.BaseToken.Addr, honeypot, pair.BaseToken.Addr)
-				p.Meme <- s
+				p.sendMeme(s)
 				delete(p.memeLowTask, query+" "+chain)
 				return
 			}
@@ -254,7 +254,7 @@ func (t *Probe) AddSmartAddr(addr string) {
 		ctx, cf := context.WithCancel(context.Background())
 		t.smartAddr[addr] = cf
 		go t.SmartAddrProbe(ctx, addr)
-		t.Meme <- fmt.Sprintf("已开启 %s 地址的监控", addr)
+		t.sendMeme(fmt.Sprintf("已开启 %s 地址的监控", addr))
 	}
 }
 
@@ -262,7 +262,7 @@ func (t *Probe) DeleteSmartAddr(addr string) {
 	if cf, ok := t.smartAddr[addr]; ok {
 		cf()
 		delete(t.smartAddr, addr)
-		t.Meme <- fmt.Sprintf("已关闭 %s 地址的监控", addr)
+		t.sendMeme(fmt.Sprintf("已关闭 %s 地址的监控", addr))
 	}
 }
 
@@ -274,7 +274,7 @@ func (t *Probe) ListSmartAddr(tip bool) string {
 		sb.WriteString("`")
 	}
 	if !tip {
-		t.Meme <- "*当前正在探测的地址有:*" + sb.String()
+		t.sendMeme("*当前正在探测的地址有:*" + sb.String())
 	}
 	return "*当前正在探测的地址有:*" + sb.String()
 
@@ -282,33 +282,33 @@ func (t *Probe) ListSmartAddr(tip bool) string {
 
 func (t *Probe) SmartAddr(addr string, offset string) {
 	if t.Keys.IsNull() {
-		t.Meme <- "未读取到etherscan的apikey无法启动监控"
+		t.sendMeme("未读取到etherscan的apikey无法启动监控")
 		return
 	}
 	url := "https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=%s&sort=desc&address=%s&apikey=%s"
 	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
 		log.Println("请求失败")
-		t.Meme <- "etherscan请求失败"
+		t.sendMeme("etherscan请求失败")
 		return
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("读取body失败")
-		t.Meme <- "读取body失败"
+		t.sendMeme("读取body失败")
 		return
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		log.Println("json转换失败")
-		t.Meme <- "json转换失败"
+		t.sendMeme("json转换失败")
 		return
 	}
 
 	if scan.Status != "1" {
-		t.Meme <- "返回码不为1,检查地址是否正确"
+		t.sendMeme("返回码不为1,检查地址是否正确")
 		return
 	}
 
@@ -335,17 +335,17 @@ func (t *Probe) SmartAddr(addr string, offset string) {
 			}
 		}
 	}
-	t.Meme <- msg.String()
+	t.sendMeme(msg.String())
 }
 
 func (t *Probe) SetSmartAddrProbeItv(itv string) {
 	i, err := strconv.Atoi(itv)
 	if err != nil {
-		t.Meme <- "请输入[1,60]分钟"
+		t.sendMeme("请输入[1,60]分钟")
 		return
 	}
 	if i > 60 || i < 1 {
-		t.Meme <- "间隔必须在1-60之间"
+		t.sendMeme("间隔必须在1-60之间")
 		return
 	}
 
@@ -356,18 +356,18 @@ func (t *Probe) SetSmartAddrProbeItv(itv string) {
 		t.smartAddr[addr] = c
 		go t.SmartAddrProbe(ctx, addr)
 	}
-	t.Meme <- "修改完成"
+	t.sendMeme("修改完成")
 }
 
 func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 	if t.Keys.IsNull() {
-		t.Meme <- "未读取到etherscan的apikey无法启动监控"
+		t.sendMeme("未读取到etherscan的apikey无法启动监控")
 		delete(t.smartAddr, addr)
 		return
 	}
 
 	if t.smartItv > 60 || t.smartItv < 1 {
-		t.Meme <- "间隔必须在1-60之间"
+		t.sendMeme("间隔必须在1-60之间")
 		return
 	}
 
@@ -425,7 +425,7 @@ func (t *Probe) SmartAddrProbe(ctx context.Context, addr string) {
 		}
 
 		if msg.Len() != 0 {
-			t.Meme <- "*探测到新买入地址有:*" + msg.String()
+			t.sendMeme("*探测到新买入地址有:*" + msg.String())
 		}
 	}
 
@@ -462,7 +462,7 @@ func (t *Probe) DumpCron() {
 func (t *Probe) DumpSmartAddrList(tip bool) {
 	if len(t.smartBuys) == 0 {
 		if tip {
-			t.Meme <- "列表为空,不执行dump"
+			t.sendMeme("列表为空,不执行dump")
 		}
 		return
 	}
@@ -470,7 +470,7 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 	if err != nil {
 		log.Println("SmartAddr备份序列化失败:", err)
 		if tip {
-			t.Meme <- "dump失败: list序列化报错"
+			t.sendMeme("dump失败: list序列化报错")
 		}
 		return
 	}
@@ -480,7 +480,7 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 		if err != nil {
 			log.Println("创建本地文件夹失败")
 			if tip {
-				t.Meme <- "dump失败: 创建本地文件夹失败"
+				t.sendMeme("dump失败: 创建本地文件夹失败")
 			}
 			return
 		}
@@ -489,13 +489,13 @@ func (t *Probe) DumpSmartAddrList(tip bool) {
 	if err != nil {
 		log.Println("dump文件创建/写入失败")
 		if tip {
-			t.Meme <- "dump失败: dump文件创建/写入失败"
+			t.sendMeme("dump失败: dump文件创建/写入失败")
 		}
 		return
 	}
 
 	if tip {
-		t.Meme <- "dump完成"
+		t.sendMeme("dump完成")
 	}
 
 }

@@ -173,7 +173,7 @@ func (t *Track) WalletTrackingV2(addr string) {
 		// sb.WriteString("\n`")
 		// sb.WriteString(record.ContractAddress)
 		// sb.WriteString("`")
-		// t.C <- strings.ToUpper(t.Newest[addr].Remark) + ": `" + addr + "` [Selling](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+		// t.sendMarkdown(strings.ToUpper(t.Newest[addr].Remark) + ": `" + addr + "` [Selling](https://etherscan.io/tx/" + record.Hash + ")" + sb.String())
 		return
 	}
 
@@ -320,12 +320,12 @@ func (t *Track) WalletTrackingV2(addr string) {
 
 	log.Println("查询总耗时: ", time.Since(now))
 
-	t.C <- "*" + strings.ToUpper(t.Newest[addr].Remark) + ":* `" + addr + "` [Buying](https://etherscan.io/tx/" + record.Hash + ")" + sb.String()
+	t.sendMarkdown("*" + strings.ToUpper(t.Newest[addr].Remark) + ":* `" + addr + "` [Buying](https://etherscan.io/tx/" + record.Hash + ")" + sb.String())
 }
 
 func (t *Track) SmartAddrFinderV2(token, offset, page string) {
 	if t.Keys.IsNull() {
-		t.C <- "未读取到etherscan的apikey无法启动分析"
+		t.sendMarkdown("未读取到etherscan的apikey无法启动分析")
 		return
 	}
 
@@ -416,7 +416,7 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) {
 		if v.Profit > 0 {
 			list = append(list, k.(string))
 			if len(msg) > 4000 {
-				t.C <- msg
+				t.sendMarkdown(msg)
 				msg = "---------------切割线---------------"
 			}
 			msg += fmt.Sprintf("\n`%s`*: %0.3f / %0.3f*", k, v.Pay, v.Profit)
@@ -424,7 +424,7 @@ func (t *Track) SmartAddrFinderV2(token, offset, page string) {
 		return true
 	})
 
-	t.C <- msg
+	t.sendMarkdown(msg)
 }
 
 func (t *txs) Add(val float64) {
@@ -449,7 +449,7 @@ func (t *txs) Sub(val float64) {
 
 func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool) (float64, int) {
 	if t.Keys.IsNull() {
-		t.C <- "未读取到etherscan的apikey无法调用api"
+		t.sendMarkdown("未读取到etherscan的apikey无法调用api")
 		return 0.0, 0
 	}
 	addr = strings.ToLower(addr)
@@ -457,26 +457,26 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool) (floa
 	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
 		log.Println("etherscan请求失败")
-		t.C <- "etherscan请求失败"
+		t.sendMarkdown("etherscan请求失败")
 		return 0.0, 0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("读取body失败")
-		t.C <- "读取body失败"
+		t.sendMarkdown("读取body失败")
 		return 0.0, 0
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		log.Println("json转换失败")
-		t.C <- "json转换失败"
+		t.sendMarkdown("json转换失败")
 		return 0.0, 0
 	}
 
 	if scan.Status != "1" {
-		t.C <- "响应码异常"
+		t.sendMarkdown("响应码异常")
 		return 0.0, 0
 	}
 
@@ -604,19 +604,19 @@ func (t *Track) WalletTxAnalyzeV2(addr string, offset string, output bool) (floa
 	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns) *支出: %0.5f  |  净收入: %0.5f  |  胜率: %d:%d*\n", addr, profit.Pay, profit.Profit, profit.WinTx, profit.TotalTx)
 	for _, v := range list {
 		if len(msg) > 4000 {
-			t.C <- msg
+			t.sendMarkdown(msg)
 			msg = "---------------切割线---------------\n"
 		}
 		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s` *| C: %0.3f | P: %0.3f | %s *\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Pay, v.Profit, highest.M[v.Addr])
 	}
 
-	t.C <- msg
+	t.sendMarkdown(msg)
 	return 0.0, 0
 }
 
 func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 	if t.Keys.IsNull() {
-		t.C <- "未读取到etherscan的apikey无法启动分析"
+		t.sendMarkdown("未读取到etherscan的apikey无法启动分析")
 		return
 	}
 
@@ -663,20 +663,20 @@ func (t *Track) SmartAddrAnalyze(token, offset, page string) {
 		msg += fmt.Sprintf("\n`%s` %s", k, v)
 	}
 
-	t.C <- msg
+	t.sendMarkdown(msg)
 }
 
 func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float64, *HoneypotResp, error) {
 	from, err := time.ParseInLocation("2006-01-02_15:04:05", start, time.Local)
 	if err != nil {
-		t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
+		t.sendMarkdown("时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'")
 		return 0, nil, err
 	}
 	to := time.Now()
 	if !strings.EqualFold(end, "now") {
 		to, err = time.ParseInLocation("2006-01-02_15:04:05", end, time.Local)
 		if err != nil {
-			t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
+			t.sendMarkdown("时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'")
 			return 0, nil, err
 		}
 	}
@@ -698,12 +698,12 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 	switch {
 	case duration > 24*time.Hour:
 		if strings.EqualFold(end, "now") {
-			to = from.Add(24*time.Hour)
+			to = from.Add(24 * time.Hour)
 			resolution = 5
 		} else {
 			resolution = 60
 		}
-		
+
 	case duration > 5*time.Hour:
 		resolution = 5
 	}
@@ -805,24 +805,24 @@ func (t *Track) PriceHighestAndNow(token, start, end string, output bool) (float
 		if check.SimulationResult.SellTax != 100 && check.SimulationResult.BuyTax != 100 {
 			ratio = 1 / ((1 - check.SimulationResult.BuyTax/100) * (1 - check.SimulationResult.SellTax/100))
 		}
-		 
-		tax = fmt.Sprintf("\n\n*LP: $%.2f   |   Tax Buy / Sell: %.1f%% / %.1f%%   |   Ratio: %.3f*",lp, check.SimulationResult.BuyTax, check.SimulationResult.SellTax, ratio)
+
+		tax = fmt.Sprintf("\n\n*LP: $%.2f   |   Tax Buy / Sell: %.1f%% / %.1f%%   |   Ratio: %.3f*", lp, check.SimulationResult.BuyTax, check.SimulationResult.SellTax, ratio)
 	}
 
 	//nowPrice := p[version].PriceUsd
 	nowPrice := ""
 	if len(dk.CUsd) > 0 {
-		nowPrice = fmt.Sprintf("%.18f", dk.CUsd[len(dk.CUsd) - 1])
+		nowPrice = fmt.Sprintf("%.18f", dk.CUsd[len(dk.CUsd)-1])
 	}
 
-	t.C <- fmt.Sprintf("%s`%s` *(K:%d)*\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f (大于购入价格K线数: %d)*\n*可获得利润率(税前): %f (大于购入价格K线数: %d)*\n\n[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s)  *|*  [Uniswap](https://etherscan.io/dex/uniswap%s/%s)%s", scam, token, resolution, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH, time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, gto, profit, hGto, pair, version, pair, tax)
+	t.sendMarkdown(fmt.Sprintf("%s`%s` *(K:%d)*\n\n*当前价格: %s (%s)*\n*买入价格: %.18f (%s)*\n\n*实线高价: %.18f (%s)*\n*最高价格: %.18f (%s)*\n\n*实线的利润率(税前): %f (大于购入价格K线数: %d)*\n*可获得利润率(税前): %f (大于购入价格K线数: %d)*\n\n[Dextools](https://www.dextools.io/app/cn/ether/pair-explorer/%s)  *|*  [Uniswap](https://etherscan.io/dex/uniswap%s/%s)%s", scam, token, resolution, nowPrice, time.Now().Format("2006-01-02 15:04:05"), o, time.Unix(oTime, 0).Format("2006-01-02 15:04:05"), readH, time.Unix(readHT, 0).Format("2006-01-02 15:04:05"), h, time.Unix(hTime, 0).Format("2006-01-02 15:04:05"), readP, gto, profit, hGto, pair, version, pair, tax))
 
 	return readP, check, nil
 }
 
 func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (int, int, int, int, int, int) {
 	if t.Keys.IsNull() {
-		t.C <- "未读取到etherscan的apikey无法调用api"
+		t.sendMarkdown("未读取到etherscan的apikey无法调用api")
 		return 0, 0, 0, 0, 0, 0
 	}
 	addr = strings.ToLower(addr)
@@ -830,26 +830,26 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	r, err := http.Get(fmt.Sprintf(url, offset, addr, t.Keys.GetKey()))
 	if err != nil {
 		log.Println("etherscan请求失败")
-		t.C <- "etherscan请求失败"
+		t.sendMarkdown("etherscan请求失败")
 		return 0, 0, 0, 0, 0, 0
 	}
 	defer r.Body.Close()
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("读取body失败")
-		t.C <- "读取body失败"
+		t.sendMarkdown("读取body失败")
 		return 0, 0, 0, 0, 0, 0
 	}
 	scan := new(TokenTxResp)
 	err = json.Unmarshal(b, &scan)
 	if err != nil {
 		log.Println("json转换失败")
-		t.C <- "json转换失败"
+		t.sendMarkdown("json转换失败")
 		return 0, 0, 0, 0, 0, 0
 	}
 
 	if scan.Status != "1" {
-		t.C <- "响应码异常"
+		t.sendMarkdown("响应码异常")
 		return 0, 0, 0, 0, 0, 0
 	}
 
@@ -950,13 +950,13 @@ func (t *Track) WalletTxInterestRate(addr string, offset string, output bool) (i
 	msg := fmt.Sprintf("[Wallet](https://etherscan.io/address/%s#tokentxns)  *涨比: %d/%d | 蜜罐: %d/%d | 2x涨蜜比: %d/%d | 胜率: %d%%(%d)*\n\n", addr, earnable, total, earnableScam, scam, qualityScam, quality, winner, len(scan.Result))
 	for _, v := range tprs {
 		if len(msg) > 4000 {
-			t.C <- msg
+			t.sendMarkdown(msg)
 			msg = "---------------切割线---------------\n"
 		}
 		msg += fmt.Sprintf("[%s](https://www.dextools.io/app/cn/ether/pair-explorer/%s)*:* `%s`\n*T:* `%s`  *|  Rate: %.4f*%s%s\n", v.Symbol, v.Addr, v.Addr, time.Unix(v.Ts, 0).Format("2006-01-02_15:04:05"), v.Rate, v.Old, v.Scam)
 	}
 
-	t.C <- msg
+	t.sendMarkdown(msg)
 	return total, earnable, quality, scam, earnableScam, len(scan.Result)
 }
 
@@ -968,12 +968,12 @@ func (t *Track) TrackingWalletAnalyze() {
 		if i != 0 {
 			winner = (i2 - i5) * 100 / i
 		}
-		
+
 		profit[detail.Remark] = fmt.Sprintf("*(%d)%d/%d 蜜罐: %d/%d  胜率: %d%% (%d) (%s)* `%s`", i3, i2, i, i5, i4, winner, i6, detail.Latest, addr)
 	}
 	msg := "*分析完毕:*"
 	for k, v := range profit {
 		msg += fmt.Sprintf("\n*%s:* %s", k, v)
 	}
-	t.C <- msg
+	t.sendMarkdown(msg)
 }

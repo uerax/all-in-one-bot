@@ -3,6 +3,7 @@ package lists
 import (
 	"strings"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 
@@ -12,11 +13,14 @@ type Lists struct {
 	image  []interface{}
 	utils  []interface{}
 	list   []interface{}
-	C      chan string
-	ErrC   chan string
+	ch     chan<- common.AioEvent
 }
 
-func NewLists() *Lists {
+func NewLists(ch ...chan<- common.AioEvent) *Lists {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	_crypto, _ := goconf.VarArray("command", "crypto")
 	_video, _ := goconf.VarArray("command", "video")
 	_image, _ := goconf.VarArray("command", "image")
@@ -28,57 +32,60 @@ func NewLists() *Lists {
 		image:  _image,
 		utils:  _utils,
 		list:   _list,
-		C:      make(chan string, 3),
-		ErrC:   make(chan string, 3),
+		ch:     eventCh,
 	}
+}
+
+func (t *Lists) send(msg string) {
+	common.Send(t.ch, common.DeleteMarkdownTo(0, msg, false, 2))
 }
 
 func (t *Lists) Crypto() {
 	b := strings.Builder{}
 	b.WriteString("加密货币相关命令:")
-	for i := len(t.crypto) - 1; i >= 0 ; i-- {
+	for i := len(t.crypto) - 1; i >= 0; i-- {
 		b.WriteString("\n`/")
 		b.WriteString(strings.ReplaceAll(t.crypto[i].(string), " -", "` -"))
 	}
-	t.C <- b.String()
+	t.send(b.String())
 }
 
 func (t *Lists) Image() {
 	b := strings.Builder{}
 	b.WriteString("图片处理相关命令:")
-	for i := len(t.image) - 1; i >= 0 ; i-- {
+	for i := len(t.image) - 1; i >= 0; i-- {
 		b.WriteString("\n`/")
 		b.WriteString(strings.ReplaceAll(t.image[i].(string), " -", "` -"))
 	}
-	t.C <- b.String()
+	t.send(b.String())
 }
 func (t *Lists) List() {
 	b := strings.Builder{}
 	b.WriteString("命令列表相关命令:")
-	for i := len(t.list) - 1; i >= 0 ; i-- {
+	for i := len(t.list) - 1; i >= 0; i-- {
 		b.WriteString("\n`/")
 		b.WriteString(strings.ReplaceAll(t.list[i].(string), " -", "` -"))
 	}
-	t.C <- b.String()
+	t.send(b.String())
 }
 func (t *Lists) Utils() {
 	b := strings.Builder{}
 	b.WriteString("工具类相关命令:")
-	for i := len(t.utils) - 1; i >= 0 ; i-- {
+	for i := len(t.utils) - 1; i >= 0; i-- {
 		b.WriteString("\n`/")
 		b.WriteString(strings.ReplaceAll(t.utils[i].(string), " -", "` -"))
 	}
-	t.C <- b.String()
+	t.send(b.String())
 }
 
 func (t *Lists) Video() {
 	b := strings.Builder{}
 	b.WriteString("视频相关命令:")
-	for i := len(t.video) - 1; i >= 0 ; i-- {
+	for i := len(t.video) - 1; i >= 0; i-- {
 		b.WriteString("\n`/")
 		b.WriteString(strings.ReplaceAll(t.video[i].(string), " -", "` -"))
 	}
-	t.C <- b.String()
+	t.send(b.String())
 }
 
 func (t *Lists) All() {
@@ -105,5 +112,5 @@ func (t *Lists) All() {
 		b.WriteString(strings.ReplaceAll(v.(string), " -", "` -"))
 	}
 
-	t.C <- b.String()
+	t.send(b.String())
 }

@@ -17,7 +17,7 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 
 	video, err := client.GetVideo(url)
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		return
 	}
 
@@ -35,7 +35,7 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 
 	stream, _, err := client.GetStream(video, formats)
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		log.Println(err)
 		return
 	}
@@ -44,13 +44,13 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 		err := os.MkdirAll(v.path, os.ModePerm) // 创建目录
 		if err != nil {
 			log.Println("创建本地临时文件夹失败")
-			v.MsgC <- "创建本地临时文件夹失败"
+			v.sendText("创建本地临时文件夹失败")
 			return
 		}
 	}
 	file, err := os.Create(filename + ".m4a")
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		log.Println(err)
 		return
 	}
@@ -58,7 +58,7 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 
 	_, err = io.Copy(file, stream)
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		log.Println(err)
 		return
 	}
@@ -88,20 +88,20 @@ func (v *VideoDownload) YoutubeAudioDownload(url string, startAndEnd ...string) 
 	if len(startAndEnd) == 2 {
 		err = v.Cut(filename+".m4a", startAndEnd[0], startAndEnd[1], filename+"_C.m4a")
 		if err != nil {
-			v.MsgC <- "请检查是否安装ffmpeg"
+			v.sendText("请检查是否安装ffmpeg")
 			log.Println(err)
 			return
 		}
 		audio_cfg[1] = common.TimeIntervalSecond(startAndEnd[0], startAndEnd[1])
 		audio_cfg[2] = filename + "_C.m4a"
-		v.AudioC <- audio_cfg
+		v.sendAudio(audio_cfg[0].(string), audio_cfg[1].(int), audio_cfg[2].(string))
 		go common.DeleteFileAfterTime(filename+"_C.m4a", 5)
 		go common.DeleteFileAfterTime(filename+".m4a", 5)
 		go common.DeleteFileAfterTime(filename+".jpg", 5)
 		return
 	}
 
-	v.AudioC <- audio_cfg
+	v.sendAudio(audio_cfg[0].(string), audio_cfg[1].(int), audio_cfg[2].(string))
 	go common.DeleteFileAfterTime(filename+".m4a", 5)
 	go common.DeleteFileAfterTime(filename+".jpg", 5)
 
@@ -113,7 +113,7 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 
 	video, err := client.GetVideo(url)
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		log.Println(err)
 		return
 	}
@@ -123,7 +123,7 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 	formats := video.Formats.WithAudioChannels() // only get videos with audio
 	stream, _, err := client.GetStream(video, &formats[0])
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		log.Println(err)
 		return
 	}
@@ -132,13 +132,13 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 		err := os.MkdirAll(v.path, os.ModePerm) // 创建目录
 		if err != nil {
 			log.Println("创建本地临时文件夹失败")
-			v.MsgC <- "创建本地临时文件夹失败"
+			v.sendText("创建本地临时文件夹失败")
 			return
 		}
 	}
 	file, err := os.Create(filename + ".mp4")
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		log.Println(err)
 		return
 	}
@@ -146,7 +146,7 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 
 	_, err = io.Copy(file, stream)
 	if err != nil {
-		v.MsgC <- "出现异常,请重试"
+		v.sendText("出现异常,请重试")
 		log.Println(err)
 		return
 	}
@@ -154,18 +154,18 @@ func (v *VideoDownload) YoutubeDownload(url string, startAndEnd ...string) {
 	if len(startAndEnd) == 2 {
 		err = v.Cut(filename+".mp4", startAndEnd[0], startAndEnd[1], filename+"_C.mp4")
 		if err != nil {
-			v.MsgC <- "请检查是否安装ffmpeg"
+			v.sendText("请检查是否安装ffmpeg")
 			log.Println(err)
 			return
 		}
 
-		v.C <- filename + "_C.mp4"
+		v.sendVideo(filename + "_C.mp4")
 		go common.DeleteFileAfterTime(filename+"_C.mp4", 5)
 		go common.DeleteFileAfterTime(filename+".mp4", 5)
 		return
 	}
 
-	v.C <- filename + ".mp4"
+	v.sendVideo(filename + ".mp4")
 	go common.DeleteFileAfterTime(filename+".mp4", 5)
 }
 

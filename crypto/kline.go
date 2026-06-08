@@ -74,14 +74,14 @@ func (t *Track) Kline(addr, token, start, end string) (float64, *HoneypotResp) {
 func (t *Track) KlineAnalyze(token, start, end string) (float64, *HoneypotResp, error) {
 	from, err := time.ParseInLocation("2006-01-02_15:04:05", start, time.Local)
 	if err != nil {
-		t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
+		t.sendMarkdown("时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'")
 		return 0, nil, err
 	}
 	to := time.Now()
 	if !strings.EqualFold(end, "now") {
 		to, err = time.ParseInLocation("2006-01-02_15:04:05", end, time.Local)
 		if err != nil {
-			t.C <- "时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'"
+			t.sendMarkdown("时间格式输入错误,请按照以下格式'2006-01-02_15:04:05'")
 			return 0, nil, err
 		}
 	}

@@ -16,17 +16,27 @@ import (
 )
 
 type Sticker struct {
-	C    chan string
-	MsgC chan string
+	ch   chan<- common.AioEvent
 	path string
 }
 
-func NewSticker() *Sticker {
+func NewSticker(ch ...chan<- common.AioEvent) *Sticker {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	return &Sticker{
-		C:    make(chan string, 3),
-		MsgC: make(chan string, 3),
+		ch:   eventCh,
 		path: goconf.VarStringOrDefault("/tmp/aio-tgbot/sticker/", "sticker", "path"),
 	}
+}
+
+func (t *Sticker) sendText(msg string) {
+	common.Send(t.ch, common.Text(msg))
+}
+
+func (t *Sticker) sendDocument(path string) {
+	common.Send(t.ch, common.Document(path))
 }
 
 func (t *Sticker) StickerDownload(fileId string, gif bool) {
@@ -36,14 +46,14 @@ func (t *Sticker) StickerDownload(fileId string, gif bool) {
 	file, err := api.bot.GetFile(fileConfig)
 	if err != nil {
 		log.Printf("无法获取贴纸文件：%s\n", err.Error())
-		t.MsgC <- "无法获取贴纸文件"
+		t.sendText("无法获取贴纸文件")
 		return
 	}
 
 	token, err := goconf.VarString("telegram", "token")
 	if err != nil {
 		log.Printf("无法获取token：%s\n", err.Error())
-		t.MsgC <- "无法获取token"
+		t.sendText("无法获取token")
 		return
 	}
 
@@ -53,7 +63,7 @@ func (t *Sticker) StickerDownload(fileId string, gif bool) {
 	resp, err := http.Get(downloadURL)
 	if err != nil {
 		log.Printf("无法下载贴纸文件：%s\n", err.Error())
-		t.MsgC <- "无法下载贴纸文件"
+		t.sendText("无法下载贴纸文件")
 		return
 	}
 	defer resp.Body.Close()
@@ -68,7 +78,7 @@ func (t *Sticker) StickerDownload(fileId string, gif bool) {
 		err := os.MkdirAll(t.path, os.ModePerm) // 创建目录
 		if err != nil {
 			log.Println("创建本地临时文件夹失败")
-			t.MsgC <- "创建本地临时文件夹失败"
+			t.sendText("创建本地临时文件夹失败")
 			return
 		}
 	}
@@ -78,7 +88,7 @@ func (t *Sticker) StickerDownload(fileId string, gif bool) {
 		fileLocal, err := os.Create(filePath)
 		if err != nil {
 			log.Printf("无法创建本地文件：%s\n", err.Error())
-			t.MsgC <- "无法创建本地文件"
+			t.sendText("无法创建本地文件")
 			return
 		}
 		defer fileLocal.Close()
@@ -87,14 +97,14 @@ func (t *Sticker) StickerDownload(fileId string, gif bool) {
 		_, err = io.Copy(fileLocal, resp.Body)
 		if err != nil {
 			log.Printf("无法写入本地文件：%s\n", err.Error())
-			t.MsgC <- "无法写入本地文件"
+			t.sendText("无法写入本地文件")
 			return
 		}
 	} else {
-		fileLocal, err := os.Create(t.path+fileName)
+		fileLocal, err := os.Create(t.path + fileName)
 		if err != nil {
 			log.Printf("无法创建本地文件：%s\n", err.Error())
-			t.MsgC <- "无法创建本地文件"
+			t.sendText("无法创建本地文件")
 			return
 		}
 		defer fileLocal.Close()
@@ -103,29 +113,29 @@ func (t *Sticker) StickerDownload(fileId string, gif bool) {
 		_, err = io.Copy(fileLocal, resp.Body)
 		if err != nil {
 			log.Printf("无法写入本地文件：%s\n", err.Error())
-			t.MsgC <- "无法写入本地文件"
+			t.sendText("无法写入本地文件")
 			return
 		}
 
-		args := []string{"-i", t.path+fileName, "-b", "2048k", filePath + ".gif"}
+		args := []string{"-i", t.path + fileName, "-b", "2048k", filePath + ".gif"}
 
 		cmd := exec.Command("ffmpeg", args...)
 		if err = cmd.Run(); err != nil {
 			log.Printf("sticker转gif失败：%s\n", err.Error())
-			t.MsgC <- "sticker转gif失败, 检查是否安装ffmpeg"
+			t.sendText("sticker转gif失败, 检查是否安装ffmpeg")
 			return
 		}
 
 		err = common.Zip(filePath+".gif", filePath+".zip")
 		if err != nil {
 			log.Printf("创建压缩包失败%s\n", err.Error())
-			t.MsgC <- "创建压缩包失败"
+			t.sendText("创建压缩包失败")
 			return
 		}
 
 		filePath = filePath + ".zip"
 	}
 
-	t.C <- filePath
+	t.sendDocument(filePath)
 	go common.DeleteFileAfterTime(filePath, 5)
 }

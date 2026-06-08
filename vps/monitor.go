@@ -10,13 +10,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 
 type VpsMonitor struct {
-	valid  map[string]*Vps            // vps -> keyword
-	VTU    sync.Map                   // map[string]map[int64]struct{} vps -> user
-	C      chan map[int64]string      // user -> msg
+	valid  map[string]*Vps // vps -> keyword
+	VTU    sync.Map        // map[string]map[int64]struct{} vps -> user
+	ch     chan<- common.AioEvent
 	notify map[string]map[int64]int64 // url ->  user -> date
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -29,7 +30,11 @@ type Vps struct {
 	Name    string
 }
 
-func NewVpsMonitor() *VpsMonitor {
+func NewVpsMonitor(ch ...chan<- common.AioEvent) *VpsMonitor {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	vpsList, _ := goconf.VarArray("vps", "list")
 	vps := make(map[string]*Vps)
 	for _, v := range vpsList {
@@ -44,7 +49,7 @@ func NewVpsMonitor() *VpsMonitor {
 	return &VpsMonitor{
 		valid:  vps,
 		VTU:    sync.Map{},
-		C:      make(chan map[int64]string, 1),
+		ch:     eventCh,
 		notify: make(map[string]map[int64]int64),
 		ctx:    ctx,
 		cancel: cancel,
@@ -113,7 +118,9 @@ func (t *VpsMonitor) probe(url, keyword string) {
 				}
 			}
 			if len(s) > 0 {
-				t.C <- s
+				for id, msg := range s {
+					common.Send(t.ch, common.TextTo(id, msg))
+				}
 			}
 
 		}

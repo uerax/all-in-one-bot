@@ -8,18 +8,23 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/uerax/all-in-one-bot/common"
 	"github.com/uerax/goconf"
 )
 
 type ChatGPT struct {
 	apiKey string
-	C      chan map[int64]string
+	ch     chan<- common.AioEvent
 }
 
-func NewChatGPT() *ChatGPT {
+func NewChatGPT(ch ...chan<- common.AioEvent) *ChatGPT {
+	var eventCh chan<- common.AioEvent
+	if len(ch) > 0 {
+		eventCh = ch[0]
+	}
 	return &ChatGPT{
 		apiKey: goconf.VarStringOrDefault("", "chatgpt", "key"),
-		C:      make(chan map[int64]string, 5),
+		ch:     eventCh,
 	}
 }
 
@@ -97,8 +102,6 @@ func (t *ChatGPT) Ask(id int64, msg string) {
 		return
 	}
 
-	t.C <- map[int64]string{
-		id: respBody.Choices[0].Message.Content,
-	}
+	common.Send(t.ch, common.TextTo(id, respBody.Choices[0].Message.Content))
 
 }
