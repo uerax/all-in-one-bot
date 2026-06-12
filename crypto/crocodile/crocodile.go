@@ -208,23 +208,33 @@ func (t *Crocodile) loop(ctx context.Context) {
 		t.mu.Unlock()
 	}()
 
+	// 1. 启动时当场执行一次
 	t.check(true, false, true)
 
-	ticker := time.NewTicker(t.interval)
-	defer ticker.Stop()
+	// 2. 在 for 循环外部初始化 Timer (只分配一次内存)
+	delay := durationUntilNextRun()
+	timer := time.NewTimer(delay)
+
+	// 确保外层函数退出时，清理掉 Timer
+	defer timer.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
+			// context 被取消，直接退出即可，defer 会处理 timer.Stop()
 			return
-		case <-ticker.C:
+
+		case <-timer.C:
+			// 3. 时间到了，执行扫描逻辑
 			t.check(true, false, true)
+
+			// 4. 计算明天的时间差，并复用（Reset）这个 timer
+			timer.Reset(durationUntilNextRun())
 		}
 	}
 }
 
 func (t *Crocodile) check(notifyProblems, notifyNoHit, dedup bool) {
-	notifyNoHit = false
 
 	list, err := t.load()
 	if err != nil {
@@ -599,7 +609,7 @@ func (r volumeSpikeRule) Evaluate(item Item, klines []crypto.CoingeckoKline) (*S
 			Item:                  item,
 			Rule:                  r.Name(),
 			RuleConfig:            RuleConfig{Lookback: r.lookback, YesterdayMultiple: r.yesterdayMultiple, AverageMultiple: r.averageMultiple},
-			Time:                  latest.Time,
+			Time:                  latest.Time.Add(-24 * time.Hour),
 			Close:                 latest.Close,
 			Volume:                latest.Volume,
 			PreviousVolume:        yesterday.Volume,
@@ -712,4 +722,17 @@ func (t *Crocodile) formatErrors(errList []string) string {
 	}
 
 	return sb.String()
+}
+
+func durationUntilNextRun() time.Duration {
+	now := time.Now().UTC()
+	// 构造今天 UTC 00:05:00 的时间对象
+	next := time.Date(now.Year(), now.Month(), now.Day(), 0, 5, 0, 0, time.UTC)
+
+	// 如果当前时间已经过了今天的 00:05，则将目标时间推到明天
+	if now.After(next) {
+		next = next.AddDate(0, 0, 1)
+	}
+
+	return next.Sub(now)
 }

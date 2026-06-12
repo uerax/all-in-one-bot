@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -95,7 +94,7 @@ type CoingeckoSearchCoin struct {
 	MarketCapRank *int   `json:"market_cap_rank"`
 }
 
-const coingeckoDailyKlineDays = 30
+const coingeckoDailyKlineDays = 91
 
 type coingeckoMarketChartResp struct {
 	Prices       [][]float64 `json:"prices"`
@@ -232,65 +231,42 @@ func (t *Coingecko) GetDailyKline(coin string) ([]CoingeckoKline, error) {
 }
 
 func buildDailyKlines(prices [][]float64, volumes [][]float64) []CoingeckoKline {
-	if len(prices) == 0 {
+	if len(prices) == 0 || len(prices) != len(volumes) {
 		return nil
 	}
 
-	volumeByDay := make(map[string]float64, len(volumes))
-	for _, volume := range volumes {
-		if len(volume) < 2 {
+	klines := make([]CoingeckoKline, 0, len(prices))
+
+	for i := 0; i < len(prices); i++ {
+		if len(prices[i]) < 2 || len(volumes[i]) < 2 {
 			continue
 		}
 
-		ts := time.UnixMilli(int64(volume[0])).UTC()
-		day := ts.Format("2006-01-02")
-		volumeByDay[day] = volume[1]
-	}
+		ts := time.UnixMilli(int64(prices[i][0])).UTC()
 
-	dayMap := make(map[string]CoingeckoKline, len(prices))
-	order := make([]string, 0, len(prices))
-	seen := make(map[string]struct{}, len(prices))
+		// 检查这个点是否是严格的 UTC 00:00:00
+		isMidnight := ts.Hour() == 0 && ts.Minute() == 0 && ts.Second() == 0
 
-	for _, price := range prices {
-		if len(price) < 2 {
+		// 如果不是 00:00 (比如你 00:01 或 15:30 拿到的最新快照点)，直接跳过不作处理
+		// 这样可以保证你的 K 线数组里全都是干净的、无重叠的完整自然日数据
+		if !isMidnight {
 			continue
 		}
 
-		ts := time.UnixMilli(int64(price[0])).UTC()
-		day := ts.Format("2006-01-02")
-		closePrice := price[1]
-		kline, ok := dayMap[day]
-		if !ok {
-			kline = CoingeckoKline{
-				Time:   time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC),
-				Open:   closePrice,
-				High:   closePrice,
-				Low:    closePrice,
-				Close:  closePrice,
-				Volume: volumeByDay[day],
-			}
-		} else {
-			if closePrice > kline.High {
-				kline.High = closePrice
-			}
-			if closePrice < kline.Low {
-				kline.Low = closePrice
-			}
-			kline.Close = closePrice
-			kline.Volume = volumeByDay[day]
+		dayStart := time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC)
+		closePrice := prices[i][1]
+		dailyVolume := volumes[i][1]
+
+		kline := CoingeckoKline{
+			Time:   dayStart,
+			Open:   closePrice,
+			High:   closePrice,
+			Low:    closePrice,
+			Close:  closePrice,
+			Volume: dailyVolume,
 		}
 
-		dayMap[day] = kline
-		if _, ok := seen[day]; !ok {
-			seen[day] = struct{}{}
-			order = append(order, day)
-		}
-	}
-
-	sort.Strings(order)
-	klines := make([]CoingeckoKline, 0, len(order))
-	for _, day := range order {
-		klines = append(klines, dayMap[day])
+		klines = append(klines, kline)
 	}
 
 	return klines

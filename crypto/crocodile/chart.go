@@ -72,7 +72,8 @@ func (t *Crocodile) renderSignalChart(sig Signal, klines []crypto.CoingeckoKline
 }
 
 func renderChart(path string, sig Signal, klines []crypto.CoingeckoKline) error {
-	klines = recentKlines(klines, chartKlineLimit)
+	// 1. 获取所有数据，不再做截断 (limit=0)
+	klines = recentKlines(klines, 0)
 	if len(klines) < 2 {
 		return fmt.Errorf("kline data is insufficient")
 	}
@@ -83,15 +84,11 @@ func renderChart(path string, sig Signal, klines []crypto.CoingeckoKline) error 
 	}
 
 	const (
-		width        = 1100
-		height       = 740
-		left         = 70
-		right        = 35
-		headerTop    = 24
-		priceTop     = 100
-		priceBottom  = 505
-		volumeTop    = 545
-		volumeBottom = 690
+		width, height           = 1100, 740
+		left, right             = 70, 35
+		headerTop               = 24
+		priceTop, priceBottom   = 100, 505
+		volumeTop, volumeBottom = 545, 690
 	)
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -99,11 +96,13 @@ func renderChart(path string, sig Signal, klines []crypto.CoingeckoKline) error 
 	fillRect(img, left, priceTop, width-right, priceBottom, chartPanel)
 	fillRect(img, left, volumeTop, width-right, volumeBottom, chartPanel)
 
+	// 绘制表头信息
 	drawLabel(img, left, headerTop, fmt.Sprintf("%s (%s)", displayName(sig.Item), sig.Item.ID), chartText)
 	todayLabel, averageLabel := formatChartRuleLabels(sig)
 	drawLabel(img, left, headerTop+24, todayLabel, chartSubText)
 	drawLabel(img, left, headerTop+46, averageLabel, chartSubText)
 
+	// 绘制网格
 	for i := 0; i <= 5; i++ {
 		y := priceTop + (priceBottom-priceTop)*i/5
 		drawLine(img, left, y, width-right, y, chartGrid)
@@ -114,6 +113,7 @@ func renderChart(path string, sig Signal, klines []crypto.CoingeckoKline) error 
 	drawLine(img, left, priceBottom, width-right, priceBottom, chartAxis)
 	drawLine(img, left, volumeBottom, width-right, volumeBottom, chartAxis)
 
+	// 计算坐标转换函数
 	priceRange := maxPrice - minPrice
 	priceY := func(price float64) int {
 		return priceBottom - int((price-minPrice)/priceRange*float64(priceBottom-priceTop))
@@ -124,37 +124,37 @@ func renderChart(path string, sig Signal, klines []crypto.CoingeckoKline) error 
 
 	plotWidth := width - left - right
 	step := float64(plotWidth) / float64(len(klines))
-	bodyWidth := int(step * 0.55)
-	if bodyWidth < 4 {
-		bodyWidth = 4
+
+	// 动态计算柱状图宽度，避免 90 天数据堆积时重叠
+	barWidth := int(step * 0.4)
+	if barWidth < 1 {
+		barWidth = 1
 	}
 
-	triggerDay := sig.Time.UTC().Format("2006-01-02")
+	type Point struct{ x, y int }
+	points := make([]Point, len(klines))
+	triggerDay := sig.Time.UTC().Truncate(24 * time.Hour).Format("2006-01-02")
+
+	// 绘制折线点和成交量
 	for i, kline := range klines {
 		x := left + int((float64(i)+0.5)*step)
-		c := chartUp
-		if kline.Close < kline.Open {
-			c = chartDown
-		}
-		if kline.Time.UTC().Format("2006-01-02") == triggerDay {
-			c = chartHighlight
-		}
+		y := priceY(kline.Close)
+		points[i] = Point{x, y}
 
-		drawLine(img, x, priceY(kline.High), x, priceY(kline.Low), c)
-		y0 := priceY(kline.Open)
-		y1 := priceY(kline.Close)
-		if y0 == y1 {
-			y1++
-		}
-		fillRect(img, x-bodyWidth/2, y0, x+bodyWidth/2, y1, c)
-
+		// 绘制成交量柱状图
 		vc := chartVolume
-		if kline.Time.UTC().Format("2006-01-02") == triggerDay {
+		if kline.Time.UTC().Truncate(24*time.Hour).Format("2006-01-02") == triggerDay {
 			vc = chartHighlight
 		}
-		fillRect(img, x-bodyWidth/2, volumeY(kline.Volume), x+bodyWidth/2, volumeBottom, vc)
+		fillRect(img, x-barWidth, volumeY(kline.Volume), x+barWidth, volumeBottom, vc)
 	}
 
+	// 连接收盘价折线
+	for i := 0; i < len(points)-1; i++ {
+		drawLine(img, points[i].x, points[i].y, points[i+1].x, points[i+1].y, chartHighlight)
+	}
+
+	// 最终保存
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -170,14 +170,21 @@ func formatChartRuleLabels(sig Signal) (string, string) {
 }
 
 func recentKlines(klines []crypto.CoingeckoKline, limit int) []crypto.CoingeckoKline {
+	// 复制一份，防止修改原始数据
 	out := append([]crypto.CoingeckoKline(nil), klines...)
+
+	// 按时间排序
 	sort.Slice(out, func(i, j int) bool {
 		return out[i].Time.Before(out[j].Time)
 	})
-	if limit > 0 && len(out) > limit {
-		return out[len(out)-limit:]
+
+	// 如果 limit 为 0 或负数，则返回所有数据，不再进行截断
+	if limit <= 0 || len(out) <= limit {
+		return out
 	}
-	return out
+
+	// 如果你依然觉得90天太挤，可以改为只取最后90天
+	return out[len(out)-90:]
 }
 
 func chartBounds(klines []crypto.CoingeckoKline) (float64, float64, float64) {
