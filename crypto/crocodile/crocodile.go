@@ -177,6 +177,16 @@ func (t *Crocodile) AddMonitor(id, name string) {
 	common.Send(t.ch, common.Markdown(fmt.Sprintf("crocodile已添加监控:\n%s\nID: `%s`", displayName(item), item.ID), true))
 }
 
+func (t *Crocodile) DeleteMonitor(id string) {
+	item, err := t.DeleteItem(id)
+	if err != nil {
+		common.Send(t.ch, common.Markdown(fmt.Sprintf("crocodile删除监控失败: %v", err), true))
+		return
+	}
+
+	common.Send(t.ch, common.Markdown(fmt.Sprintf("crocodile已删除本地监控:\n%s\nID: `%s`", displayName(item), item.ID), true))
+}
+
 func (t *Crocodile) RuleTip() string {
 	cfg := t.GetRuleConfig()
 	return formatRuleDescription(cfg) + "\n\n请输入新参数: `lookback today avg`\n例如: `5 3 2`"
@@ -528,15 +538,45 @@ func (t *Crocodile) AddItem(item Item) error {
 	}
 	local = mergeItems(append(local, item))
 
-	b, err := json.MarshalIndent(local, "", "  ")
-	if err != nil {
-		return err
+	return t.saveLocalItems(local)
+}
+
+// DeleteItem 仅从本地 list.json 删除标的（按 CoinGecko ID，大小写不敏感）。
+// 远程默认列表无法通过此命令修改。
+func (t *Crocodile) DeleteItem(id string) (Item, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return Item{}, errors.New("缺少 CoinGecko ID")
 	}
 
-	if err := os.MkdirAll(filepath.Dir(t.localPath), 0755); err != nil {
-		return err
+	local, err := t.loadLocalItems()
+	if err != nil {
+		return Item{}, err
 	}
-	return os.WriteFile(t.localPath, append(b, '\n'), 0644)
+
+	key := strings.ToLower(id)
+	next := make([]Item, 0, len(local))
+	var removed Item
+	found := false
+	for _, item := range local {
+		item = normalizeItem(item)
+		if strings.ToLower(item.ID) == key {
+			if !found {
+				removed = item
+				found = true
+			}
+			continue
+		}
+		next = append(next, item)
+	}
+	if !found {
+		return Item{}, fmt.Errorf("本地监控列表中未找到: %s", id)
+	}
+
+	if err := t.saveLocalItems(next); err != nil {
+		return Item{}, err
+	}
+	return removed, nil
 }
 
 func (t *Crocodile) loadLocalItems() ([]Item, error) {
@@ -548,6 +588,18 @@ func (t *Crocodile) loadLocalItems() ([]Item, error) {
 		return []Item{}, nil
 	}
 	return nil, err
+}
+
+func (t *Crocodile) saveLocalItems(items []Item) error {
+	items = mergeItems(items)
+	b, err := json.MarshalIndent(items, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(t.localPath), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(t.localPath, append(b, '\n'), 0644)
 }
 
 func mergeItems(items []Item) []Item {

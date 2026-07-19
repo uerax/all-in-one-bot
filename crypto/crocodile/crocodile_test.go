@@ -356,6 +356,48 @@ func TestAddItemWritesLocalListAndReplacesDuplicate(t *testing.T) {
 	}
 }
 
+func TestDeleteItemRemovesFromLocalList(t *testing.T) {
+	localPath := filepath.Join(t.TempDir(), "list.json")
+	c := NewCrocodileWithSource(fakeKlineSource{})
+	c.localPath = localPath
+
+	if err := c.AddItem(Item{Name: "Wrapped QUIL", ID: "wrapped-quil"}); err != nil {
+		t.Fatalf("AddItem: %v", err)
+	}
+	if err := c.AddItem(Item{Name: "BTC", ID: "bitcoin"}); err != nil {
+		t.Fatalf("AddItem: %v", err)
+	}
+
+	removed, err := c.DeleteItem("Wrapped-QUIL")
+	if err != nil {
+		t.Fatalf("DeleteItem: %v", err)
+	}
+	if removed.ID != "wrapped-quil" {
+		t.Fatalf("removed = %+v, want wrapped-quil", removed)
+	}
+
+	items, err := c.loadLocalItems()
+	if err != nil {
+		t.Fatalf("loadLocalItems: %v", err)
+	}
+	if len(items) != 1 || items[0].ID != "bitcoin" {
+		t.Fatalf("items = %+v, want only bitcoin", items)
+	}
+}
+
+func TestDeleteItemMissingReturnsError(t *testing.T) {
+	localPath := filepath.Join(t.TempDir(), "list.json")
+	c := NewCrocodileWithSource(fakeKlineSource{})
+	c.localPath = localPath
+
+	if _, err := c.DeleteItem("missing-coin"); err == nil {
+		t.Fatal("expected error for missing id")
+	}
+	if _, err := c.DeleteItem("  "); err == nil {
+		t.Fatal("expected error for empty id")
+	}
+}
+
 func TestRenderChartCreatesReadablePNG(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "chart.png")
 	sig := Signal{

@@ -110,6 +110,8 @@ func Server() {
 				coingeckoSearch(update.Message.Chat.ID, update.Message.Text)
 			case "crocodile_add":
 				crocodileAdd(update.Message.Text)
+			case "crocodile_delete":
+				crocodileDelete(update.Message.Text)
 			case "crocodile_rule":
 				crocodileRule(update.Message.Text)
 			case "delete_crypto_minitor":
@@ -284,6 +286,9 @@ func Server() {
 		case "crocodile_add":
 			Cmd = "crocodile_add"
 			tips(update.Message.Chat.ID, "请输入 CoinGecko ID 和名称，例如:\n`wrapped-quil Wrapped QUIL`")
+		case "crocodile_delete":
+			Cmd = "crocodile_delete"
+			tips(update.Message.Chat.ID, "请输入要删除的 CoinGecko ID，例如:\n`wrapped-quil`\n仅删除本地 list.json 中的标的")
 		case "crocodile_rule":
 			Cmd = "crocodile_rule"
 			crocodileRuleTip(update.Message.Chat.ID)
