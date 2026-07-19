@@ -27,18 +27,17 @@ func TestCoingeckoDailyKlineURLDoesNotUsePaidInterval(t *testing.T) {
 }
 
 func TestBuildDailyKlinesAggregatesPrices(t *testing.T) {
+	// buildDailyKlines 只保留严格 UTC 00:00 的点; 每个自然日对应一根 K 线
 	klines := buildDailyKlines(
 		[][]float64{
-			{1717200000000, 10},
-			{1717203600000, 15},
-			{1717207200000, 8},
-			{1717210800000, 12},
-			{1717286400000, 20},
+			{1717200000000, 10},            // 2024-06-01 00:00
+			{1717286400000, 20},            // 2024-06-02 00:00
+			{1717286400000 + 3600_000, 25}, // 非 00:00, 应被忽略
 		},
 		[][]float64{
 			{1717200000000, 100},
-			{1717210800000, 120},
 			{1717286400000, 200},
+			{1717286400000 + 3600_000, 250},
 		},
 	)
 
@@ -50,7 +49,7 @@ func TestBuildDailyKlinesAggregatesPrices(t *testing.T) {
 	if first.Time.Format("2006-01-02") != "2024-06-01" {
 		t.Fatalf("first day = %s, want 2024-06-01", first.Time.Format("2006-01-02"))
 	}
-	if first.Open != 10 || first.High != 15 || first.Low != 8 || first.Close != 12 || first.Volume != 120 {
+	if first.Open != 10 || first.High != 10 || first.Low != 10 || first.Close != 10 || first.Volume != 100 {
 		t.Fatalf("unexpected first kline: %+v", first)
 	}
 
@@ -121,5 +120,67 @@ func TestCoingeckoSearchReturnsStatusError(t *testing.T) {
 	_, err := NewCoingecko().searchFromURL(srv.URL)
 	if err == nil {
 		t.Fatal("expected error")
+	}
+}
+
+func TestCoingeckoNextAPIKeyRotates(t *testing.T) {
+	c := &Coingecko{keys: []string{"k1", "k2", "k3"}}
+	got := []string{c.nextAPIKey(), c.nextAPIKey(), c.nextAPIKey(), c.nextAPIKey()}
+	want := []string{"k1", "k2", "k3", "k1"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("nextAPIKey[%d] = %q, want %q (full=%v)", i, got[i], want[i], got)
+		}
+	}
+}
+
+func TestCoingeckoNextAPIKeyEmpty(t *testing.T) {
+	c := &Coingecko{}
+	if got := c.nextAPIKey(); got != "" {
+		t.Fatalf("nextAPIKey = %q, want empty", got)
+	}
+}
+
+func TestCoingeckoApplyAPIKeyHeader(t *testing.T) {
+	var seen []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.Header.Get("x-cg-demo-api-key"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"coins":[]}`))
+	}))
+	defer srv.Close()
+
+	c := &Coingecko{keys: []string{"alpha", "beta"}}
+	if _, err := c.searchFromURL(srv.URL); err != nil {
+		t.Fatalf("search 1: %v", err)
+	}
+	if _, err := c.searchFromURL(srv.URL); err != nil {
+		t.Fatalf("search 2: %v", err)
+	}
+	if len(seen) != 2 || seen[0] != "alpha" || seen[1] != "beta" {
+		t.Fatalf("headers = %v, want [alpha beta]", seen)
+	}
+}
+
+func TestCoingeckoGetDailyKlineSendsKey(t *testing.T) {
+	var key string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		key = r.Header.Get("x-cg-demo-api-key")
+		w.Header().Set("Content-Type", "application/json")
+		// one complete UTC midnight sample so buildDailyKlines returns data
+		_, _ = w.Write([]byte(`{"prices":[[1717200000000,10]],"total_volumes":[[1717200000000,100]]}`))
+	}))
+	defer srv.Close()
+
+	c := &Coingecko{keys: []string{"kline-key"}}
+	klines, err := c.getDailyKlineFromURL(srv.URL)
+	if err != nil {
+		t.Fatalf("getDailyKlineFromURL: %v", err)
+	}
+	if key != "kline-key" {
+		t.Fatalf("header key = %q, want kline-key", key)
+	}
+	if len(klines) != 1 {
+		t.Fatalf("len(klines) = %d, want 1", len(klines))
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/uerax/all-in-one-bot/common"
@@ -17,7 +18,8 @@ import (
 )
 
 type Coingecko struct {
-	api    string
+	keys   []string
+	idx    uint64
 	list   map[string]float64
 	price  map[string]MarketData
 	ch     chan<- common.AioEvent
@@ -49,16 +51,75 @@ func getList() map[string]float64 {
 	return filter
 }
 
+func loadCoingeckoKeys() []string {
+	// 优先 crypto.coingecko.keys; 其次 crypto.coingecko 直接为数组; 最后兼容单字符串
+	if keys := normalizeKeyList(readConfigArray("crypto", "coingecko", "keys")); len(keys) > 0 {
+		return keys
+	}
+	if keys := normalizeKeyList(readConfigArray("crypto", "coingecko")); len(keys) > 0 {
+		return keys
+	}
+	if s := strings.TrimSpace(goconf.VarStringOrDefault("", "crypto", "coingecko")); s != "" {
+		return []string{s}
+	}
+	return nil
+}
+
+func readConfigArray(keys ...string) []any {
+	arr, err := goconf.VarArray(keys...)
+	if err != nil || len(arr) == 0 {
+		return nil
+	}
+	return arr
+}
+
+func normalizeKeyList(arr []any) []string {
+	if len(arr) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(arr))
+	for _, v := range arr {
+		s, ok := v.(string)
+		if !ok {
+			continue
+		}
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		keys = append(keys, s)
+	}
+	return keys
+}
+
 func NewCoingecko(ch ...chan<- common.AioEvent) *Coingecko {
 	var eventCh chan<- common.AioEvent
 	if len(ch) > 0 {
 		eventCh = ch[0]
 	}
 	return &Coingecko{
-		api:   goconf.VarStringOrDefault("", "crypto", "coingecko"),
+		keys:  loadCoingeckoKeys(),
 		list:  getList(),
 		price: make(map[string]MarketData),
 		ch:    eventCh,
+	}
+}
+
+// nextAPIKey 轮询返回下一个 Demo API Key；未配置时返回空字符串。
+func (t *Coingecko) nextAPIKey() string {
+	if t == nil || len(t.keys) == 0 {
+		return ""
+	}
+	i := atomic.AddUint64(&t.idx, 1)
+	return t.keys[int((i-1)%uint64(len(t.keys)))]
+}
+
+func (t *Coingecko) applyAPIKey(req *http.Request) {
+	if req == nil {
+		return
+	}
+	if key := t.nextAPIKey(); key != "" {
+		req.Header.Set("x-cg-demo-api-key", key)
 	}
 }
 
@@ -117,7 +178,7 @@ func (t *Coingecko) Price(coin string, count float64) {
 	}
 
 	req.Header.Add("accept", "application/json")
-	req.Header.Add("x-cg-demo-api-key", t.api)
+	t.applyAPIKey(req)
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -155,9 +216,7 @@ func (t *Coingecko) searchFromURL(rawURL string) ([]CoingeckoSearchCoin, error) 
 	}
 
 	req.Header.Add("accept", "application/json")
-	if t.api != "" {
-		req.Header.Add("x-cg-demo-api-key", t.api)
-	}
+	t.applyAPIKey(req)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -191,16 +250,17 @@ func coingeckoDailyKlineURL(coin string) string {
 }
 
 func (t *Coingecko) GetDailyKline(coin string) ([]CoingeckoKline, error) {
-	u := coingeckoDailyKlineURL(coin)
-	req, err := http.NewRequest(http.MethodGet, u, nil)
+	return t.getDailyKlineFromURL(coingeckoDailyKlineURL(coin))
+}
+
+func (t *Coingecko) getDailyKlineFromURL(rawURL string) ([]CoingeckoKline, error) {
+	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("accept", "application/json")
-	if t.api != "" {
-		req.Header.Add("x-cg-demo-api-key", t.api)
-	}
+	t.applyAPIKey(req)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
