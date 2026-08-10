@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -24,7 +23,6 @@ type Coingecko struct {
 	list   map[string]float64
 	price  map[string]MarketData
 	ch     chan<- common.AioEvent
-	mu     sync.RWMutex
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -169,9 +167,6 @@ type coingeckoSearchResp struct {
 }
 
 func (t *Coingecko) Price(coin string, count float64) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
 	url := "https://api.coingecko.com/api/v3/coins/" + coin
 	method := "GET"
 
@@ -338,38 +333,28 @@ func buildDailyKlines(prices [][]float64, volumes [][]float64) []CoingeckoKline 
 }
 
 func (t *Coingecko) SyncPrice() {
-	t.mu.Lock()
+	t.SyncList()
 	t.price = make(map[string]MarketData)
-	t.mu.Unlock()
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
 	for i := range t.list {
 		t.Price(i, t.list[i])
 	}
 }
 
 func (t *Coingecko) SyncList() {
-	t.mu.Lock()
 	t.list = getList()
-	t.mu.Unlock()
 }
 
 func (t *Coingecko) Handle() {
-	t.mu.RLock()
 	t.SyncPrice()
-	defer t.mu.RUnlock()
-
-	if len(t.price) == 0 {
-		return
+	if len(t.price) != 0 {
+		msg := ""
+		total := 0.0
+		for k, v := range t.price {
+			msg += fmt.Sprintf("\n*%s* 当前价格为 *%su* 持有价值为 *%su*", k, strconv.FormatFloat(v.CurrentPrice.Usd, 'f', -1, 64), strconv.FormatFloat(v.TotalPrice, 'f', -1, 64))
+			total += v.TotalPrice
+		}
+		common.Send(t.ch, common.Markdown(fmt.Sprintf("当前总持有价值为 *%su*%s", strconv.FormatFloat(total, 'f', -1, 64), msg), true))
 	}
-	msg := ""
-	total := 0.0
-	for k, v := range t.price {
-		msg += fmt.Sprintf("\n*%s* 当前价格为 *%su* 持有价值为 *%su*", k, strconv.FormatFloat(v.CurrentPrice.Usd, 'f', -1, 64), strconv.FormatFloat(v.TotalPrice, 'f', -1, 64))
-		total += v.TotalPrice
-	}
-	common.Send(t.ch, common.Markdown(fmt.Sprintf("当前总持有价值为 *%su*%s", strconv.FormatFloat(total, 'f', -1, 64), msg), true))
 }
 
 func (t *Coingecko) Stop() {

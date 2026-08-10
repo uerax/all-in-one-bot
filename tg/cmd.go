@@ -101,21 +101,6 @@ func crocodileAdd(args string) {
 	go api.Crocodile.AddMonitor(id, name)
 }
 
-func crocodileDelete(args string) {
-	id := strings.TrimSpace(args)
-	if id == "" {
-		log.Printf("crocodileDelete 参数有误: %s", args)
-		go api.DeleteAfterSendMessage("参数有误")
-		return
-	}
-
-	// 只取第一个字段作为 CoinGecko ID
-	if parts := strings.Fields(id); len(parts) > 0 {
-		id = parts[0]
-	}
-	go api.Crocodile.DeleteMonitor(id)
-}
-
 func crocodileRuleTip(id int64) {
 	go api.DeleteAfterSendMarkdown(id, api.Crocodile.RuleTip(), false)
 }

@@ -10,11 +10,6 @@
     "rule": ""
   },
   {
-    "name": "DRB",
-    "id": "debtreliefbot",
-    "rule": ""
-  },
-  {
     "name": "b3",
     "id": "b3",
     "rule": ""
