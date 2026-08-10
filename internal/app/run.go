@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"flag"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -16,10 +17,12 @@ import (
 )
 
 func Run() {
+	configPath := flag.String("config", "", "配置文件路径 (YAML)，留空则仅使用环境变量")
+	flag.Parse()
 
 	log := logger.NewLogger()
 
-	cfg := config.LoadConfig()
+	cfg := config.LoadConfig(*configPath)
 
 	b, err := telegram.NewBot(cfg.Telegram)
 	if err != nil {

@@ -6,6 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.11.0
 	github.com/joho/godotenv v1.5.1
 	gopkg.in/telebot.v4 v4.0.0-beta.7
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

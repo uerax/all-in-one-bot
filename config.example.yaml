@@ -1,0 +1,61 @@
+# config.example.yaml
+# all-in-one-bot (lite) 可选 YAML 配置文件。
+#
+# 优先级： 环境变量 (env / .env) > 本 YAML > 内置默认值。
+# 即：同一字段若同时在 env 和 YAML 中配置，env 生效；YAML 仅在 env 缺失时填充，并覆盖内置默认。
+# 因此 systemd 部署时，建议把敏感凭据 (telegram token / api key) 放在 EnvironmentFile，
+# 把结构化配置写在本文件，互不干扰。
+#
+# 用法:
+#   ./all-in-one-bot -config ./config.yaml
+# 或在 systemd ExecStart 里:
+#   ExecStart=/opt/aio/all-in-one-bot -config /etc/all-in-one-bot/config.yaml
+#
+# 不传 -config 时完全退回纯 env 模式，行为与改动前一致。
+# 本文件每一节括号内标注了对应的 env 变量名与内置默认值，可照此改写。
+
+# ───────── Telegram ─────────
+telegram:
+  token: ""          # env TELEGRAM_TOKEN (必填，留空且 env 也无 → Bot 初始化失败)
+  timeout: 10        # env TELEGRAM_TIMEOUT (秒, 默认 10)
+
+# ───────── Polymarket ─────────
+polymarket:
+  gamma_base_url: "https://gamma-api.polymarket.com"   # env POLYMARKET_GAMMA_BASE_URL
+  clob_base_url:   "https://clob.polymarket.com"        # env POLYMARKET_CLOB_BASE_URL
+  timeout: 10                 # env POLYMARKET_TIMEOUT (秒, 默认 10)
+  default_limit: 10          # env POLYMARKET_DEFAULT_LIMIT (默认 10)
+  address: ""                 # env POLYMARKET_ADDRESS (你的钱包地址)
+  api_key: ""                 # env POLYMARKET_API_KEY (CLOB L2 凭据)
+  api_secret: ""              # env POLYMARKET_API_SECRET
+  api_passphrase: ""          # env POLYMARKET_API_PASSPHRASE
+
+# ───────── Bitcointalk ─────────
+bitcointalk:
+  limit: 60                   # env BITCOINTALK_LIMIT (单次拉取条数, 默认 60)
+  url: "https://bitcointalk.org/index.php?board=159.0"   # env BITCOINTALK_URL
+  interval: 60                # env BITCOINTALK_INTERVAL (秒, 默认 60)
+
+# ───────── Database (持久化) ─────────
+database:
+  type: "file"               # env DATABASE_TYPE (默认 file)
+  # 本地目录 或 GitHub Raw URL；远程 URL 时 Save 会落地到 /tmp/aio/data
+  # env DATABASE_FILE_PATH (默认 下方 GitHub raw 持仓数据)
+  file_path: "https://raw.githubusercontent.com/uerax/all-in-one-bot/refs/heads/lite/data"
+
+# ───────── Nodeseek ─────────
+nodeseek:
+  limit: 60                   # env NODESEEK_LIMIT (默认 60)
+  url: "https://rss.nodeseek.com/"    # env NODESEEK_URL
+  interval: 60                # env NODESEEK_INTERVAL (秒, 默认 60)
+
+# ───────── CoinGecko ─────────
+coingecko:
+  keys: ""                    # env COINGECKO_KEYS (逗号分隔的 demo API keys)
+
+# ───────── Crocodile (每日 UTC 00:05 量能突增扫描) ─────────
+crocodile:
+  lookback: 5                           # env CROCODILE_LOOKBACK (回看天数, 默认 5)
+  yesterday_multiple: 3.0                # env CROCODILE_YESTERDAY_MULTIPLE (相对昨日倍数, 默认 3.0)
+  average_multiple: 2.0                  # env CROCODILE_AVERAGE_MULTIPLE (相对均值倍数, 默认 2.0)
+  interval: 86400                        # env CROCODILE_INTERVAL (扫描间隔秒, 默认 86400 = 每天)

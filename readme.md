@@ -38,6 +38,50 @@ __同时会分析超过初始价格的K线数, 如果少于2根K线也就是10�
 
 ## Usage
 
+> 本仓库 `lite` 分支为轻量版：配置支持两种方式，**环境变量**（`.env`）与 **YAML 配置文件**（`-config` flag），二者可并存，优先级为 `环境变量 > YAML > 内置默认`。
+
+### 0. 直接部署 (systemd / 非 Docker)
+
+适合不使用 Docker、直接在 Linux 上用 systemd 托管的用户。编译得到二进制后，用 YAML 配置：
+
+```bash
+# 构建
+go build -o all-in-one-bot .
+
+# 拷贝配置示例并编辑
+cp config.example.yaml /etc/all-in-one-bot/config.yaml
+vim /etc/all-in-one-bot/config.yaml    # 填入 telegram.token, api keys 等
+```
+
+`/etc/systemd/system/all-in-one-bot.service`：
+
+```ini
+[Unit]
+Description=all-in-one-bot (lite)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/aio/all-in-one-bot -config /etc/all-in-one-bot/config.yaml
+Restart=on-failure
+RestartSec=5
+
+# 敏感凭据可单独放 EnvironmentFile，优先级高于 YAML
+# EnvironmentFile=/etc/aio/secrets.env
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now all-in-one-bot
+sudo systemctl status all-in-one-bot   # 或 journalctl -u all-in-one-bot -f 查看日志
+```
+
+说明：`-config` 留空时完全走 pure env（`.env` autoload + 环境变量），与旧行为一致。
+
 ### 1.Docker安装(推荐)
 
 `下载 docker-compose.yml` -> `下载 .env.example 文件` -> `.env.example 文件改名为 .env` -> `ID 和 ChatID 填进去` -> `docker compose up -d`

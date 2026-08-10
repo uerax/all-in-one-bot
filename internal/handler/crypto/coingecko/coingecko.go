@@ -107,30 +107,55 @@ func (c *Coingecko) get(url string) (*http.Response, error) {
 	return c.client.Do(req)
 }
 
+type coinPrice struct {
+	symbol string
+	price  float64
+	total  float64
+	change float64
+}
+
+// formatPrice 按价格量级动态选择小数位。
+// 价格 >= 1 保留 2 位；低价币（如 qubic 0.000005）保留足够位数以显示有效数字，避免被舍成 0。
+func formatPrice(p float64) string {
+	switch {
+	case p >= 1:
+		return fmt.Sprintf("%.2f", p)
+	case p >= 1e-4:
+		return fmt.Sprintf("%.6f", p)
+	case p >= 1e-8:
+		return fmt.Sprintf("%.10f", p)
+	default:
+		return fmt.Sprintf("%.12f", p)
+	}
+}
+
 // fetchPrice 获取单个币种当前价格和持仓总值。
-func (c *Coingecko) fetchPrice(id string, count float64) string {
+func (c *Coingecko) fetchPrice(id string, count float64) *coinPrice {
 	resp, err := c.get(fmt.Sprintf("%s/coins/%s", cgBaseURL, id))
 	if err != nil {
 		c.log.Error("coingecko fetchPrice 失败", "id", id, "error", err)
-		return ""
+		return nil
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		c.log.Error("coingecko fetchPrice 非200响应", "id", id, "status", resp.StatusCode)
-		return ""
+		return nil
 	}
 	var r coingeckoResp
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		c.log.Error("coingecko fetchPrice 解析失败", "id", id, "error", err)
-		return ""
+		return nil
 	}
 	price, ok := r.Market.CurrentPrice["usd"]
 	if !ok || r.Symbol == "" {
-		return ""
+		return nil
 	}
-	total := count * price
-	change := r.Market.PriceChange24H
-	return fmt.Sprintf("*%s* `$%.4f` 持仓: `$%.2f` 24h: `%.2f%%`", strings.ToUpper(r.Symbol), price, total, change)
+	return &coinPrice{
+		symbol: strings.ToLower(r.Symbol),
+		price:  price,
+		total:  count * price,
+		change: r.Market.PriceChange24H,
+	}
 }
 
 // Handle 立即查询所有持仓币种价格并发送。
@@ -146,12 +171,19 @@ func (c *Coingecko) Handle(chatID int64) {
 		return
 	}
 
-	lines := []string{"*CoinGecko 持仓报告*"}
+	lines := []string{}
+	var total float64
+	var prices []*coinPrice
 	for id, count := range list {
-		line := c.fetchPrice(id, count)
-		if line != "" {
-			lines = append(lines, line)
+		p := c.fetchPrice(id, count)
+		if p != nil {
+			total += p.total
+			prices = append(prices, p)
 		}
+	}
+	lines = append(lines, fmt.Sprintf("当前总持有价值为 *$%.2f*", total))
+	for _, p := range prices {
+		lines = append(lines, fmt.Sprintf("%s: *$%s* 持仓: *$%.2f* 涨幅: *%.2f%%*", p.symbol, formatPrice(p.price), p.total, p.change))
 	}
 	c.ch <- models.Message{
 		ChatID: chatID,
