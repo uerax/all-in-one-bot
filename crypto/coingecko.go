@@ -21,7 +21,6 @@ type Coingecko struct {
 	keys   []string
 	idx    uint64
 	list   map[string]float64
-	price  map[string]MarketData
 	ch     chan<- common.AioEvent
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -98,10 +97,9 @@ func NewCoingecko(ch ...chan<- common.AioEvent) *Coingecko {
 		eventCh = ch[0]
 	}
 	return &Coingecko{
-		keys:  loadCoingeckoKeys(),
-		list:  getList(),
-		price: make(map[string]MarketData),
-		ch:    eventCh,
+		keys: loadCoingeckoKeys(),
+		list: getList(),
+		ch:   eventCh,
 	}
 }
 
@@ -166,7 +164,7 @@ type coingeckoSearchResp struct {
 	Coins []CoingeckoSearchCoin `json:"coins"`
 }
 
-func (t *Coingecko) Price(coin string, count float64) {
+func (t *Coingecko) fetchPrice(coin string, count float64) (string, MarketData, bool) {
 	url := "https://api.coingecko.com/api/v3/coins/" + coin
 	method := "GET"
 
@@ -174,7 +172,7 @@ func (t *Coingecko) Price(coin string, count float64) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return "", MarketData{}, false
 	}
 
 	req.Header.Add("accept", "application/json")
@@ -183,19 +181,22 @@ func (t *Coingecko) Price(coin string, count float64) {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return "", MarketData{}, false
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return "", MarketData{}, false
 	}
 	price := CoingeckoResp{}
 	json.Unmarshal(body, &price)
+	if price.Symbol == "" {
+		return "", MarketData{}, false
+	}
 	price.MarketData.TotalPrice = count * price.MarketData.CurrentPrice.Usd
-	t.price[price.Symbol] = price.MarketData
+	return price.Symbol, price.MarketData, true
 }
 
 func coingeckoSearchURL(query string) string {
@@ -332,29 +333,34 @@ func buildDailyKlines(prices [][]float64, volumes [][]float64) []CoingeckoKline 
 	return klines
 }
 
-func (t *Coingecko) SyncPrice() {
-	t.SyncList()
-	t.price = make(map[string]MarketData)
-	for i := range t.list {
-		t.Price(i, t.list[i])
+func (t *Coingecko) syncPrice() map[string]MarketData {
+	list := getList()
+	if len(list) == 0 {
+		list = t.list
+	} else {
+		t.list = list
 	}
-}
-
-func (t *Coingecko) SyncList() {
-	t.list = getList()
+	prices := make(map[string]MarketData)
+	for coin, count := range list {
+		if sym, md, ok := t.fetchPrice(coin, count); ok {
+			prices[sym] = md
+		}
+	}
+	return prices
 }
 
 func (t *Coingecko) Handle() {
-	t.SyncPrice()
-	if len(t.price) != 0 {
-		msg := ""
-		total := 0.0
-		for k, v := range t.price {
-			msg += fmt.Sprintf("\n*%s* 当前价格为 *%su* 持有价值为 *%su*", k, strconv.FormatFloat(v.CurrentPrice.Usd, 'f', -1, 64), strconv.FormatFloat(v.TotalPrice, 'f', -1, 64))
-			total += v.TotalPrice
-		}
-		common.Send(t.ch, common.Markdown(fmt.Sprintf("当前总持有价值为 *%su*%s", strconv.FormatFloat(total, 'f', -1, 64), msg), true))
+	prices := t.syncPrice()
+	if len(prices) == 0 {
+		return
 	}
+	msg := ""
+	total := 0.0
+	for k, v := range prices {
+		msg += fmt.Sprintf("\n*%s* 当前价格为 *%su* 持有价值为 *%su*", k, strconv.FormatFloat(v.CurrentPrice.Usd, 'f', -1, 64), strconv.FormatFloat(v.TotalPrice, 'f', -1, 64))
+		total += v.TotalPrice
+	}
+	common.Send(t.ch, common.Markdown(fmt.Sprintf("当前总持有价值为 *%su*%s", strconv.FormatFloat(total, 'f', -1, 64), msg), true))
 }
 
 func (t *Coingecko) Stop() {
