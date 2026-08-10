@@ -5,6 +5,11 @@
     "rule": ""
   },
   {
+    "name": "DRB",
+    "id": "debtreliefbot",
+    "rule": ""
+  },
+  {
     "name": "auki",
     "id": "auki-labs",
     "rule": ""
