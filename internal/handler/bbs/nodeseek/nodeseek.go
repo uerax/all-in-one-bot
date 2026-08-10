@@ -21,7 +21,7 @@ var ErrNotRunning = errors.New("Nodeseek 监控未运行")
 var ErrAlreadyRunning = errors.New("Nodeseek 监控已在运行中")
 
 type Nodeseek struct {
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	C        chan models.Message
 	active   bool
 	tag      int64
@@ -40,7 +40,6 @@ func NewNodeseek(db store.Store, c chan models.Message, cfg config.Nodeseek, log
 		C:        c,
 		url:      cfg.Url,
 		interval: cfg.Interval,
-		mu:       sync.Mutex{},
 		active:   false,
 		keyword:  make(map[string]struct{}),
 		db:       db,
@@ -86,7 +85,6 @@ func (h *Nodeseek) syncKeyword() {
 		h.keyword = kw
 	}
 }
-
 func (f *Nodeseek) dailySync(ctx context.Context) {
 	go func() {
 		for {
@@ -146,12 +144,18 @@ func (h *Nodeseek) monitor(chatID int64) {
 	r, err := h.client.Get(h.url)
 	bbs := NodeseekResp{}
 	if err != nil {
+		h.Log.Error("请求Nodeseek失败", "error:", err)
 		return
 	}
-	b, _ := io.ReadAll(r.Body)
 	defer r.Body.Close()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.Log.Error("读取Nodeseek响应失败", "error:", err)
+		return
+	}
 	err = xml.Unmarshal(b, &bbs)
 	if err != nil {
+		h.Log.Error("解析Nodeseek XML失败", "error:", err)
 		return
 	}
 	if bbs.Channel == nil || len(bbs.Channel.Item) == 0 {
@@ -168,12 +172,15 @@ func (h *Nodeseek) monitor(chatID int64) {
 			tag = v.Guid
 		}
 		v.Title = strings.ToLower(strings.TrimSpace(v.Title))
+		// Bug 4 fix: 读 keyword 时加读锁，防止与 dailySync 并发写产生数据竞争
+		h.mu.RLock()
 		for k := range h.keyword {
 			if strings.Contains(v.Title, k) {
 				msg += fmt.Sprintf("[%s](%s)\n", v.Title, v.Link)
 				break
 			}
 		}
+		h.mu.RUnlock()
 	}
 
 	if tag > h.tag {
@@ -181,6 +188,11 @@ func (h *Nodeseek) monitor(chatID int64) {
 	}
 
 	if msg != "" {
-		h.C <- models.Message{ChatID: chatID, Text: "*NodeSeek新帖:*\n" + msg}
+		// Bug 5 fix: 非阻塞发送，channel 满时跳过本条推送
+		select {
+		case h.C <- models.Message{ChatID: chatID, Text: "*NodeSeek新帖:*\n" + msg}:
+		default:
+			h.Log.Warn("消息队列已满，跳过本条Nodeseek推送")
+		}
 	}
 }

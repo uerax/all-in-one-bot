@@ -7,6 +7,7 @@ import (
 
 type Log interface {
 	Info(msg string, args ...any)
+	Warn(msg string, args ...any)
 	Error(msg string, args ...any)
 }
 
@@ -26,7 +27,11 @@ func NewLogger() *Logger {
 }
 
 func (l *Logger) Info(msg string, args ...any) {
-    l.Logger.Info(msg, args...)
+	l.Logger.Info(msg, args...)
+}
+
+func (l *Logger) Warn(msg string, args ...any) {
+	l.Logger.Warn(msg, args...)
 }
 
 func (l *Logger) Error(msg string, args ...any) {

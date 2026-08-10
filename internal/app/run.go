@@ -40,7 +40,7 @@ func Run() {
 
 	// 创建 Dispatcher 用于消息分发
 	c := make(chan models.Message, 20)
-	dispatcher := bot.NewDispatcher(b, c)
+	dispatcher := bot.NewDispatcher(b, c, log)
 	dispatcher.Start(context.Background())
 
 	// 注册所有 Handler

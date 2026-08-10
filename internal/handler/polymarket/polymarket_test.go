@@ -6,8 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	pm "github.com/uerax/polymarket-go/polymarket"
-
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/mocks"
 )
@@ -26,7 +24,7 @@ func TestServiceListMarkets(t *testing.T) {
 		if r.URL.Path != "/markets" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		if got := r.URL.Query().Get("next_cursor"); got != pm.InitialCursor {
+		if got := r.URL.Query().Get("next_cursor"); got != InitialCursor {
 			t.Fatalf("unexpected next_cursor: %s", got)
 		}
 		w.WriteHeader(http.StatusOK)
@@ -81,7 +79,7 @@ func TestServiceGetMarketBySlug(t *testing.T) {
 		if r.URL.Path != "/markets" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
-		if got := r.URL.Query().Get("next_cursor"); got != pm.InitialCursor {
+		if got := r.URL.Query().Get("next_cursor"); got != InitialCursor {
 			t.Fatalf("unexpected next_cursor: %s", got)
 		}
 		w.WriteHeader(http.StatusOK)
@@ -263,8 +261,8 @@ func TestServiceFetchMarketsPaginatesWhenLimitZero(t *testing.T) {
 		calls++
 		cursor := r.URL.Query().Get("next_cursor")
 		if calls == 1 {
-			if cursor != pm.InitialCursor {
-				t.Fatalf("first cursor = %s, want %s", cursor, pm.InitialCursor)
+			if cursor != InitialCursor {
+				t.Fatalf("first cursor = %s, want %s", cursor, InitialCursor)
 			}
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"limit":1,"count":1,"next_cursor":"MQ==","data":[{"id":"1","slug":"m1","event_slug":"e1","event_title":"E1"}]}`))
@@ -297,7 +295,7 @@ func TestServiceFetchMarketsPaginatesWhenLimitZero(t *testing.T) {
 
 func TestServiceMapSDKErrorStatusFallback(t *testing.T) {
 	svc := newTestService("https://clob.polymarket.com", 10)
-	err := svc.mapSDKError(&pm.ApiError{Status: 500})
+	err := svc.mapSDKError(&ApiError{Status: 500})
 	if got := fmt.Sprint(err); got != "polymarket api status: 500" {
 		t.Fatalf("mapSDKError() = %s, want polymarket api status: 500", got)
 	}

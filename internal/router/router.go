@@ -3,6 +3,8 @@ package router
 import (
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/bitcointalk"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/nodeseek"
+	cghandler "github.com/uerax/all-in-one-bot/lite/internal/handler/crypto/coingecko"
+	crhandler "github.com/uerax/all-in-one-bot/lite/internal/handler/crypto/crocodile"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/polymarket"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/telegram"
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
@@ -25,28 +27,38 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	var handlers []Handler
 
 	// telegram handlers
-	// chatid
 	handlers = append(handlers, telegram.NewChatIDHandle(deps.Logger))
 
 	// bitcointalk handlers
 	bitcointalkService := bitcointalk.NewBitcointalkHandle(deps.Store, &deps.Config.Bitcointalk, deps.Logger, r.msgCh)
-	// bitcointalk_start
 	handlers = append(handlers, bitcointalk.NewBitcointalkStartHandle(bitcointalkService))
-	// bitcointalk_stop
 	handlers = append(handlers, bitcointalk.NewBitcointalkStopHandle(bitcointalkService))
 
 	// nodeseek
 	nodeseekService := nodeseek.NewNodeseek(deps.Store, r.msgCh, deps.Config.Nodeseek, deps.Logger)
-
-	// nodeseek_start
 	handlers = append(handlers, nodeseek.NewNodeseekStartHandle(nodeseekService))
-	// nodeseek_stop
 	handlers = append(handlers, nodeseek.NewNodeseekStopHandle(nodeseekService))
 
 	// polymarket
 	polymarketService := polymarket.NewService(deps.Config.Polymarket, deps.Logger)
 	handlers = append(handlers, polymarket.NewPolymarketHoldingsHandle(polymarketService, deps.Logger))
 	handlers = append(handlers, polymarket.NewPolymarketL2CheckHandle(polymarketService, deps.Logger))
+
+	// coingecko
+	cgService := cghandler.NewCoingecko(deps.Store, deps.Config.Coingecko, r.msgCh, deps.Logger)
+	handlers = append(handlers, cghandler.NewCoinMonitorHandle(cgService))
+	handlers = append(handlers, cghandler.NewCoinStopHandle(cgService))
+	handlers = append(handlers, cghandler.NewCoinPriceHandle(cgService))
+	handlers = append(handlers, cghandler.NewCoinSearchHandle(cgService))
+
+	// crocodile
+	crService := crhandler.NewCrocodile(deps.Store, cgService, r.msgCh, deps.Config.Crocodile, deps.Logger)
+	handlers = append(handlers, crhandler.NewCrocodileMonitorHandle(crService))
+	handlers = append(handlers, crhandler.NewCrocodileStopHandle(crService))
+	handlers = append(handlers, crhandler.NewCrocodileCheckHandle(crService))
+	handlers = append(handlers, crhandler.NewCrocodileListHandle(crService))
+	handlers = append(handlers, crhandler.NewCrocodileAddHandle(crService))
+	handlers = append(handlers, crhandler.NewCrocodileRuleHandle(crService))
 
 	return handlers
 }
@@ -60,11 +72,7 @@ func NewRouter(b *tb.Bot, c chan models.Message) *Router {
 
 // RegisterHandlers 负责将所有 Handler 绑定到 Bot 实例。
 func (r *Router) RegisterHandlers(b *tb.Bot, deps *Dependencies) {
-
-	// 1. 调用 Handlers 获取所有已经**配置好并注入了依赖**的 Handler 实例。
-	//    Logger 实例必须在这里作为参数传入 Handlers。
 	handlers := r.Handlers(deps)
-
 	for _, h := range handlers {
 		b.Handle(h.Cmd(), h.Handle)
 	}

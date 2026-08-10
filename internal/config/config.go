@@ -39,11 +39,27 @@ func LoadConfig() *Config {
 	config.Database = *database
 
 	nodeseek := &Nodeseek{
+		Limit:    intOrDefault("NODESEEK_LIMIT", 60),
 		Url:      strOrDefault("NODESEEK_URL", "https://rss.nodeseek.com/"),
 		Interval: intOrDefault("NODESEEK_INTERVAL", 60),
 	}
 
 	config.Nodeseek = *nodeseek
+
+	coingecko := &Coingecko{
+		Keys: strOrDefault("COINGECKO_KEYS", ""),
+	}
+
+	config.Coingecko = *coingecko
+
+	crocodile := &Crocodile{
+		Lookback:          intOrDefault("CROCODILE_LOOKBACK", 5),
+		YesterdayMultiple: float64OrDefault("CROCODILE_YESTERDAY_MULTIPLE", 3.0),
+		AverageMultiple:   float64OrDefault("CROCODILE_AVERAGE_MULTIPLE", 2.0),
+		Interval:          intOrDefault("CROCODILE_INTERVAL", 86400),
+	}
+
+	config.Crocodile = *crocodile
 
 	return config
 }
@@ -54,6 +70,8 @@ type Config struct {
 	Bitcointalk Bitcointalk
 	Database    Database
 	Nodeseek    Nodeseek
+	Coingecko   Coingecko
+	Crocodile   Crocodile
 }
 
 type Database struct {
@@ -88,3 +106,15 @@ type Nodeseek struct {
 	Url      string
 	Interval int
 }
+
+type Coingecko struct {
+	Keys string // 逗号分隔的 demo API keys
+}
+
+type Crocodile struct {
+	Lookback          int
+	YesterdayMultiple float64
+	AverageMultiple   float64
+	Interval          int // 扫描间隔秒数，默认 86400（每天）
+}
+

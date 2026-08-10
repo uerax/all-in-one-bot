@@ -10,6 +10,5 @@ require (
 
 require (
 	github.com/andybalholm/cascadia v1.3.3 // indirect
-	github.com/uerax/polymarket-go v0.0.0-20260329071849-658b1ac7e790 // indirect
 	golang.org/x/net v0.48.0 // indirect
 )

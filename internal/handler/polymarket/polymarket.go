@@ -2,15 +2,17 @@ package polymarket
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
-
-	pm "github.com/uerax/polymarket-go/polymarket"
 
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
@@ -23,12 +25,140 @@ var ErrMissingL2Credentials = errors.New("polymarket l2 credentials not configur
 const (
 	PriceSideBuy  = "buy"
 	PriceSideSell = "sell"
+	InitialCursor = "MA=="
+	EndCursor     = "LTE="
 )
+
+type ApiError struct {
+	Message string `json:"error"`
+	Status  int    `json:"-"`
+}
+
+func (e *ApiError) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("polymarket api error: %s", e.Message)
+	}
+	if e.Status > 0 {
+		return fmt.Sprintf("polymarket api status: %d", e.Status)
+	}
+	return "polymarket api error"
+}
+
+type Client struct {
+	baseURL       string
+	httpClient    *http.Client
+	address       string
+	apiKey        string
+	apiSecret     string
+	apiPassphrase string
+}
+
+func NewClient(baseURL string, httpClient *http.Client, address, apiKey, apiSecret, apiPassphrase string) *Client {
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: 10 * time.Second}
+	}
+	return &Client{
+		baseURL:       strings.TrimRight(baseURL, "/"),
+		httpClient:    httpClient,
+		address:       strings.TrimSpace(address),
+		apiKey:        strings.TrimSpace(apiKey),
+		apiSecret:     strings.TrimSpace(apiSecret),
+		apiPassphrase: strings.TrimSpace(apiPassphrase),
+	}
+}
+
+func (c *Client) hasL2Creds() bool {
+	return c.address != "" && c.apiKey != "" && c.apiSecret != "" && c.apiPassphrase != ""
+}
+
+func (c *Client) request(ctx context.Context, method, reqPath string, query map[string]string, auth bool) ([]byte, error) {
+	fullURL := c.baseURL + reqPath
+	req, err := http.NewRequestWithContext(ctx, method, fullURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(query) > 0 {
+		q := req.URL.Query()
+		for k, v := range query {
+			if v != "" {
+				q.Set(k, v)
+			}
+		}
+		req.URL.RawQuery = q.Encode()
+	}
+
+	if auth && c.hasL2Creds() {
+		headers, err := createL2Headers(c.address, c.apiKey, c.apiSecret, c.apiPassphrase, method, reqPath, nil)
+		if err == nil {
+			for k, v := range headers {
+				req.Header[k] = v
+			}
+		}
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		var apiErr ApiError
+		apiErr.Status = resp.StatusCode
+		if jsonErr := json.Unmarshal(body, &apiErr); jsonErr == nil && apiErr.Message != "" {
+			return nil, &apiErr
+		}
+		return nil, &apiErr
+	}
+
+	return body, nil
+}
+
+func createL2Headers(address, apiKey, apiSecret, apiPassphrase, method, requestPath string, body []byte) (http.Header, error) {
+	timestamp := fmt.Sprintf("%d", time.Now().Unix())
+
+	secretStr := strings.ReplaceAll(strings.ReplaceAll(apiSecret, "-", "+"), "_", "/")
+	secretBytes, err := base64.StdEncoding.DecodeString(secretStr)
+	if err != nil {
+		secretBytes = []byte(apiSecret)
+	}
+
+	sigMessage := timestamp + method + requestPath
+	if len(body) > 0 {
+		sigMessage += string(body)
+	}
+
+	h := hmac.New(sha256.New, secretBytes)
+	h.Write([]byte(sigMessage))
+	rawSig := h.Sum(nil)
+
+	sig := base64.StdEncoding.EncodeToString(rawSig)
+	sig = strings.ReplaceAll(strings.ReplaceAll(sig, "+", "-"), "/", "_")
+
+	header := make(http.Header)
+	header.Set("POLY_ADDRESS", address)
+	header.Set("POLY_SIGNATURE", sig)
+	header.Set("POLY_TIMESTAMP", timestamp)
+	header.Set("POLY_API_KEY", apiKey)
+	header.Set("POLY_PASSPHRASE", apiPassphrase)
+
+	return header, nil
+}
+
+type PagedResponse struct {
+	NextCursor string          `json:"next_cursor"`
+	Data       json.RawMessage `json:"data"`
+}
 
 type Service struct {
 	defaultLimit int
-	gammaClient  *pm.Client
-	clobClient   *pm.Client
+	clobClient   *Client
 	l2Enabled    bool
 	log          logger.Log
 }
@@ -96,6 +226,23 @@ type OrderBook struct {
 	LastTradePrice string      `json:"last_trade_price"`
 }
 
+type rawOrderBook struct {
+	Market         string      `json:"market"`
+	AssetID        string      `json:"asset_id"`
+	Timestamp      string      `json:"timestamp"`
+	Hash           string      `json:"hash"`
+	Bids           []BookLevel `json:"bids"`
+	Asks           []BookLevel `json:"asks"`
+	MinOrderSize   string      `json:"min_order_size"`
+	TickSize       string      `json:"tick_size"`
+	NegRisk        bool        `json:"neg_risk"`
+	LastTradePrice string      `json:"last_trade_price"`
+}
+
+type TradeItem struct {
+	Market string `json:"market"`
+}
+
 func NewService(cfg config.Polymarket, log logger.Log) *Service {
 	httpClient := &http.Client{
 		Timeout: time.Duration(cfg.Timeout) * time.Second,
@@ -104,40 +251,19 @@ func NewService(cfg config.Polymarket, log logger.Log) *Service {
 		},
 	}
 
-	gammaClient := pm.NewClient(
-		strings.TrimRight(cfg.GammaBaseURL, "/"),
-		pm.ChainPolygon,
-		nil,
-		nil,
-		pm.WithHTTPClient(httpClient),
-		pm.WithThrowOnError(true),
-	)
-
-	var signer pm.ClobSigner
-	var creds *pm.ApiKeyCreds
-	if strings.TrimSpace(cfg.Address) != "" && strings.TrimSpace(cfg.ApiKey) != "" && strings.TrimSpace(cfg.ApiSecret) != "" && strings.TrimSpace(cfg.ApiPassphrase) != "" {
-		signer = &staticAddressSigner{address: strings.TrimSpace(cfg.Address)}
-		creds = &pm.ApiKeyCreds{
-			Key:        strings.TrimSpace(cfg.ApiKey),
-			Secret:     strings.TrimSpace(cfg.ApiSecret),
-			Passphrase: strings.TrimSpace(cfg.ApiPassphrase),
-		}
-	}
-
-	clobClient := pm.NewClient(
-		strings.TrimRight(cfg.ClobBaseURL, "/"),
-		pm.ChainPolygon,
-		signer,
-		creds,
-		pm.WithHTTPClient(httpClient),
-		pm.WithThrowOnError(true),
+	clobClient := NewClient(
+		cfg.ClobBaseURL,
+		httpClient,
+		cfg.Address,
+		cfg.ApiKey,
+		cfg.ApiSecret,
+		cfg.ApiPassphrase,
 	)
 
 	return &Service{
 		defaultLimit: cfg.DefaultLimit,
-		gammaClient:  gammaClient,
 		clobClient:   clobClient,
-		l2Enabled:    signer != nil && creds != nil,
+		l2Enabled:    clobClient.hasL2Creds(),
 		log:          log,
 	}
 }
@@ -172,14 +298,14 @@ func (s *Service) SearchMarkets(query string, limit int) ([]Market, error) {
 }
 
 func (s *Service) GetMarketByID(id string) (*Market, error) {
-	res, err := s.clobClient.GetMarket(context.Background(), id)
+	body, err := s.clobClient.request(context.Background(), http.MethodGet, "/markets/"+id, nil, false)
 	if err != nil {
 		s.log.Error("polymarket get market by id failed", "id", id, "error", err)
 		return nil, s.mapSDKError(err)
 	}
 
-	market, err := decodeAny[Market](res)
-	if err != nil {
+	var market Market
+	if err := json.Unmarshal(body, &market); err != nil {
 		s.log.Error("polymarket decode market failed", "id", id, "error", err)
 		return nil, err
 	}
@@ -299,14 +425,19 @@ func (s *Service) GetTokenPrice(tokenID string, side string) (*Price, error) {
 		return nil, ErrInvalidPriceSide
 	}
 
-	res, err := s.clobClient.GetPrice(context.Background(), tokenID, side)
+	query := map[string]string{
+		"token_id": tokenID,
+		"side":     side,
+	}
+
+	body, err := s.clobClient.request(context.Background(), http.MethodGet, "/price", query, false)
 	if err != nil {
 		s.log.Error("polymarket get token price failed", "token_id", tokenID, "side", side, "error", err)
 		return nil, s.mapSDKError(err)
 	}
 
-	price, err := decodeAny[Price](res)
-	if err != nil {
+	var price Price
+	if err := json.Unmarshal(body, &price); err != nil {
 		s.log.Error("polymarket decode price failed", "token_id", tokenID, "side", side, "error", err)
 		return nil, err
 	}
@@ -315,23 +446,33 @@ func (s *Service) GetTokenPrice(tokenID string, side string) (*Price, error) {
 }
 
 func (s *Service) GetOrderBook(tokenID string) (*OrderBook, error) {
-	book, err := s.clobClient.GetOrderBook(context.Background(), tokenID)
+	query := map[string]string{
+		"token_id": tokenID,
+	}
+
+	body, err := s.clobClient.request(context.Background(), http.MethodGet, "/book", query, false)
 	if err != nil {
 		s.log.Error("polymarket get order book failed", "token_id", tokenID, "error", err)
 		return nil, s.mapSDKError(err)
 	}
 
+	var raw rawOrderBook
+	if err := json.Unmarshal(body, &raw); err != nil {
+		s.log.Error("polymarket decode order book failed", "token_id", tokenID, "error", err)
+		return nil, err
+	}
+
 	return &OrderBook{
-		Market:         book.Market,
-		AssetID:        book.AssetID,
-		Timestamp:      book.Timestamp,
-		Hash:           book.Hash,
-		Bids:           mapOrderLevels(book.Bids),
-		Asks:           mapOrderLevels(book.Asks),
-		MinOrderSize:   book.MinOrderSize,
-		TickSize:       book.TickSize,
-		NegRisk:        book.NegRisk,
-		LastTradePrice: book.LastTradePrice,
+		Market:         raw.Market,
+		AssetID:        raw.AssetID,
+		Timestamp:      raw.Timestamp,
+		Hash:           raw.Hash,
+		Bids:           raw.Bids,
+		Asks:           raw.Asks,
+		MinOrderSize:   raw.MinOrderSize,
+		TickSize:       raw.TickSize,
+		NegRisk:        raw.NegRisk,
+		LastTradePrice: raw.LastTradePrice,
 	}, nil
 }
 
@@ -344,10 +485,25 @@ func (s *Service) ListAddressUnresolvedMarkets(address string, limit int) ([]Mar
 		return nil, ErrMissingL2Credentials
 	}
 
-	trades, err := s.clobClient.GetTrades(context.Background(), &pm.TradeParams{MakerAddress: normalized}, false, pm.InitialCursor)
+	query := map[string]string{
+		"maker_address": normalized,
+		"next_cursor":   InitialCursor,
+	}
+
+	body, err := s.clobClient.request(context.Background(), http.MethodGet, "/data/trades", query, true)
 	if err != nil {
 		s.log.Error("polymarket get trades failed", "address", normalized, "error", err)
 		return nil, s.mapSDKError(err)
+	}
+
+	var paged PagedResponse
+	if err := json.Unmarshal(body, &paged); err != nil {
+		return nil, err
+	}
+
+	var trades []TradeItem
+	if err := json.Unmarshal(paged.Data, &trades); err != nil {
+		return nil, err
 	}
 
 	conditionIDs := make(map[string]struct{})
@@ -383,7 +539,10 @@ func (s *Service) CheckL2Credentials() error {
 	if !s.l2Enabled {
 		return ErrMissingL2Credentials
 	}
-	_, err := s.clobClient.GetTrades(context.Background(), &pm.TradeParams{}, false, pm.InitialCursor)
+	query := map[string]string{
+		"next_cursor": InitialCursor,
+	}
+	_, err := s.clobClient.request(context.Background(), http.MethodGet, "/data/trades", query, true)
 	if err != nil {
 		s.log.Error("polymarket check l2 credentials failed", "error", err)
 		return s.mapSDKError(err)
@@ -398,7 +557,7 @@ func (s *Service) fetchRawMarkets(limit int) ([]map[string]any, error) {
 		resolvedLimit = s.normalizeLimit(resolvedLimit)
 	}
 
-	cursor := pm.InitialCursor
+	cursor := InitialCursor
 	initialCap := s.normalizeLimit(0)
 	if !fetchAll {
 		initialCap = resolvedLimit
@@ -406,14 +565,23 @@ func (s *Service) fetchRawMarkets(limit int) ([]map[string]any, error) {
 	markets := make([]map[string]any, 0, initialCap)
 
 	for {
-		payload, err := s.clobClient.GetMarkets(context.Background(), cursor)
+		query := map[string]string{
+			"next_cursor": cursor,
+		}
+		body, err := s.clobClient.request(context.Background(), http.MethodGet, "/markets", query, false)
 		if err != nil {
 			s.log.Error("polymarket list markets failed", "cursor", cursor, "error", err)
 			return nil, s.mapSDKError(err)
 		}
 
-		batch, err := decodeAny[[]map[string]any](payload.Data)
-		if err != nil {
+		var payload PagedResponse
+		if err := json.Unmarshal(body, &payload); err != nil {
+			s.log.Error("polymarket unmarshal markets page failed", "cursor", cursor, "error", err)
+			return nil, err
+		}
+
+		var batch []map[string]any
+		if err := json.Unmarshal(payload.Data, &batch); err != nil {
 			s.log.Error("polymarket decode markets failed", "cursor", cursor, "error", err)
 			return nil, err
 		}
@@ -425,7 +593,7 @@ func (s *Service) fetchRawMarkets(limit int) ([]map[string]any, error) {
 		}
 
 		next := strings.TrimSpace(payload.NextCursor)
-		if next == "" || next == pm.EndCursor {
+		if next == "" || next == EndCursor {
 			break
 		}
 		cursor = next
@@ -496,15 +664,9 @@ func (s *Service) mapSDKError(err error) error {
 	if err == nil {
 		return nil
 	}
-	var apiErr *pm.ApiError
+	var apiErr *ApiError
 	if errors.As(err, &apiErr) {
-		msg := strings.TrimSpace(apiErr.Message)
-		if msg != "" {
-			return fmt.Errorf("polymarket api error: %s", msg)
-		}
-		if apiErr.Status > 0 {
-			return fmt.Errorf("polymarket api status: %d", apiErr.Status)
-		}
+		return apiErr
 	}
 	return err
 }
@@ -522,29 +684,6 @@ func decodeAny[T any](value any) (T, error) {
 }
 
 var addressPattern = regexp.MustCompile(`(?i)^0x[0-9a-f]{40}$`)
-
-type staticAddressSigner struct {
-	address string
-}
-
-func (s *staticAddressSigner) Address(ctx context.Context) (string, error) {
-	_ = ctx
-	return s.address, nil
-}
-
-func (s *staticAddressSigner) SignClobAuth(ctx context.Context, chainID pm.Chain, timestamp int64, nonce int64) (string, error) {
-	_ = ctx
-	_ = chainID
-	_ = timestamp
-	_ = nonce
-	return "", nil
-}
-
-func (s *staticAddressSigner) SignOrderTypedData(ctx context.Context, payload pm.OrderTypedDataPayload) (string, error) {
-	_ = ctx
-	_ = payload
-	return "", nil
-}
 
 func normalizeAddress(address string) (string, error) {
 	trimmed := strings.TrimSpace(address)
@@ -567,15 +706,4 @@ func (t *stripAcceptEncodingTransport) RoundTrip(req *http.Request) (*http.Respo
 	clone.Header = req.Header.Clone()
 	clone.Header.Del("Accept-Encoding")
 	return base.RoundTrip(clone)
-}
-
-func mapOrderLevels(levels []pm.OrderSummary) []BookLevel {
-	if len(levels) == 0 {
-		return nil
-	}
-	mapped := make([]BookLevel, 0, len(levels))
-	for _, level := range levels {
-		mapped = append(mapped, BookLevel{Price: level.Price, Size: level.Size})
-	}
-	return mapped
 }

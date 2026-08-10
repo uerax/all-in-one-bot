@@ -26,7 +26,7 @@ type BitcointalkHandle struct {
 	url      string
 	filter   map[string]struct{}
 	limit    int
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	active   bool
 	notified store.LRU
 	db       store.Store
@@ -39,28 +39,31 @@ type BitcointalkHandle struct {
 
 func NewBitcointalkHandle(db store.Store, cfg *config.Bitcointalk, logger logger.Log, c chan models.Message) *BitcointalkHandle {
 	return &BitcointalkHandle{
-		url:      cfg.Url,
-		limit:    cfg.Limit,
-		filter:   make(map[string]struct{}),
-		mu:       sync.Mutex{},
-		db:       db,
-		notified: nil,
-		active:   false,
-		client:   &http.Client{Timeout: 10 * time.Second},
-		C:        c,
-		Logger:   logger,
-		Config:   cfg,
+		url:    cfg.Url,
+		limit:  cfg.Limit,
+		filter: make(map[string]struct{}),
+		db:     db,
+		active: false,
+		client: &http.Client{Timeout: 10 * time.Second},
+		C:      c,
+		Logger: logger,
+		Config: cfg,
+	}
+}
+
+// syncFilterLocked 更新过滤列表，调用方必须已持有写锁。
+func (t *BitcointalkHandle) syncFilterLocked() {
+	if m, err := t.db.Set("bitcointalk", "filter"); err != nil {
+		t.Logger.Error("bitcointalk 同步过滤列表失败", "error:", err)
+	} else {
+		t.filter = m
 	}
 }
 
 func (t *BitcointalkHandle) syncFilter() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if m, err := t.db.Set("bitcointalk", "filter"); err != nil {
-		t.Logger.Error("bitcointalk 同步过滤列表失败", "error:", err)
-	} else {
-		t.filter = m
-	}
+	t.syncFilterLocked()
 }
 
 func (f *BitcointalkHandle) dailySync(ctx context.Context) {
@@ -87,9 +90,11 @@ func (t *BitcointalkHandle) StartMonitor(ctx context.Context, chatID int64) erro
 		return ErrAlreadyRunning
 	}
 	t.notified = store.NewLRUCache(t.limit)
-	// 过滤列表更新
-	t.syncFilter()
-	t.monitor(chatID)
+	// Bug 1 fix: 在持锁期间调用不加锁的内部方法，避免死锁
+	t.syncFilterLocked()
+	// Bug 2 fix: 在持锁期间创建 cancel，防止 StopMonitor 在 goroutine 启动前拿到 nil cancel
+	ctx, cf := context.WithCancel(ctx)
+	t.cancel = cf
 	t.active = true
 	go t.runMonitor(ctx, chatID)
 	return nil
@@ -109,21 +114,18 @@ func (t *BitcointalkHandle) StopMonitor() error {
 }
 
 func (t *BitcointalkHandle) runMonitor(ctx context.Context, chatID int64) {
-
-	ctx, cf := context.WithCancel(ctx)
 	t.dailySync(ctx)
 	interval := time.Duration(t.Config.Interval) * time.Second
-	t.cancel = cf
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	t.Logger.Info("监控循环启动", "间隔: ", interval)
+	t.monitor(chatID)
 	for {
 		select {
 		case <-ctx.Done():
 			t.Logger.Info("收到终止信号，Bitcointalk 监控循环停止")
 			return
 		case <-ticker.C:
-			// 收到计时器信号，执行监控动作
 			t.monitor(chatID)
 		}
 	}
@@ -135,6 +137,8 @@ func (b *BitcointalkHandle) monitor(chatID int64) {
 		b.Logger.Error("请求Bitcointalk失败", "error:", err)
 		return
 	}
+	// Bug 3 fix: 确保 response body 被关闭，防止连接泄漏
+	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		b.Logger.Error("body解析失败", "error:", err)
@@ -156,10 +160,18 @@ func (b *BitcointalkHandle) monitor(chatID int64) {
 		if td.Text() != "" {
 			text := strings.TrimSpace(td.Text())
 			if !b.notified.Seen(topic) {
+				// Bug 4 fix: 读 filter 时加读锁，防止与 dailySync 并发写产生数据竞争
+				b.mu.RLock()
+				filtered := false
 				for k := range b.filter {
 					if strings.Contains(strings.ToLower(text), strings.ToLower(k)) {
-						return
+						filtered = true
+						break
 					}
+				}
+				b.mu.RUnlock()
+				if filtered {
+					return
 				}
 				if b.active {
 					reply := strings.TrimSpace(s.Find("td").Eq(4).Text())
@@ -168,9 +180,14 @@ func (b *BitcointalkHandle) monitor(chatID int64) {
 					if rpy < 5 {
 						url, exists := td.Attr("href")
 						if exists {
-							b.C <- models.Message{
+							// Bug 5 fix: 非阻塞发送，channel 满时跳过本条推送
+							select {
+							case b.C <- models.Message{
 								ChatID: chatID,
 								Text:   "Bitcointalk 新帖推送:\n主 题: *" + text + "*\n回复: *" + reply + "*\n点击: *" + views + "*\n直达链接: " + url,
+							}:
+							default:
+								b.Logger.Warn("消息队列已满，跳过本条推送", "topic:", topic)
 							}
 						}
 					}
