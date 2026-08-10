@@ -357,6 +357,7 @@ func (t *Coingecko) SyncList() {
 
 func (t *Coingecko) Handle() {
 	t.mu.RLock()
+	t.SyncPrice()
 	defer t.mu.RUnlock()
 
 	if len(t.price) == 0 {
