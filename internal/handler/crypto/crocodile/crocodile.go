@@ -47,12 +47,18 @@ type klineSource interface {
 	GetDailyKline(coin string) ([]cg.DailyKline, error)
 }
 
+type klineCacheItem struct {
+	klines    []cg.DailyKline
+	updatedAt time.Time
+}
+
 // Crocodile 是量能监控引擎。
 type Crocodile struct {
 	mu          sync.Mutex
 	source      klineSource
 	ruleConfig  RuleConfig
 	lastTrigger map[string]string // "coinID:rule" -> "2006-01-02"
+	klineCache  map[string]klineCacheItem
 	ctx         context.Context
 	cancel      context.CancelFunc
 	db          store.Store
@@ -64,14 +70,15 @@ type Crocodile struct {
 
 func NewCrocodile(db store.Store, source klineSource, ch chan<- models.Message, cfg config.Crocodile, log logger.Log) *Crocodile {
 	return &Crocodile{
-		db:     db,
-		source: source,
+		db:          db,
+		source:      source,
 		ruleConfig: RuleConfig{
 			Lookback:          cfg.Lookback,
 			YesterdayMultiple: cfg.YesterdayMultiple,
 			AverageMultiple:   cfg.AverageMultiple,
 		},
 		lastTrigger: make(map[string]string),
+		klineCache:  make(map[string]klineCacheItem),
 		ch:          ch,
 		client:      &http.Client{Timeout: 15 * time.Second},
 		log:         log,
@@ -94,7 +101,7 @@ func (c *Crocodile) Monitor(chatID int64) {
 
 	go func() {
 		c.log.Info("Crocodile 监控已启动")
-		c.check(chatID, true)
+		c.check(chatID)
 		for {
 			next := durationUntilNextRun()
 			timer := time.NewTimer(next)
@@ -104,7 +111,7 @@ func (c *Crocodile) Monitor(chatID int64) {
 				c.log.Info("Crocodile 监控已停止")
 				return
 			case <-timer.C:
-				c.check(chatID, true)
+				c.check(chatID)
 			}
 		}
 	}()
@@ -123,22 +130,39 @@ func (c *Crocodile) Stop(chatID int64) {
 	c.ch <- models.Message{ChatID: chatID, Text: "Crocodile 监控已关闭"}
 }
 
-// Handle 立即执行一次扫描。
+// Handle 手动触发一次扫描（只读查询，不写去重状态，设置 30s 超时上下文）。
 func (c *Crocodile) Handle(chatID int64) {
-	c.check(chatID, false)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	signals, errList := c.scan(ctx)
+	if len(signals) == 0 {
+		reply := "扫描完成，未触发量能信号"
+		if len(errList) > 0 {
+			reply += ":\n" + strings.Join(errList[:min(3, len(errList))], "\n")
+		}
+		c.ch <- models.Message{ChatID: chatID, Text: reply}
+		return
+	}
+	sort.Slice(signals, func(i, j int) bool { return signals[i].Name < signals[j].Name })
+	c.sendSignals(chatID, signals)
+	if len(errList) > 0 {
+		c.ch <- models.Message{ChatID: chatID, Text: "扫描期间部分错误:\n" + strings.Join(errList[:min(3, len(errList))], "\n")}
+	}
 }
 
 // ListMonitor 展示当前监控列表。
 func (c *Crocodile) ListMonitor(chatID int64) {
 	items, err := c.loadList()
 	if err != nil || len(items) == 0 {
-		c.ch <- models.Message{ChatID: chatID, Text: "监控列表为空，请使用 /crocodile\\_add 添加币种"}
+		c.ch <- models.Message{ChatID: chatID, Text: "监控列表为空，请使用 /crocodile_add 添加币种"}
 		return
 	}
 	var sb strings.Builder
 	sb.WriteString("*Crocodile 监控列表*\n")
-	for i, item := range items {
-		sb.WriteString(fmt.Sprintf("%d\\. `%s` \\- %s\n", i+1, item.ID, item.Name))
+	for _, item := range items {
+		link := fmt.Sprintf("https://www.coingecko.com/en/coins/%s", item.ID)
+		sb.WriteString(fmt.Sprintf("`%s`: [%s](%s)\n", item.Name, item.ID, link))
 	}
 	c.ch <- models.Message{ChatID: chatID, Text: sb.String(), Kind: models.KindMarkdown}
 }
@@ -193,12 +217,31 @@ func (c *Crocodile) UpdateRule(chatID int64, lookback int, yesterday, average fl
 	}
 }
 
-// check 执行一次量能扫描，dedup=true 时对已通知的信号去重。
-func (c *Crocodile) check(chatID int64, dedup bool) {
+func (c *Crocodile) getCachedKline(coinID string) ([]cg.DailyKline, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	item, ok := c.klineCache[coinID]
+	if ok && time.Since(item.updatedAt) < 10*time.Minute {
+		return item.klines, true
+	}
+	return nil, false
+}
+
+func (c *Crocodile) setCachedKline(coinID string, klines []cg.DailyKline) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.klineCache[coinID] = klineCacheItem{
+		klines:    klines,
+		updatedAt: time.Now(),
+	}
+}
+
+// scan 执行一次只读量能扫描：拉取 K 线、评估信号、报告错误。
+// 支持通过 Context 取消，内置 10 分钟短效缓存与智能重试机制。
+func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 	items, err := c.loadList()
 	if err != nil || len(items) == 0 {
-		c.ch <- models.Message{ChatID: chatID, Text: "请先配置需要监控的币种 (/crocodile\\_add)"}
-		return
+		return nil, []string{"监控列表为空，请先使用 /crocodile_add 添加币种"}
 	}
 
 	c.mu.Lock()
@@ -208,63 +251,105 @@ func (c *Crocodile) check(chatID int64, dedup bool) {
 	var signals []Signal
 	var errList []string
 
-	for _, item := range items {
-		klines, err := c.source.GetDailyKline(item.ID)
-		if err != nil {
-			errList = append(errList, fmt.Sprintf("%s: %v", item.ID, err))
-			continue
+	for i, item := range items {
+		select {
+		case <-ctx.Done():
+			errList = append(errList, "扫描提前取消")
+			return signals, errList
+		default:
 		}
+
+		klines, ok := c.getCachedKline(item.ID)
+		if !ok {
+			var err error
+			klines, err = c.source.GetDailyKline(item.ID)
+			// 智能重试：排除 404 等客户端错误，仅在网络/超时/限流时 500ms 重试一次
+			if err != nil && !strings.Contains(err.Error(), "404") {
+				c.log.Warn("crocodile GetDailyKline 首次失败，重试", "id", item.ID, "error", err)
+				select {
+				case <-ctx.Done():
+					errList = append(errList, "扫描提前取消")
+					return signals, errList
+				case <-time.After(500 * time.Millisecond):
+				}
+				klines, err = c.source.GetDailyKline(item.ID)
+			}
+			if err == nil {
+				c.setCachedKline(item.ID, klines)
+			} else {
+				errList = append(errList, fmt.Sprintf("%s: %v", item.ID, err))
+				continue
+			}
+		}
+
+		if i < len(items)-1 {
+			select {
+			case <-ctx.Done():
+				errList = append(errList, "扫描提前取消")
+				return signals, errList
+			case <-time.After(150 * time.Millisecond):
+			}
+		}
+
 		sig, err := evaluate(item, klines, rc)
 		if err != nil {
 			errList = append(errList, fmt.Sprintf("%s: %v", item.ID, err))
 			continue
 		}
-		if sig == nil {
-			continue
+		if sig != nil {
+			signals = append(signals, *sig)
 		}
-		if dedup {
-			key := item.ID + ":volume_spike"
-			day := sig.Time.Format("2006-01-02")
-			c.mu.Lock()
-			already := c.lastTrigger[key] == day
-			if !already {
-				c.lastTrigger[key] = day
-				// 容量上限保护
-				if len(c.lastTrigger) > 1000 {
-					for k := range c.lastTrigger {
-						delete(c.lastTrigger, k)
-						break
-					}
-				}
-			}
-			c.mu.Unlock()
-			if already {
-				continue
-			}
-		}
-		signals = append(signals, *sig)
+	}
+	return signals, errList
+}
+
+// check 定时扫描入口（Monitor 每日触发）：scan + 对已通知信号去重写入。
+// 无信号时静默，仅在存在错误时反馈。
+func (c *Crocodile) check(chatID int64) {
+	c.mu.Lock()
+	ctx := c.ctx
+	c.mu.Unlock()
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
-	if len(signals) == 0 {
-		if len(errList) > 0 {
-			n := len(errList)
-			if n > 3 {
-				n = 3
+	signals, errList := c.scan(ctx)
+
+	var notified []Signal
+	for i := range signals {
+		sig := &signals[i]
+		key := sig.Item.ID + ":volume_spike"
+		day := sig.Time.Format("2006-01-02")
+		c.mu.Lock()
+		already := c.lastTrigger[key] == day
+		if !already {
+			c.lastTrigger[key] = day
+			// 容量上限保护
+			if len(c.lastTrigger) > 1000 {
+				for k := range c.lastTrigger {
+					delete(c.lastTrigger, k)
+					break
+				}
 			}
-			c.ch <- models.Message{ChatID: chatID, Text: "扫描完成，发现以下错误:\n" + strings.Join(errList[:n], "\n")}
+		}
+		c.mu.Unlock()
+		if !already {
+			notified = append(notified, *sig)
+		}
+	}
+
+	if len(notified) == 0 {
+		if len(errList) > 0 {
+			c.ch <- models.Message{ChatID: chatID, Text: "扫描完成，未触发量能信号:\n" + strings.Join(errList[:min(3, len(errList))], "\n")}
 		}
 		return
 	}
 
-	sort.Slice(signals, func(i, j int) bool { return signals[i].Name < signals[j].Name })
-	c.sendSignals(chatID, signals)
+	sort.Slice(notified, func(i, j int) bool { return notified[i].Name < notified[j].Name })
+	c.sendSignals(chatID, notified)
 
 	if len(errList) > 0 {
-		n := len(errList)
-		if n > 3 {
-			n = 3
-		}
-		c.ch <- models.Message{ChatID: chatID, Text: "扫描期间部分错误:\n" + strings.Join(errList[:n], "\n")}
+		c.ch <- models.Message{ChatID: chatID, Text: "扫描期间部分错误:\n" + strings.Join(errList[:min(3, len(errList))], "\n")}
 	}
 }
 
@@ -276,8 +361,8 @@ func (c *Crocodile) sendSignals(chatID int64, signals []Signal) {
 			"🐊 [%s](%s) 触发买入信号\n"+
 				"日期: `%s`\n"+
 				"收盘价: `$%.4f`\n"+
-				"今日量能倍数: `%.2fx` \\(阈值 %.1fx\\)\n"+
-				"均值量能倍数: `%.2fx` \\(阈值 %.1fx\\)",
+				"今日量能倍数: `%.2fx` (阈值 %.1fx)\n"+
+				"均值量能倍数: `%.2fx` (阈值 %.1fx)",
 			escapeMarkdown(sig.Name), link,
 			sig.Time.Format("2006-01-02"),
 			sig.Close,
@@ -288,13 +373,12 @@ func (c *Crocodile) sendSignals(chatID int64, signals []Signal) {
 	}
 }
 
+// escapeMarkdown 转义 Telegram MarkdownV1 保留字符。
+// 消息经 dispatcher 以 tb.ModeMarkdown (V1) 发送，仅需转义 _ * ` [；
+// 转义 V2 专有字符 (- . () 等) 会在 V1 下原样输出 \- \. \(
 func escapeMarkdown(s string) string {
 	replacer := strings.NewReplacer(
-		"_", "\\_", "*", "\\*", "[", "\\[", "]", "\\]",
-		"(", "\\(", ")", "\\)", "~", "\\~", "`", "\\`",
-		">", "\\>", "#", "\\#", "+", "\\+", "-", "\\-",
-		"=", "\\=", "|", "\\|", "{", "\\{", "}", "\\}",
-		".", "\\.", "!", "\\!",
+		"_", "\\_", "*", "\\*", "`", "\\`", "[", "\\[",
 	)
 	return replacer.Replace(s)
 }

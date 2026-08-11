@@ -31,7 +31,7 @@ func (d *Dispatcher) Start(ctx context.Context) {
 			case msg := <-d.msgCh:
 				var err error
 				if msg.Kind == models.KindMarkdown {
-					_, err = d.bot.Send(tb.ChatID(msg.ChatID), msg.Text, tb.ModeMarkdown)
+					_, err = d.bot.Send(tb.ChatID(msg.ChatID), msg.Text, tb.ModeMarkdown, tb.NoPreview)
 				} else {
 					_, err = d.bot.Send(tb.ChatID(msg.ChatID), msg.Text)
 				}

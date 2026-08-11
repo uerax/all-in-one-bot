@@ -71,9 +71,11 @@ func NewRouter(b *tb.Bot, c chan models.Message) *Router {
 }
 
 // RegisterHandlers 负责将所有 Handler 绑定到 Bot 实例。
+// 每个 handler 统一包裹一层 authorizedOnly 鉴权中间件，非管理员命令被静默丢弃。
 func (r *Router) RegisterHandlers(b *tb.Bot, deps *Dependencies) {
 	handlers := r.Handlers(deps)
 	for _, h := range handlers {
-		b.Handle(h.Cmd(), h.Handle)
+		mw := authorizedOnly(deps.AdminIDs, h.Cmd(), deps.Logger, h.Handle)
+		b.Handle(h.Cmd(), mw)
 	}
 }

@@ -40,6 +40,7 @@ func Run() {
 	dependencies.Logger = log
 	dependencies.Config = cfg
 	dependencies.Store = db
+	dependencies.AdminIDs = router.AdminIDsSet(cfg.Telegram.AdminIDs)
 
 	// 创建 Dispatcher 用于消息分发
 	c := make(chan models.Message, 20)

@@ -25,8 +25,9 @@ func LoadConfig(configPath string) *Config {
 	config := &Config{}
 
 	config.Telegram = Telegram{
-		Token:   strOrDefaultBase("TELEGRAM_TOKEN", base.Telegram.Token, ""),
-		Timeout: int64OrDefaultBase("TELEGRAM_TIMEOUT", base.Telegram.Timeout, 10),
+		Token:    strOrDefaultBase("TELEGRAM_TOKEN", base.Telegram.Token, ""),
+		Timeout:  int64OrDefaultBase("TELEGRAM_TIMEOUT", base.Telegram.Timeout, 10),
+		AdminIDs: telegramAdminIDs("TELEGRAM_ADMIN_IDS", base.Telegram.AdminIDs),
 	}
 
 	config.Polymarket = Polymarket{
@@ -104,8 +105,9 @@ type Bitcointalk struct {
 }
 
 type Telegram struct {
-	Token   string `yaml:"token"`
-	Timeout int64  `yaml:"timeout"`
+	Token    string  `yaml:"token"`
+	Timeout  int64   `yaml:"timeout"`
+	AdminIDs []int64 `yaml:"admin_ids"` // 管理员 Telegram ID 白名单（逗号分隔/env，列表/YAML）；空则全部放行
 }
 
 type Nodeseek struct {

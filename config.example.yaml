@@ -18,6 +18,10 @@
 telegram:
   token: ""          # env TELEGRAM_TOKEN (必填，留空且 env 也无 → Bot 初始化失败)
   timeout: 10        # env TELEGRAM_TIMEOUT (秒, 默认 10)
+  # 管理员 Telegram ID 白名单（列表形式）；env TELEGRAM_ADMIN_IDS 用英文逗号分隔。
+  # 非白名单用户的命令会被静默丢弃；留空（不写或 []）则全部放行 (默认行为)。
+  # 获取你的 ID：给 bot 发 /chatid。
+  admin_ids: []      # 例: [123456789, 987654321]
 
 # ───────── Polymarket ─────────
 polymarket:
