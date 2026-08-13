@@ -88,29 +88,48 @@
 
 ## 四、 快速部署与配置指南
 
-### 1. 直接部署（systemd / 二进制）
+### 1. Systemd 一键脚本部署（推荐 Linux 服务器）
+
+项目提供了一键管理与安装脚本 `install.sh`，支持自动识别系统架构（`amd64` / `arm64`）、自动从 GitHub Release 下载二进制包、创建配置目录并配置 Systemd 服务：
+
+```bash
+# 下载并运行一键脚本（需要 root 权限）
+curl -sSL https://raw.githubusercontent.com/uerax/all-in-one-bot/refs/heads/lite/install.sh -o install.sh
+sudo bash install.sh
+```
+
+**交互菜单功能**：
+- **1. 安装服务**：自动安装二进制至 `/usr/local/bin/all-in-one-bot`，并在 `/etc/aio/` 生成配置模板 `config.yaml` 与 `.env`。
+- **2-4. 服务管理**：支持一键 `start` (启动)、`stop` (停止)、`restart` (重启)。
+- **5. 查看日志**：实时追踪 `journalctl -u aio -f` 服务输出日志。
+- **6. 自动更新**：自动从 GitHub Release 拉取最新发布二进制并无缝重启。
+- **7. 完全卸载**：清理二进制、服务文件及配置文件。
+
+### 2. 本地手动编译与 Systemd 部署
 
 ```bash
 # 1. 编译二进制
 go build -o all-in-one-bot .
 
 # 2. 复制配置示例
-cp config.example.yaml /etc/all-in-one-bot/config.yaml
-vim /etc/all-in-one-bot/config.yaml    # 填写 Telegram Token 与相关配置
+mkdir -p /etc/aio
+cp config.example.yaml /etc/aio/config.yaml
+vim /etc/aio/config.yaml    # 填写 Telegram Token 与相关配置
 ```
 
-编写服务文件 `/etc/systemd/system/all-in-one-bot.service`：
+编写服务文件 `/etc/systemd/system/aio.service`：
 ```ini
 [Unit]
-Description=all-in-one-bot (lite)
+Description=all-in-one-bot (lite) Telegram Bot Service
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/opt/aio/all-in-one-bot -config /etc/all-in-one-bot/config.yaml
+User=root
+ExecStart=/usr/local/bin/all-in-one-bot -config /etc/aio/config.yaml
 Restart=on-failure
-RestartSec=5
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
@@ -119,10 +138,10 @@ WantedBy=multi-user.target
 启动服务：
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now all-in-one-bot
+sudo systemctl enable --now aio
 ```
 
-### 2. Docker Compose 部署
+### 3. Docker Compose 部署
 
 ```bash
 # 1. 拷贝环境变量配置文件
