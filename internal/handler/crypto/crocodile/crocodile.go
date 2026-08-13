@@ -100,6 +100,8 @@ func (c *Crocodile) Monitor(chatID int64) {
 	c.cancel = cf
 	c.mu.Unlock()
 
+	c.ch <- models.Message{ChatID: chatID, Text: "Crocodile 监控已启动，将在每日 UTC 00:05 自动执行扫描"}
+
 	go func() {
 		c.log.Info("Crocodile 监控已启动")
 		c.check(chatID)
@@ -209,7 +211,7 @@ func (c *Crocodile) ListMonitor(chatID int64) {
 	sb.WriteString("*Crocodile 监控列表*\n")
 	for _, item := range items {
 		link := fmt.Sprintf("https://www.coingecko.com/en/coins/%s", item.ID)
-		sb.WriteString(fmt.Sprintf("`%s`: [%s](%s)\n", item.Name, item.ID, link))
+		fmt.Fprintf(&sb, "`%s`: [%s](%s)\n", item.Name, item.ID, link)
 	}
 	c.ch <- models.Message{ChatID: chatID, Text: sb.String(), Kind: models.KindMarkdown}
 }

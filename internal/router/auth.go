@@ -49,6 +49,12 @@ func authorizedOnly(adminIDs map[int64]bool, cmd string, log logger.Log, next fu
 			)
 			return nil // 静默丢弃，不回复
 		}
+		log.Info(
+			"command processed",
+			"command", cmd,
+			"sender_id", senderID,
+			"chat_id", c.Chat().ID,
+		)
 		return next(c)
 	}
 }
