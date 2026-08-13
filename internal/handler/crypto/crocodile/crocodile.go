@@ -30,7 +30,7 @@ type RuleConfig struct {
 	AverageMultiple   float64
 }
 
-// Signal 存储触发信号的详细信息。
+// Signal 存储币种扫描诊断与告警信号信息。
 type Signal struct {
 	Item
 	RuleConfig
@@ -41,6 +41,7 @@ type Signal struct {
 	PreviousAverageVol float64
 	YesterdayRatio     float64
 	AverageRatio       float64
+	Triggered          bool
 }
 
 type klineSource interface {
@@ -130,24 +131,70 @@ func (c *Crocodile) Stop(chatID int64) {
 	c.ch <- models.Message{ChatID: chatID, Text: "Crocodile 监控已关闭"}
 }
 
-// Handle 手动触发一次扫描（只读查询，不写去重状态，设置 30s 超时上下文）。
+// Handle 手动触发一次只读量能诊断扫描（/crocodile_check），返回包含所有币种量能现状的详细诊断报告。
 func (c *Crocodile) Handle(chatID int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	signals, errList := c.scan(ctx)
-	if len(signals) == 0 {
-		reply := "扫描完成，未触发量能信号"
-		if len(errList) > 0 {
-			reply += ":\n" + strings.Join(errList[:min(3, len(errList))], "\n")
+
+	c.mu.Lock()
+	rc := c.ruleConfig
+	c.mu.Unlock()
+
+	var triggered []Signal
+	var untriggered []Signal
+
+	for _, sig := range signals {
+		if sig.Triggered {
+			triggered = append(triggered, sig)
+		} else {
+			untriggered = append(untriggered, sig)
 		}
-		c.ch <- models.Message{ChatID: chatID, Text: reply}
-		return
 	}
-	sort.Slice(signals, func(i, j int) bool { return signals[i].Name < signals[j].Name })
-	c.sendSignals(chatID, signals)
+
+	sort.Slice(triggered, func(i, j int) bool { return triggered[i].Name < triggered[j].Name })
+	sort.Slice(untriggered, func(i, j int) bool { return untriggered[i].Name < untriggered[j].Name })
+
+	var sb strings.Builder
+	nowUTC := time.Now().UTC().Format("2006-01-02 15:04:05")
+	sb.WriteString("🐊 *Crocodile 量能诊断报告* (`/crocodile_check`)\n")
+	fmt.Fprintf(&sb, "扫描时间: `%s UTC`\n", nowUTC)
+	fmt.Fprintf(&sb, "规则配置: 回望 `%d`天 | 昨日倍数 `%.1fx` | 均值倍数 `%.1fx`\n", rc.Lookback, rc.YesterdayMultiple, rc.AverageMultiple)
+	fmt.Fprintf(&sb, "扫描总数: `%d` | 触发告警: `%d`\n\n", len(signals), len(triggered))
+
+	if len(triggered) > 0 {
+		sb.WriteString("*【🟢 触发量能信号币种】*\n")
+		for _, sig := range triggered {
+			link := fmt.Sprintf("https://www.coingecko.com/en/coins/%s", sig.ID)
+			fmt.Fprintf(&sb, "🟢 [%s](%s) (`%s`)\n", escapeMarkdown(sig.Name), link, sig.ID)
+			fmt.Fprintf(&sb, "  收盘价: `$%.4f` | 今日量能: `%.2f`\n", sig.Close, sig.Volume)
+			fmt.Fprintf(&sb, "  昨日倍数: *%.2fx* (阈值 %.1fx) | 均值倍数: *%.2fx* (阈值 %.1fx)\n\n",
+				sig.YesterdayRatio, sig.YesterdayMultiple, sig.AverageRatio, sig.AverageMultiple)
+		}
+	}
+
+	if len(untriggered) > 0 {
+		sb.WriteString("*【⚪ 未触发币种量能现状】*\n")
+		for _, sig := range untriggered {
+			fmt.Fprintf(&sb, "⚪ `%s`: 收盘 `$%.4f` | 昨日倍数: `%.2fx` | 均值倍数: `%.2fx`\n",
+				sig.Name, sig.Close, sig.YesterdayRatio, sig.AverageRatio)
+		}
+		sb.WriteString("\n")
+	}
+
 	if len(errList) > 0 {
-		c.ch <- models.Message{ChatID: chatID, Text: "扫描期间部分错误:\n" + strings.Join(errList[:min(3, len(errList))], "\n")}
+		sb.WriteString("*【⚠️ 扫描异常说明】*\n")
+		limit := min(5, len(errList))
+		for _, errStr := range errList[:limit] {
+			fmt.Fprintf(&sb, "- %s\n", errStr)
+		}
+	}
+
+	c.ch <- models.Message{
+		ChatID: chatID,
+		Text:   strings.TrimSpace(sb.String()),
+		Kind:   models.KindMarkdown,
 	}
 }
 
@@ -318,6 +365,9 @@ func (c *Crocodile) check(chatID int64) {
 	var notified []Signal
 	for i := range signals {
 		sig := &signals[i]
+		if !sig.Triggered {
+			continue
+		}
 		key := sig.Item.ID + ":volume_spike"
 		day := sig.Time.Format("2006-01-02")
 		c.mu.Lock()
@@ -417,21 +467,20 @@ func evaluate(item Item, klines []provider.DailyKline, rc RuleConfig) (*Signal, 
 
 	yRatio := targetDay.Volume / prevDay.Volume
 	aRatio := targetDay.Volume / avg
+	triggered := yRatio >= rc.YesterdayMultiple && aRatio >= rc.AverageMultiple
 
-	if yRatio >= rc.YesterdayMultiple && aRatio >= rc.AverageMultiple {
-		return &Signal{
-			Item:               item,
-			RuleConfig:         rc,
-			Time:               targetDay.Timestamp,
-			Close:              targetDay.Close,
-			Volume:             targetDay.Volume,
-			PreviousVolume:     prevDay.Volume,
-			PreviousAverageVol: avg,
-			YesterdayRatio:     yRatio,
-			AverageRatio:       aRatio,
-		}, nil
-	}
-	return nil, nil
+	return &Signal{
+		Item:               item,
+		RuleConfig:         rc,
+		Time:               targetDay.Timestamp,
+		Close:              targetDay.Close,
+		Volume:             targetDay.Volume,
+		PreviousVolume:     prevDay.Volume,
+		PreviousAverageVol: avg,
+		YesterdayRatio:     yRatio,
+		AverageRatio:       aRatio,
+		Triggered:          triggered,
+	}, nil
 }
 
 // durationUntilNextRun 计算到下一个 UTC 00:05 的等待时长。
