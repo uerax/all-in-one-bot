@@ -57,6 +57,11 @@ nodeseek:
 coingecko:
   keys: ""                    # env COINGECKO_KEYS (逗号分隔的 demo API keys)
 
+# ───────── GeckoTerminal (DEX 行情接口) ─────────
+geckoterminal:
+  base_url: "https://api.geckoterminal.com/api/v2"  # env GECKOTERMINAL_BASE_URL
+  timeout: 15                                       # env GECKOTERMINAL_TIMEOUT (秒, 默认 15)
+
 # ───────── Crocodile (每日 UTC 00:05 量能突增扫描) ─────────
 crocodile:
   lookback: 5                           # env CROCODILE_LOOKBACK (回看天数, 默认 5)
