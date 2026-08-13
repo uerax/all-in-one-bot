@@ -1,0 +1,56 @@
+name: Go Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-go-binary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin] # 需要打包的系统
+        goarch: [amd64, arm64] # 需要打包的架构
+        exclude:
+          # 排除无效组合
+          - goos: windows
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Get version from tag
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Create output directory
+      run: mkdir -p build/${{ steps.get_version.outputs.version }}
+
+    - name: Build
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        EXT: ${{ matrix.goos == 'windows' && '.exe' || '' }}
+      run: |
+        OUTPUT="build/${{ steps.get_version.outputs.version }}/Aio-${{ matrix.goos }}-${{ matrix.goarch }}${EXT}"
+        go build -o "${OUTPUT}" -trimpath -ldflags "-s -w -buildid=" main.go
+        echo "Built: ${OUTPUT}"
+
+    - name: Upload to Release
+      if: success()
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          build/${{ steps.get_version.outputs.version }}/*

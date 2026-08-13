@@ -1,0 +1,18 @@
+services:
+  aio:
+    image: uerax/aio:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: all-in-one-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    networks:
+      - botnet
+
+networks:
+  botnet:
+    driver: bridge
