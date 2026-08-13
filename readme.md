@@ -129,8 +129,8 @@ sudo systemctl enable --now all-in-one-bot
 cp .env.example .env
 vim .env    # 填入 TELEGRAM_TOKEN, TELEGRAM_ADMIN_IDS 等
 
-# 2. 启动服务
-docker compose up -d
+# 2. 编译并启动服务
+docker compose up -d --build
 ```
 
 ---
