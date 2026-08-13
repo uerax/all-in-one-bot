@@ -75,9 +75,31 @@ get_latest_version() {
     fi
 }
 
+# 检查旧版 (v2) 部署
+check_legacy_v2() {
+    local legacy_cfg="/usr/local/etc/aio/all-in-one-bot.yml"
+    local legacy_bin="/usr/local/bin/aio"
+
+    if [ -f "$legacy_cfg" ] || [ -f "$legacy_bin" ]; then
+        echo -e "\n${Yellow}====================================================${Font}"
+        echo -e "${Yellow}提示：检测到当前服务器已安装旧版 (v2) 项目！${Font}"
+        echo -e "${Yellow}旧版二进制路径: ${legacy_bin}${Font}"
+        echo -e "${Yellow}旧版配置文件: ${legacy_cfg}${Font}"
+        echo -e "${Yellow}注意：一键安装会将 Systemd 服务 aio.service 升级指向 lite 版本。${Font}"
+        echo -e "${Yellow}你的旧版配置文件和二进制会被完整保留在原目录，不会被删除。${Font}"
+        echo -e "${Yellow}====================================================${Font}\n"
+        read -rp "是否继续升级安装 lite 版本？[Y/n]: " continue_install
+        if [[ "$continue_install" =~ ^[Nn]$ ]]; then
+            echo -e "${Yellow}已取消安装。${Font}"
+            exit 0
+        fi
+    fi
+}
+
 # 下载并安装二进制文件及默认配置
 install_aio() {
     check_root
+    check_legacy_v2
     detect_arch
     install_dependencies
     get_latest_version
