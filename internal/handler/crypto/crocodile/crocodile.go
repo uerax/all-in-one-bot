@@ -268,7 +268,13 @@ func (c *Crocodile) getCachedKline(coinID string) ([]provider.DailyKline, bool) 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	item, ok := c.klineCache[coinID]
-	if ok && time.Since(item.updatedAt) < 10*time.Minute {
+	if !ok {
+		return nil, false
+	}
+	// 由于每天 UTC 00:05 评估的是上一个完整 UTC 自然日的闭合 K 线，在同一 UTC 日期内该闭合数据不会改变。
+	// 双重安全校验：既要求属于同一个 UTC 自然日，又限制单次缓存最长不超过 12 小时（防止跨天边界遗留）。
+	todayUTC := time.Now().UTC().Format("2006-01-02")
+	if item.updatedAt.UTC().Format("2006-01-02") == todayUTC && time.Since(item.updatedAt) < 12*time.Hour {
 		return item.klines, true
 	}
 	return nil, false
