@@ -134,4 +134,3 @@ func (f *FileStore) Set(database string, key string) (map[string]struct{}, error
 	}
 	return data, nil
 }
-

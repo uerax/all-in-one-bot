@@ -80,13 +80,13 @@ func TestBitcointalkHandle_syncFilter(t *testing.T) {
 func TestBitcointalkHandle_monitor(t *testing.T) {
 	path := filepath.Join("testdata", "testdata.txt")
 	content, err := os.ReadFile(path)
-    if err != nil {
-        t.Fatalf("无法读取测试样本文件: %v", err)
-    }
+	if err != nil {
+		t.Fatalf("无法读取测试样本文件: %v", err)
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        w.WriteHeader(http.StatusOK)
-        w.Write(content)
-    }))
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}))
 	defer server.Close()
 
 	mockChan := make(chan models.Message, 100) // 真实数据多，通道开大点
@@ -108,28 +108,28 @@ func TestBitcointalkHandle_monitor(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   chan <- models.Message
+		want   chan<- models.Message
 	}{
 		// TODO: Add test cases.
 		{
 			name: "正常启动测试",
 			fields: fields{
-				url:      server.URL,
-				filter:   map[string]struct{}{
+				url: server.URL,
+				filter: map[string]struct{}{
 					"privacy-focused": {},
-					"CPU Mineable": {},
+					"CPU Mineable":    {},
 				},
-				limit:    100,
-				active:   true,
+				limit:  100,
+				active: true,
 				notified: &MockLRU{
 					SeenFunc: func(key string) bool {
 						return false
 					},
 				},
-				C:        mockChan,
-				client:   server.Client(),
-				Logger:   &mocks.MockLogger{},
-				Config:   &config.Bitcointalk{},
+				C:      mockChan,
+				client: server.Client(),
+				Logger: &mocks.MockLogger{},
+				Config: &config.Bitcointalk{},
 			},
 			want: mockChan,
 		},

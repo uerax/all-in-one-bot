@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
-	cg "github.com/uerax/all-in-one-bot/lite/internal/handler/crypto/coingecko"
+	"github.com/uerax/all-in-one-bot/lite/internal/crypto/provider"
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
 	"github.com/uerax/all-in-one-bot/lite/internal/store"
@@ -34,21 +34,21 @@ type RuleConfig struct {
 type Signal struct {
 	Item
 	RuleConfig
-	Time                 time.Time
-	Close                float64
-	Volume               float64
-	PreviousVolume       float64
-	PreviousAverageVol   float64
-	YesterdayRatio       float64
-	AverageRatio         float64
+	Time               time.Time
+	Close              float64
+	Volume             float64
+	PreviousVolume     float64
+	PreviousAverageVol float64
+	YesterdayRatio     float64
+	AverageRatio       float64
 }
 
 type klineSource interface {
-	GetDailyKline(coin string) ([]cg.DailyKline, error)
+	GetDailyKline(coin string) ([]provider.DailyKline, error)
 }
 
 type klineCacheItem struct {
-	klines    []cg.DailyKline
+	klines    []provider.DailyKline
 	updatedAt time.Time
 }
 
@@ -70,8 +70,8 @@ type Crocodile struct {
 
 func NewCrocodile(db store.Store, source klineSource, ch chan<- models.Message, cfg config.Crocodile, log logger.Log) *Crocodile {
 	return &Crocodile{
-		db:          db,
-		source:      source,
+		db:     db,
+		source: source,
 		ruleConfig: RuleConfig{
 			Lookback:          cfg.Lookback,
 			YesterdayMultiple: cfg.YesterdayMultiple,
@@ -217,7 +217,7 @@ func (c *Crocodile) UpdateRule(chatID int64, lookback int, yesterday, average fl
 	}
 }
 
-func (c *Crocodile) getCachedKline(coinID string) ([]cg.DailyKline, bool) {
+func (c *Crocodile) getCachedKline(coinID string) ([]provider.DailyKline, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	item, ok := c.klineCache[coinID]
@@ -227,7 +227,7 @@ func (c *Crocodile) getCachedKline(coinID string) ([]cg.DailyKline, bool) {
 	return nil, false
 }
 
-func (c *Crocodile) setCachedKline(coinID string, klines []cg.DailyKline) {
+func (c *Crocodile) setCachedKline(coinID string, klines []provider.DailyKline) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.klineCache[coinID] = klineCacheItem{
@@ -384,32 +384,48 @@ func escapeMarkdown(s string) string {
 }
 
 // evaluate 对单个币种执行量能规则评估。
-func evaluate(item Item, klines []cg.DailyKline, rc RuleConfig) (*Signal, error) {
+// 自动剔除未闭合的“今天（UTC 当天）”K线，确保对比对象为【已闭合的上一自然日 Full 24h K线】与【前天及前 N 天均值】。
+func evaluate(item Item, klines []provider.DailyKline, rc RuleConfig) (*Signal, error) {
+	if len(klines) == 0 {
+		return nil, fmt.Errorf("kline 数据为空")
+	}
+
+	// 剔除尚未闭合的当前 UTC 当天 K 线（例如在 UTC 00:05 运行时，当天的柱子仅有 5 分钟成交量）
+	todayUTC := time.Now().UTC().Format("2006-01-02")
+	if klines[len(klines)-1].Timestamp.UTC().Format("2006-01-02") == todayUTC {
+		klines = klines[:len(klines)-1]
+	}
+
 	need := rc.Lookback + 1
 	if len(klines) < need {
-		return nil, fmt.Errorf("kline 数据不足 (%d < %d)", len(klines), need)
+		return nil, fmt.Errorf("完全闭合的 kline 数据不足 (%d < %d)", len(klines), need)
 	}
+
 	recent := klines[len(klines)-need:]
-	latest := recent[len(recent)-1]
-	yesterday := recent[len(recent)-2]
+	targetDay := recent[len(recent)-1] // 【刚刚闭合的上一自然日 Full 24h K线】
+	prevDay := recent[len(recent)-2]   // 【前天（再前一个自然日）Full 24h K线】
+
 	var sumVol float64
 	for _, k := range recent[:rc.Lookback] {
 		sumVol += k.Volume
 	}
-	avg := sumVol / float64(rc.Lookback)
-	if avg == 0 || yesterday.Volume == 0 {
+	avg := sumVol / float64(rc.Lookback) // 包含前天在内，此前 Lookback (例如 5) 天的平均成交量
+
+	if avg == 0 || prevDay.Volume == 0 {
 		return nil, nil
 	}
-	yRatio := latest.Volume / yesterday.Volume
-	aRatio := latest.Volume / avg
+
+	yRatio := targetDay.Volume / prevDay.Volume
+	aRatio := targetDay.Volume / avg
+
 	if yRatio >= rc.YesterdayMultiple && aRatio >= rc.AverageMultiple {
 		return &Signal{
 			Item:               item,
 			RuleConfig:         rc,
-			Time:               latest.Time,
-			Close:              latest.Close,
-			Volume:             latest.Volume,
-			PreviousVolume:     yesterday.Volume,
+			Time:               targetDay.Timestamp,
+			Close:              targetDay.Close,
+			Volume:             targetDay.Volume,
+			PreviousVolume:     prevDay.Volume,
 			PreviousAverageVol: avg,
 			YesterdayRatio:     yRatio,
 			AverageRatio:       aRatio,

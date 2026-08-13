@@ -62,6 +62,11 @@ func LoadConfig(configPath string) *Config {
 		Keys: strOrDefaultBase("COINGECKO_KEYS", base.Coingecko.Keys, ""),
 	}
 
+	config.GeckoTerminal = GeckoTerminal{
+		BaseURL: strOrDefaultBase("GECKOTERMINAL_BASE_URL", base.GeckoTerminal.BaseURL, "https://api.geckoterminal.com/api/v2"),
+		Timeout: intOrDefaultBase("GECKOTERMINAL_TIMEOUT", base.GeckoTerminal.Timeout, 15),
+	}
+
 	config.Crocodile = Crocodile{
 		Lookback:          intOrDefaultBase("CROCODILE_LOOKBACK", base.Crocodile.Lookback, 5),
 		YesterdayMultiple: float64OrDefaultBase("CROCODILE_YESTERDAY_MULTIPLE", base.Crocodile.YesterdayMultiple, 3.0),
@@ -73,13 +78,14 @@ func LoadConfig(configPath string) *Config {
 }
 
 type Config struct {
-	Telegram    Telegram    `yaml:"telegram"`
-	Polymarket  Polymarket  `yaml:"polymarket"`
-	Bitcointalk Bitcointalk `yaml:"bitcointalk"`
-	Database    Database    `yaml:"database"`
-	Nodeseek    Nodeseek    `yaml:"nodeseek"`
-	Coingecko   Coingecko   `yaml:"coingecko"`
-	Crocodile   Crocodile   `yaml:"crocodile"`
+	Telegram      Telegram      `yaml:"telegram"`
+	Polymarket    Polymarket    `yaml:"polymarket"`
+	Bitcointalk   Bitcointalk   `yaml:"bitcointalk"`
+	Database      Database      `yaml:"database"`
+	Nodeseek      Nodeseek      `yaml:"nodeseek"`
+	Coingecko     Coingecko     `yaml:"coingecko"`
+	GeckoTerminal GeckoTerminal `yaml:"geckoterminal"`
+	Crocodile     Crocodile     `yaml:"crocodile"`
 }
 
 type Database struct {
@@ -118,6 +124,11 @@ type Nodeseek struct {
 
 type Coingecko struct {
 	Keys string `yaml:"keys"` // 逗号分隔的 demo API keys
+}
+
+type GeckoTerminal struct {
+	BaseURL string `yaml:"base_url"`
+	Timeout int    `yaml:"timeout"`
 }
 
 type Crocodile struct {

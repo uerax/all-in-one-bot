@@ -4,11 +4,11 @@ import "testing"
 
 func TestParseHoldingsArgs(t *testing.T) {
 	tests := []struct {
-		name       string
-		payload    string
-		wantAddr   string
-		wantLimit  int
-		wantErr    bool
+		name      string
+		payload   string
+		wantAddr  string
+		wantLimit int
+		wantErr   bool
 	}{
 		{name: "address only", payload: "0x1111111111111111111111111111111111111111", wantAddr: "0x1111111111111111111111111111111111111111", wantLimit: 0, wantErr: false},
 		{name: "address and limit", payload: "0x1111111111111111111111111111111111111111 15", wantAddr: "0x1111111111111111111111111111111111111111", wantLimit: 15, wantErr: false},

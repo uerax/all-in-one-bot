@@ -1,9 +1,12 @@
 package router
 
 import (
+	"github.com/uerax/all-in-one-bot/lite/internal/crypto/provider"
+	cgprovider "github.com/uerax/all-in-one-bot/lite/internal/crypto/provider/coingecko"
+	gtprovider "github.com/uerax/all-in-one-bot/lite/internal/crypto/provider/geckoterminal"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/bitcointalk"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/bbs/nodeseek"
-	cghandler "github.com/uerax/all-in-one-bot/lite/internal/handler/crypto/coingecko"
+	coinhandler "github.com/uerax/all-in-one-bot/lite/internal/handler/crypto/coin"
 	crhandler "github.com/uerax/all-in-one-bot/lite/internal/handler/crypto/crocodile"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/polymarket"
 	"github.com/uerax/all-in-one-bot/lite/internal/handler/telegram"
@@ -44,15 +47,23 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	handlers = append(handlers, polymarket.NewPolymarketHoldingsHandle(polymarketService, deps.Logger))
 	handlers = append(handlers, polymarket.NewPolymarketL2CheckHandle(polymarketService, deps.Logger))
 
-	// coingecko
-	cgService := cghandler.NewCoingecko(deps.Store, deps.Config.Coingecko, r.msgCh, deps.Logger)
-	handlers = append(handlers, cghandler.NewCoinMonitorHandle(cgService))
-	handlers = append(handlers, cghandler.NewCoinStopHandle(cgService))
-	handlers = append(handlers, cghandler.NewCoinPriceHandle(cgService))
-	handlers = append(handlers, cghandler.NewCoinSearchHandle(cgService))
+	// crypto providers & manager
+	cgProv := cgprovider.NewProvider(deps.Config.Coingecko, deps.Logger)
+	gtProv := gtprovider.NewProvider(deps.Config.GeckoTerminal.BaseURL, deps.Config.GeckoTerminal.Timeout, deps.Logger)
+	providerMgr := provider.NewManager(cgProv, cgProv, cgProv, gtProv, gtProv, gtProv, gtProv)
 
-	// crocodile
-	crService := crhandler.NewCrocodile(deps.Store, cgService, r.msgCh, deps.Config.Crocodile, deps.Logger)
+	// coin handlers
+	coinService := coinhandler.NewService(deps.Store, providerMgr, r.msgCh, deps.Logger)
+	handlers = append(handlers, coinhandler.NewCoinHandle(coinService))
+	handlers = append(handlers, coinhandler.NewCoinPriceHandle(coinService))
+	handlers = append(handlers, coinhandler.NewCoinSearchHandle(coinService))
+	handlers = append(handlers, coinhandler.NewCoinTrendingHandle(coinService))
+	handlers = append(handlers, coinhandler.NewCoinPoolHandle(coinService))
+	handlers = append(handlers, coinhandler.NewCoinMonitorHandle(coinService))
+	handlers = append(handlers, coinhandler.NewCoinStopHandle(coinService))
+
+	// crocodile handlers
+	crService := crhandler.NewCrocodile(deps.Store, providerMgr, r.msgCh, deps.Config.Crocodile, deps.Logger)
 	handlers = append(handlers, crhandler.NewCrocodileMonitorHandle(crService))
 	handlers = append(handlers, crhandler.NewCrocodileStopHandle(crService))
 	handlers = append(handlers, crhandler.NewCrocodileCheckHandle(crService))
