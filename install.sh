@@ -16,7 +16,6 @@ PRJ_NAME="aio"
 BIN_NAME="all-in-one-bot"
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/aio"
-LOG_DIR="/var/log/aio"
 SYSTEMD_PATH="/etc/systemd/system/aio.service"
 
 REPO_OWNER="uerax"
@@ -107,7 +106,6 @@ install_aio() {
     # 创建必要的目录
     mkdir -p "${INSTALL_DIR}"
     mkdir -p "${CONFIG_DIR}"
-    mkdir -p "${LOG_DIR}"
 
     local download_url
     if [ "$LATEST_TAG" = "latest" ]; then
@@ -220,7 +218,7 @@ update_aio() {
 # 完全卸载
 uninstall_aio() {
     check_root
-    read -rp "确定要完全卸载 all-in-one-bot 吗？(包括配置文件和日志) [y/N]: " confirm
+    read -rp "确定要完全卸载 all-in-one-bot 吗？(包括配置文件) [y/N]: " confirm
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         systemctl stop aio &>/dev/null
         systemctl disable aio &>/dev/null
@@ -229,7 +227,6 @@ uninstall_aio() {
 
         rm -f "${INSTALL_DIR}/${BIN_NAME}"
         rm -rf "${CONFIG_DIR}"
-        rm -rf "${LOG_DIR}"
 
         echo -e "${Green}已完全卸载 all-in-one-bot。${Font}"
     else
