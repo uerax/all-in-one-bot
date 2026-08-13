@@ -36,8 +36,8 @@ type MarketData struct {
 	DEX             string       `json:"dex,omitempty"`   // DEX platform name (e.g. Uniswap v3, Raydium)
 	ContractAddress string       `json:"contract_address,omitempty"`
 	PoolAddress     string       `json:"pool_address,omitempty"`
-	Source          string       `json:"source"`        // Provider name (e.g. "coingecko", "geckoterminal")
-	SourceType      ProviderType `json:"source_type"`   // ProviderTypeCEX or ProviderTypeDEX
+	Source          string       `json:"source"`      // Provider name (e.g. "coingecko", "geckoterminal")
+	SourceType      ProviderType `json:"source_type"` // ProviderTypeCEX or ProviderTypeDEX
 	UpdatedAt       time.Time    `json:"updated_at"`
 }
 

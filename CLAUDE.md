@@ -30,7 +30,7 @@ The `lite` branch is a lightweight refactored version of the Telegram bot using 
 
 ### Storage
 
-- `internal/store`: Defines the unified `Store` interface (`Set`, `Load`, `Save`) and `FileStore` implementation, responsible for loading and saving persistence data (such as Nodeseek keywords, Bitcointalk filters, CoinGecko holdings, and Crocodile watchlists) via local files or remote data sources.
+- `internal/store`: Defines the unified `Store` interface (`Set`, `Load`, `Save`) and `FileStore` implementation, responsible for loading and saving persistence data (such as Nodeseek keywords, Bitcointalk filters, Coin holdings, and Crocodile watchlists) via local files or remote data sources.
 
 ### Message Delivery Model
 
@@ -43,6 +43,6 @@ The `lite` branch is a lightweight refactored version of the Telegram bot using 
   - `bbs/bitcointalk`: Bitcointalk topic monitoring & notification.
   - `bbs/nodeseek`: NodeSeek RSS topic monitoring & notification.
   - `polymarket`: Polymarket holdings and L2 credential checks.
-  - `crypto/coingecko`: CoinGecko price querying, searching, and 24h price reporting.
+  - `crypto/coin`: CEX & DEX price querying, multi-search, trending pools, and holdings valuation reporting.
   - `crypto/crocodile`: Daily UTC 00:05 volume-spike alert engine for crypto assets (Markdown output).
   - `telegram`: Basic utility commands (e.g. `/chatid`).

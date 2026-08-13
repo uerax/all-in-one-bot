@@ -22,16 +22,16 @@ type PoolData struct {
 }
 
 type PoolAttributes struct {
-	Address               string                 `json:"address"`
-	Name                  string                 `json:"name"`
-	BaseTokenPriceUSD     string                 `json:"base_token_price_usd"`
-	QuoteTokenPriceUSD    string                 `json:"quote_token_price_usd"`
-	FDVUSD                string                 `json:"fdv_usd"`
-	MarketCapUSD          string                 `json:"market_cap_usd"`
-	ReserveInUSD          string                 `json:"reserve_in_usd"`
-	VolumeUSD             VolumeUSDMap           `json:"volume_usd"`
-	PriceChangePercentage PriceChangePctMap      `json:"price_change_percentage"`
-	PoolCreatedAt         string                 `json:"pool_created_at"`
+	Address               string            `json:"address"`
+	Name                  string            `json:"name"`
+	BaseTokenPriceUSD     string            `json:"base_token_price_usd"`
+	QuoteTokenPriceUSD    string            `json:"quote_token_price_usd"`
+	FDVUSD                string            `json:"fdv_usd"`
+	MarketCapUSD          string            `json:"market_cap_usd"`
+	ReserveInUSD          string            `json:"reserve_in_usd"`
+	VolumeUSD             VolumeUSDMap      `json:"volume_usd"`
+	PriceChangePercentage PriceChangePctMap `json:"price_change_percentage"`
+	PoolCreatedAt         string            `json:"pool_created_at"`
 }
 
 type VolumeUSDMap struct {

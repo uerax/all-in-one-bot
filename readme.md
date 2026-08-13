@@ -57,7 +57,7 @@
 | :--- | :--- | :--- |
 | **`/coin <symbol\|address>`** | **单币 / DEX 池子快捷查询** | `/coin BTC`<br>`/coin 0x6982508145454ce325ddbe47a25d4ec3d2311933`<br>`/coin solana:JUPyiwrYF...`<br>返回：价格、5m/1h/6h/24h 涨跌幅、24h 成交量、流动性 Reserve USD、FDV、市值、DEX 平台及网络 |
 | **`/coin_search <名称\|地址>`** | **CEX + DEX 混合搜索** | `/coin_search PEPE`<br>同时列出 CoinGecko 市值排名与 GeckoTerminal 链上流动性池 |
-| **`/coin_price`** | **持仓价值实时计算** | 读取 `coingecko/list.json` 配置，计算当前总持有 USD 价值及各代币持仓明细（兼容 DEX 合约持仓） |
+| **`/coin_price`** | **持仓价值实时计算** | 读取 `coin/list.json` 配置，计算当前总持有 USD 价值及各代币持仓明细（兼容 DEX 合约持仓） |
 | **`/coin_trending [网络]`** | **DEX 热门池子榜单** | `/coin_trending`<br>`/coin_trending solana`<br>获取实时 DEX 热门交易池及 24h 涨跌幅/流动性 |
 | **`/coin_pool [网络] <池子地址>`** | **指定 DEX 池子数据分析** | `/coin_pool eth 0x11950d141ecb863f010075d381097c119232698d` |
 | **`/coin_monitor`** | **持仓 24h 定时播报** | 启动持仓价值的每日定时播报 |

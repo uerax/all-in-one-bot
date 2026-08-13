@@ -14,14 +14,14 @@ import (
 )
 
 type Service struct {
-	mu      sync.Mutex
-	mgr     *provider.Manager
-	db      store.Store
-	ch      chan<- models.Message
-	list    map[string]float64 // coin_id or contract -> holding count
-	ctx     context.Context
-	cancel  context.CancelFunc
-	log     logger.Log
+	mu     sync.Mutex
+	mgr    *provider.Manager
+	db     store.Store
+	ch     chan<- models.Message
+	list   map[string]float64 // coin_id or contract -> holding count
+	ctx    context.Context
+	cancel context.CancelFunc
+	log    logger.Log
 }
 
 func NewService(db store.Store, mgr *provider.Manager, ch chan<- models.Message, log logger.Log) *Service {
@@ -65,7 +65,7 @@ func (s *Service) Handle(chatID int64) {
 	s.mu.Unlock()
 
 	if len(list) == 0 {
-		s.ch <- models.Message{ChatID: chatID, Text: "持仓列表为空，请在数据库 coingecko/list 中配置持仓数据"}
+		s.ch <- models.Message{ChatID: chatID, Text: "持仓列表为空，请在数据库 coin/list 中配置持仓数据"}
 		return
 	}
 
@@ -198,9 +198,12 @@ func (s *Service) syncList() {
 		return
 	}
 	var list map[string]float64
-	if err := s.db.Load("coingecko", "list", &list); err != nil {
-		s.log.Error("coin 从 Store 加载持仓列表失败", "error", err)
-		return
+	if err := s.db.Load("coin", "list", &list); err != nil {
+		// Fallback to legacy path coingecko/list for backward compatibility
+		if errLegacy := s.db.Load("coingecko", "list", &list); errLegacy != nil {
+			s.log.Error("coin 从 Store 加载持仓列表失败", "error", err)
+			return
+		}
 	}
 	s.mu.Lock()
 	s.list = list
