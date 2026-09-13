@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/crypto/provider"
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
 )
@@ -54,7 +55,9 @@ func TestEvaluate_ExcludesUnclosedToday(t *testing.T) {
 }
 
 type mockStore struct {
-	data map[string]any
+	data      map[string]any
+	loadCount int
+	saveCount int
 }
 
 func (m *mockStore) Set(database string, key string) (map[string]struct{}, error) {
@@ -62,6 +65,7 @@ func (m *mockStore) Set(database string, key string) (map[string]struct{}, error
 }
 
 func (m *mockStore) Load(database string, key string, target any) error {
+	m.loadCount++
 	val, ok := m.data[database+":"+key]
 	if !ok {
 		return nil
@@ -74,6 +78,7 @@ func (m *mockStore) Load(database string, key string, target any) error {
 }
 
 func (m *mockStore) Save(database string, key string, value any) error {
+	m.saveCount++
 	m.data[database+":"+key] = value
 	return nil
 }
@@ -102,7 +107,7 @@ func TestCrocodile_AddAndDeleteItem(t *testing.T) {
 	}
 
 	// 2. Delete non-existent item
-	deleted, err := c.deleteItem("doge")
+	deleted, _, err := c.deleteItem("doge")
 	if err != nil {
 		t.Fatalf("deleteItem error: %v", err)
 	}
@@ -111,12 +116,12 @@ func TestCrocodile_AddAndDeleteItem(t *testing.T) {
 	}
 
 	// 3. Delete case-insensitively
-	deleted, err = c.deleteItem("BitCoin")
+	deleted, deletedID, err := c.deleteItem("BitCoin")
 	if err != nil {
 		t.Fatalf("deleteItem error: %v", err)
 	}
-	if !deleted {
-		t.Fatalf("expected deleted=true for bitcoin")
+	if !deleted || deletedID != "bitcoin" {
+		t.Fatalf("expected deleted=true and deletedID='bitcoin', got deleted=%v, id=%s", deleted, deletedID)
 	}
 
 	list, _ = c.loadList()
@@ -149,5 +154,89 @@ func TestCrocodile_AddAndDeleteItem(t *testing.T) {
 	list, _ = c.loadList()
 	if len(list) != 0 {
 		t.Fatalf("expected empty list, got: %+v", list)
+	}
+
+	// 5. Add and delete by Name (case-insensitive)
+	if err := c.addItem(Item{ID: "debtreliefbot", Name: "DRB"}); err != nil {
+		t.Fatalf("addItem failed: %v", err)
+	}
+	deleted, deletedID, err = c.deleteItem("drb")
+	if err != nil || !deleted || deletedID != "debtreliefbot" {
+		t.Fatalf("expected deleted by name 'drb' -> 'debtreliefbot', got deleted=%v, id=%s, err=%v", deleted, deletedID, err)
+	}
+	list, _ = c.loadList()
+	if len(list) != 0 {
+		t.Fatalf("expected empty list after name delete, got: %+v", list)
+	}
+}
+
+func TestCrocodile_StartupSyncAndMemoryOnly(t *testing.T) {
+	initialItems := []Item{
+		{ID: "wrapped-quil", Name: "wquil"},
+		{ID: "debtreliefbot", Name: "DRB"},
+	}
+
+	ms := &mockStore{
+		data: map[string]any{
+			"crocodile:list": initialItems,
+		},
+	}
+	msgCh := make(chan models.Message, 10)
+
+	// 1. NewCrocodile runs startup init: loads once from store and persists
+	c := NewCrocodile(ms, nil, msgCh, config.Crocodile{}, nil)
+
+	if ms.loadCount != 1 {
+		t.Fatalf("expected store Load to be called exactly 1 time on startup, got %d", ms.loadCount)
+	}
+
+	items := c.getItems()
+	if len(items) != 2 {
+		t.Fatalf("expected 2 items in memory, got %d", len(items))
+	}
+
+	// 2. ListMonitor must read from memory without calling store Load
+	c.ListMonitor(100)
+	select {
+	case msg := <-msgCh:
+		if !strings.Contains(msg.Text, "wrapped-quil") || !strings.Contains(msg.Text, "debtreliefbot") {
+			t.Fatalf("unexpected ListMonitor message: %s", msg.Text)
+		}
+	default:
+		t.Fatal("expected message in msgCh")
+	}
+	if ms.loadCount != 1 {
+		t.Fatalf("expected store Load NOT to be called by ListMonitor, got %d", ms.loadCount)
+	}
+
+	// 3. DeleteMonitor deletes from memory and calls Save, but does NOT call Load
+	c.DeleteMonitor(100, "wquil")
+	select {
+	case msg := <-msgCh:
+		if !strings.Contains(msg.Text, "已删除监控: `wrapped-quil`") {
+			t.Fatalf("unexpected DeleteMonitor message: %s", msg.Text)
+		}
+	default:
+		t.Fatal("expected message in msgCh")
+	}
+	if ms.loadCount != 1 {
+		t.Fatalf("expected store Load NOT to be called by DeleteMonitor, got %d", ms.loadCount)
+	}
+
+	// 4. ListMonitor reflects deletion immediately from memory
+	c.ListMonitor(100)
+	select {
+	case msg := <-msgCh:
+		if strings.Contains(msg.Text, "wrapped-quil") {
+			t.Fatalf("deleted coin should not be present in list: %s", msg.Text)
+		}
+		if !strings.Contains(msg.Text, "debtreliefbot") {
+			t.Fatalf("remaining coin should be present: %s", msg.Text)
+		}
+	default:
+		t.Fatal("expected message in msgCh")
+	}
+	if ms.loadCount != 1 {
+		t.Fatalf("expected store Load count to remain 1, got %d", ms.loadCount)
 	}
 }

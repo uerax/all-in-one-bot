@@ -55,7 +55,8 @@ type klineCacheItem struct {
 
 // Crocodile 是量能监控引擎。
 type Crocodile struct {
-	mu          sync.Mutex
+	mu          sync.RWMutex
+	items       []Item
 	source      klineSource
 	ruleConfig  RuleConfig
 	lastTrigger map[string]string // "coinID:rule" -> "2006-01-02"
@@ -70,7 +71,7 @@ type Crocodile struct {
 }
 
 func NewCrocodile(db store.Store, source klineSource, ch chan<- models.Message, cfg config.Crocodile, log logger.Log) *Crocodile {
-	return &Crocodile{
+	c := &Crocodile{
 		db:     db,
 		source: source,
 		ruleConfig: RuleConfig{
@@ -85,6 +86,39 @@ func NewCrocodile(db store.Store, source klineSource, ch chan<- models.Message, 
 		log:         log,
 		cfg:         cfg,
 	}
+	c.initList()
+	return c
+}
+
+// initList 在启动时仅同步一次数据：优先从本地/远程 Store 加载，载入内存并在首次拉取时保存至本地持久化。
+func (c *Crocodile) initList() {
+	if c.db == nil {
+		return
+	}
+	var items []Item
+	if err := c.db.Load("crocodile", "list", &items); err != nil {
+		c.log.Error("crocodile 初始化加载监控列表失败", "error", err)
+		return
+	}
+	c.mu.Lock()
+	c.items = items
+	c.mu.Unlock()
+
+	// 首次启动若本地尚无文件，Save 确保本地持久化建立，后续重启彻底不再走远端
+	if len(items) > 0 {
+		if err := c.db.Save("crocodile", "list", items); err != nil {
+			c.log.Warn("crocodile 初始化本地持久化失败", "error", err)
+		}
+	}
+}
+
+// getItems 获取当前内存中的监控币种切片拷贝。
+func (c *Crocodile) getItems() []Item {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	res := make([]Item, len(c.items))
+	copy(res, c.items)
+	return res
 }
 
 // Monitor 开启每日 UTC 00:05 量能扫描。
@@ -241,7 +275,7 @@ func (c *Crocodile) DeleteMonitor(chatID int64, id string) {
 		c.ch <- models.Message{ChatID: chatID, Text: "参数有误: 币种 ID 不能为空"}
 		return
 	}
-	deleted, err := c.deleteItem(id)
+	deleted, deletedID, err := c.deleteItem(id)
 	if err != nil {
 		c.ch <- models.Message{ChatID: chatID, Text: "删除失败: " + err.Error()}
 		return
@@ -251,16 +285,7 @@ func (c *Crocodile) DeleteMonitor(chatID int64, id string) {
 		return
 	}
 
-	c.mu.Lock()
-	delete(c.klineCache, id)
-	for k := range c.lastTrigger {
-		if strings.HasPrefix(k, id+":") {
-			delete(c.lastTrigger, k)
-		}
-	}
-	c.mu.Unlock()
-
-	c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("已删除监控: `%s`", id), Kind: models.KindMarkdown}
+	c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("已删除监控: `%s`", deletedID), Kind: models.KindMarkdown}
 }
 
 // RuleTip 返回当前规则配置说明。
@@ -530,61 +555,103 @@ func durationUntilNextRun() time.Duration {
 	return next.Sub(now)
 }
 
-// loadList 通过 db Store 加载监控列表。
+// loadList 获取当前监控列表（优先返回内存列表；若内存未初始化则从 store 补充加载一次）。
 func (c *Crocodile) loadList() ([]Item, error) {
-	if c.db == nil {
-		return nil, fmt.Errorf("db store 未初始化")
+	c.mu.RLock()
+	hasItems := len(c.items) > 0
+	c.mu.RUnlock()
+	if hasItems {
+		return c.getItems(), nil
 	}
-	var items []Item
-	if err := c.db.Load("crocodile", "list", &items); err != nil {
-		return nil, err
+
+	// 内存尚未初始化时（如直接通过 struct 实例化的测试），从 store 补充加载
+	if c.db != nil {
+		var items []Item
+		if err := c.db.Load("crocodile", "list", &items); err == nil && len(items) > 0 {
+			c.mu.Lock()
+			if len(c.items) == 0 {
+				c.items = items
+			}
+			c.mu.Unlock()
+			return c.getItems(), nil
+		}
 	}
-	return items, nil
+	return c.getItems(), nil
 }
 
-// addItem 将新条目添加并保存到 db Store。
+// addItem 将新条目添加并保存到内存及 db Store。
 func (c *Crocodile) addItem(item Item) error {
-	existing, _ := c.loadList()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// 若内存尚未加载，尝试从 store 加载
+	if len(c.items) == 0 && c.db != nil {
+		var items []Item
+		if err := c.db.Load("crocodile", "list", &items); err == nil {
+			c.items = items
+		}
+	}
+
 	found := false
-	for i, e := range existing {
-		if e.ID == item.ID {
-			existing[i] = item
+	for i, e := range c.items {
+		if strings.EqualFold(e.ID, item.ID) {
+			c.items[i] = item
 			found = true
 			break
 		}
 	}
 	if !found {
-		existing = append(existing, item)
+		c.items = append(c.items, item)
 	}
 	if c.db == nil {
 		return fmt.Errorf("db store 未初始化")
 	}
-	return c.db.Save("crocodile", "list", existing)
+	return c.db.Save("crocodile", "list", c.items)
 }
 
-// deleteItem 从监控列表中移除指定 ID 的币种。
-func (c *Crocodile) deleteItem(id string) (bool, error) {
-	existing, err := c.loadList()
-	if err != nil {
-		return false, err
+// deleteItem 从监控列表中移除指定 ID 或 Name 的币种（支持大小写不敏感匹配）。
+func (c *Crocodile) deleteItem(target string) (bool, string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// 若内存尚未加载，尝试从 store 加载
+	if len(c.items) == 0 && c.db != nil {
+		var items []Item
+		if err := c.db.Load("crocodile", "list", &items); err == nil {
+			c.items = items
+		}
 	}
-	newList := make([]Item, 0, len(existing))
+
+	newList := make([]Item, 0, len(c.items))
 	found := false
-	for _, item := range existing {
-		if strings.EqualFold(item.ID, id) {
+	deletedID := ""
+	for _, item := range c.items {
+		if !found && (strings.EqualFold(item.ID, target) || strings.EqualFold(item.Name, target)) {
 			found = true
+			deletedID = item.ID
 			continue
 		}
 		newList = append(newList, item)
 	}
 	if !found {
-		return false, nil
+		return false, "", nil
 	}
+
+	c.items = newList
+
+	// 清理该币种在内存中的 kline 缓存与去重触发记录
+	delete(c.klineCache, deletedID)
+	for k := range c.lastTrigger {
+		if strings.HasPrefix(k, deletedID+":") {
+			delete(c.lastTrigger, k)
+		}
+	}
+
 	if c.db == nil {
-		return false, fmt.Errorf("db store 未初始化")
+		return false, "", fmt.Errorf("db store 未初始化")
 	}
-	if err := c.db.Save("crocodile", "list", newList); err != nil {
-		return false, err
+	if err := c.db.Save("crocodile", "list", c.items); err != nil {
+		return false, "", err
 	}
-	return true, nil
+	return true, deletedID, nil
 }

@@ -16,6 +16,8 @@ import (
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
 )
 
+const defaultLocalDataDir = "/tmp/aio/data"
+
 var (
 	ErrorPathNotSet      = errors.New("没有填写数据库文件地址")
 	ErrorDownloadFailed  = errors.New("下载JSON文件失败")
@@ -24,10 +26,18 @@ var (
 )
 
 type FileStore struct {
-	mu     sync.RWMutex
-	path   string // GitHub Raw URL 或 本地路径
-	log    logger.Log
-	client *http.Client
+	mu           sync.RWMutex
+	path         string // GitHub Raw URL 或 本地路径
+	localDataDir string // 远程 URL 模式下的本地持久化目录，留空默认为 /tmp/aio/data
+	log          logger.Log
+	client       *http.Client
+}
+
+func (f *FileStore) getLocalDataDir() string {
+	if f.localDataDir != "" {
+		return f.localDataDir
+	}
+	return defaultLocalDataDir
 }
 
 func NewFileStore(cfg config.Database, logger logger.Log) *FileStore {
@@ -52,12 +62,22 @@ func (f *FileStore) Load(database string, key string, target any) error {
 	var err error
 
 	if strings.HasPrefix(f.path, "http://") || strings.HasPrefix(f.path, "https://") {
-		// 优先取 .json，再取 .dat
-		url := f.path + "/" + database + "/" + key + ".json"
-		body, err = f.fetchURL(url)
-		if err != nil {
-			url = f.path + "/" + database + "/" + key + ".dat"
+		// 远程 URL 模式下，若本地已有持久化文件（由 Save 产生），优先读取本地修改
+		localBase := f.getLocalDataDir()
+		localPath := filepath.Join(localBase, database, key+".json")
+		if _, statErr := os.Stat(localPath); os.IsNotExist(statErr) {
+			localPath = filepath.Join(localBase, database, key+".dat")
+		}
+		if _, statErr := os.Stat(localPath); statErr == nil {
+			body, err = os.ReadFile(localPath)
+		} else {
+			cleanPath := strings.TrimRight(f.path, "/")
+			url := cleanPath + "/" + database + "/" + key + ".json"
 			body, err = f.fetchURL(url)
+			if err != nil {
+				url = cleanPath + "/" + database + "/" + key + ".dat"
+				body, err = f.fetchURL(url)
+			}
 		}
 	} else {
 		filePath := filepath.Join(f.path, database, key+".json")
@@ -107,7 +127,7 @@ func (f *FileStore) Save(database string, key string, value any) error {
 
 	baseDir := f.path
 	if strings.HasPrefix(f.path, "http://") || strings.HasPrefix(f.path, "https://") {
-		baseDir = "/tmp/aio/data"
+		baseDir = f.getLocalDataDir()
 	}
 
 	dir := filepath.Join(baseDir, database)
