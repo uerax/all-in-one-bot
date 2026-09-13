@@ -234,6 +234,35 @@ func (c *Crocodile) AddMonitor(chatID int64, id, name string) {
 	c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("已添加监控: `%s` (%s)", id, name), Kind: models.KindMarkdown}
 }
 
+// DeleteMonitor 从监控列表中移除指定币种。
+func (c *Crocodile) DeleteMonitor(chatID int64, id string) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		c.ch <- models.Message{ChatID: chatID, Text: "参数有误: 币种 ID 不能为空"}
+		return
+	}
+	deleted, err := c.deleteItem(id)
+	if err != nil {
+		c.ch <- models.Message{ChatID: chatID, Text: "删除失败: " + err.Error()}
+		return
+	}
+	if !deleted {
+		c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("未在监控列表中找到币种: `%s`", id), Kind: models.KindMarkdown}
+		return
+	}
+
+	c.mu.Lock()
+	delete(c.klineCache, id)
+	for k := range c.lastTrigger {
+		if strings.HasPrefix(k, id+":") {
+			delete(c.lastTrigger, k)
+		}
+	}
+	c.mu.Unlock()
+
+	c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("已删除监控: `%s`", id), Kind: models.KindMarkdown}
+}
+
 // RuleTip 返回当前规则配置说明。
 func (c *Crocodile) RuleTip(chatID int64) {
 	c.mu.Lock()
@@ -531,4 +560,31 @@ func (c *Crocodile) addItem(item Item) error {
 		return fmt.Errorf("db store 未初始化")
 	}
 	return c.db.Save("crocodile", "list", existing)
+}
+
+// deleteItem 从监控列表中移除指定 ID 的币种。
+func (c *Crocodile) deleteItem(id string) (bool, error) {
+	existing, err := c.loadList()
+	if err != nil {
+		return false, err
+	}
+	newList := make([]Item, 0, len(existing))
+	found := false
+	for _, item := range existing {
+		if strings.EqualFold(item.ID, id) {
+			found = true
+			continue
+		}
+		newList = append(newList, item)
+	}
+	if !found {
+		return false, nil
+	}
+	if c.db == nil {
+		return false, fmt.Errorf("db store 未初始化")
+	}
+	if err := c.db.Save("crocodile", "list", newList); err != nil {
+		return false, err
+	}
+	return true, nil
 }

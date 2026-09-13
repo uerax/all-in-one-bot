@@ -84,6 +84,29 @@ func (h *crocodileAddHandle) Handle(c tb.Context) error {
 	return nil
 }
 
+// crocodileDelHandle 从监控列表中删除币种（/crocodile_del <id>）
+type crocodileDelHandle struct{ svc *Crocodile }
+
+func NewCrocodileDelHandle(svc *Crocodile) *crocodileDelHandle {
+	return &crocodileDelHandle{svc}
+}
+func (h *crocodileDelHandle) Cmd() string { return "/crocodile_del" }
+func (h *crocodileDelHandle) Handle(c tb.Context) error {
+	args := strings.TrimSpace(c.Message().Payload)
+	if args == "" {
+		parts := strings.Fields(c.Message().Text)
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+	}
+	if args == "" {
+		return c.Send("用法: /crocodile_del <id>")
+	}
+	id := strings.Fields(args)[0]
+	go h.svc.DeleteMonitor(c.Chat().ID, id)
+	return nil
+}
+
 // crocodileRuleHandle 两阶段：先展示当前规则，再解析新参数更新
 // 第一次调用 -> 展示提示；此后 bot 在外部用 Cmd 状态机路由文本输入
 type crocodileRuleHandle struct{ svc *Crocodile }

@@ -69,6 +69,7 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	handlers = append(handlers, crhandler.NewCrocodileCheckHandle(crService))
 	handlers = append(handlers, crhandler.NewCrocodileListHandle(crService))
 	handlers = append(handlers, crhandler.NewCrocodileAddHandle(crService))
+	handlers = append(handlers, crhandler.NewCrocodileDelHandle(crService))
 	handlers = append(handlers, crhandler.NewCrocodileRuleHandle(crService))
 
 	return handlers
