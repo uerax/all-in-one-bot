@@ -74,6 +74,21 @@ get_latest_version() {
     fi
 }
 
+# 检查已安装的 lite 版本
+check_installed_lite() {
+    if [ -f "${INSTALL_DIR}/${BIN_NAME}" ] && [ -f "${SYSTEMD_PATH}" ]; then
+        echo -e "\n${Yellow}====================================================${Font}"
+        echo -e "${Yellow}提示：检测到当前已安装 all-in-one-bot (lite)！${Font}"
+        echo -e "${Yellow}如仅需更新程序版本，建议使用更新功能 (选项 6)。${Font}"
+        echo -e "${Yellow}====================================================${Font}"
+        read -rp "是否继续重新安装？[y/N]: " reinstall
+        if [[ ! "$reinstall" =~ ^[Yy]$ ]]; then
+            echo -e "${Yellow}已取消安装。可通过菜单选项 6 或执行 'bash install.sh update' 进行更新。${Font}"
+            exit 0
+        fi
+    fi
+}
+
 # 检查旧版 (v2) 部署
 check_legacy_v2() {
     local legacy_cfg="/usr/local/etc/aio/all-in-one-bot.yml"
@@ -99,6 +114,7 @@ check_legacy_v2() {
 install_aio() {
     check_root
     check_legacy_v2
+    check_installed_lite
     detect_arch
     install_dependencies
     get_latest_version
@@ -132,8 +148,10 @@ install_aio() {
         curl -sL "${ENV_URL}" -o "${CONFIG_DIR}/.env"
     fi
 
-    # 创建 systemd 服务
-    cat > "${SYSTEMD_PATH}" << EOF
+    # 创建 systemd 服务（仅在服务文件不存在时创建，防止覆盖已有自定义配置）
+    if [ ! -f "${SYSTEMD_PATH}" ]; then
+        echo -e "${Cyan}正在创建 systemd 服务 (${SYSTEMD_PATH}) ...${Font}"
+        cat > "${SYSTEMD_PATH}" << EOF
 [Unit]
 Description=all-in-one-bot (lite) Telegram Bot Service
 Documentation=https://github.com/uerax/all-in-one-bot
@@ -154,8 +172,11 @@ LimitNPROC=65535
 WantedBy=multi-user.target
 EOF
 
-    systemctl daemon-reload
-    systemctl enable aio
+        systemctl daemon-reload
+        systemctl enable aio
+    else
+        echo -e "${Yellow}检测到已存在 systemd 服务文件 (${SYSTEMD_PATH})，跳过生成以保留现有配置。${Font}"
+    fi
 
     echo -e "\n${Green}====================================================${Font}"
     echo -e "${Green}恭喜！all-in-one-bot 安装成功！${Font}"
@@ -200,11 +221,22 @@ update_aio() {
     detect_arch
     get_latest_version
 
+    if [ ! -f "${INSTALL_DIR}/${BIN_NAME}" ]; then
+        echo -e "${Yellow}未检测到已安装的程序 (${INSTALL_DIR}/${BIN_NAME})，请先执行安装 (选项 1)。${Font}"
+        exit 1
+    fi
+
     echo -e "${Yellow}正在停止当前运行中的服务...${Font}"
     systemctl stop aio
 
-    local download_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${LATEST_TAG}/Aio-${ARCH}"
-    echo -e "${Cyan}正在下载最新的二进制文件...${Font}"
+    local download_url
+    if [ "$LATEST_TAG" = "latest" ]; then
+        download_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/latest/download/Aio-${ARCH}"
+    else
+        download_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${LATEST_TAG}/Aio-${ARCH}"
+    fi
+
+    echo -e "${Cyan}正在下载最新的二进制文件: ${download_url} ...${Font}"
     if curl -L "$download_url" -o "${INSTALL_DIR}/${BIN_NAME}"; then
         chmod +x "${INSTALL_DIR}/${BIN_NAME}"
         systemctl start aio
