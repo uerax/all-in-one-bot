@@ -2,6 +2,7 @@ package crocodile
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -320,5 +321,72 @@ func TestDurationUntilNextRun(t *testing.T) {
 	target := time.Now().UTC().Add(d)
 	if target.Minute() != 1 || target.Hour() != 0 {
 		t.Errorf("target time should be at 00:01 UTC, got %v", target)
+	}
+}
+
+func TestCrocodile_AutoSelfHealAddress(t *testing.T) {
+	legacyItems := []Item{
+		{Network: "base", Name: "DRB", Address: ""},
+		{Network: "base", Name: "b3", Address: ""},
+		{Network: "base", Name: "tig", Address: ""},
+		{Network: "base", Name: "unknown_token", Address: ""},
+	}
+
+	ms := &mockStore{
+		data: map[string]any{
+			"crocodile:list": legacyItems,
+		},
+	}
+	msgCh := make(chan models.Message, 10)
+
+	c := NewCrocodile(ms, nil, msgCh, config.Crocodile{}, nil)
+
+	items := c.getItems()
+	if len(items) != 4 {
+		t.Fatalf("expected 4 items, got %d", len(items))
+	}
+
+	// 验证已知代币 address 是否自动自愈补全
+	addrMap := make(map[string]string)
+	for _, it := range items {
+		addrMap[it.Name] = it.Address
+	}
+
+	if addrMap["DRB"] != "0x5116773e18a9c7bb03ebb961b38678e45e238923" {
+		t.Errorf("DRB address was not healed: %s", addrMap["DRB"])
+	}
+	if addrMap["b3"] != "0xb099c658e784b41ee435d48a8eb67e8f27285c93" {
+		t.Errorf("b3 address was not healed: %s", addrMap["b3"])
+	}
+	if addrMap["tig"] != "0x5280d5e63b416277d0f81fae54bb1e0444cabdaa" {
+		t.Errorf("tig address was not healed: %s", addrMap["tig"])
+	}
+	if addrMap["unknown_token"] != "" {
+		t.Errorf("unknown_token should remain empty: %s", addrMap["unknown_token"])
+	}
+
+	if ms.saveCount == 0 {
+		t.Errorf("expected saveCount > 0 due to address healing persist")
+	}
+}
+
+func TestCrocodile_IsNonRetryableError(t *testing.T) {
+	if isNonRetryableError(nil) {
+		t.Error("nil should not be non-retryable")
+	}
+	if !isNonRetryableError(provider.ErrNotFound) {
+		t.Error("ErrNotFound should be non-retryable")
+	}
+	if !isNonRetryableError(provider.ErrInvalidParams) {
+		t.Error("ErrInvalidParams should be non-retryable")
+	}
+	if !isNonRetryableError(errors.New("http 404: not found")) {
+		t.Error("404 error should be non-retryable")
+	}
+	if isNonRetryableError(provider.ErrRateLimited) {
+		t.Error("ErrRateLimited should be retryable")
+	}
+	if isNonRetryableError(errors.New("connection reset by peer")) {
+		t.Error("network error should be retryable")
 	}
 }

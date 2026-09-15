@@ -138,7 +138,10 @@ func (p *Provider) GetDailyKline(query string) ([]provider.DailyKline, error) {
 		}
 		// Search pool first to get network & address
 		searchResp, err := p.client.SearchPools(searchTerm)
-		if err != nil || searchResp == nil || len(searchResp.Data) == 0 {
+		if err != nil {
+			return nil, err
+		}
+		if searchResp == nil || len(searchResp.Data) == 0 {
 			return nil, provider.ErrNotFound
 		}
 

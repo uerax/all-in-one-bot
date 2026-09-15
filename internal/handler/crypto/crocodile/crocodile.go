@@ -2,6 +2,7 @@ package crocodile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -171,6 +172,15 @@ func NewCrocodile(db store.Store, source klineSource, ch chan<- models.Message, 
 	return c
 }
 
+// defaultAddressMap 提供核心监控币种的默认池子/合约地址，用于老版本本地持久化数据缺失 address 时的平滑自愈升级。
+var defaultAddressMap = map[string]string{
+	"base:auki": "0x2fa9d6085c91151200e61a3e627d35001772c0d1",
+	"eth:wquil": "0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64",
+	"base:drb":  "0x5116773e18a9c7bb03ebb961b38678e45e238923",
+	"base:b3":   "0xb099c658e784b41ee435d48a8eb67e8f27285c93",
+	"base:tig":  "0x5280d5e63b416277d0f81fae54bb1e0444cabdaa",
+}
+
 // initList 在启动时仅同步一次数据：优先从本地/远程 Store 加载，载入内存并在首次拉取时保存至本地持久化。
 func (c *Crocodile) initList() {
 	if c.db == nil {
@@ -178,17 +188,38 @@ func (c *Crocodile) initList() {
 	}
 	var items []Item
 	if err := c.db.Load("crocodile", "list", &items); err != nil {
-		c.log.Error("crocodile 初始化加载监控列表失败", "error", err)
+		if c.log != nil {
+			c.log.Error("crocodile 初始化加载监控列表失败", "error", err)
+		}
 		return
 	}
+
+	// 自愈检查：若本地老旧持久化缓存中条目缺少 address，自动根据默认配置补全，防止历史缓存阻塞最新配置
+	autoUpdated := false
+	for i := range items {
+		if items[i].Address == "" {
+			k := strings.ToLower(items[i].Network + ":" + items[i].Name)
+			if addr, ok := defaultAddressMap[k]; ok {
+				items[i].Address = addr
+				autoUpdated = true
+			}
+		}
+	}
+
 	c.mu.Lock()
 	c.items = items
 	c.mu.Unlock()
 
-	// 首次启动若本地尚无文件，Save 确保本地持久化建立，后续重启彻底不再走远端
+	// 首次启动若本地尚无文件，或检测到有字段补齐更新，Save 确保本地持久化建立并同步最新结构
 	if len(items) > 0 {
 		if err := c.db.Save("crocodile", "list", items); err != nil {
-			c.log.Warn("crocodile 初始化本地持久化失败", "error", err)
+			if c.log != nil {
+				c.log.Warn("crocodile 初始化本地持久化失败", "error", err)
+			}
+		} else if autoUpdated {
+			if c.log != nil {
+				c.log.Info("crocodile 监控列表已自动补齐缺失的 address 并同步持久化")
+			}
 		}
 	}
 }
@@ -449,8 +480,21 @@ func (c *Crocodile) setCachedKline(coinID string, klines []provider.DailyKline) 
 	}
 }
 
+// isNonRetryableError 判定是否为不可重试的客户端/永久性错误（如资源不存在或参数无效）。
+// 采用 errors.Is 哨兵错误判定与字符串包含双重保险，避免因错误包装或底层微调导致误重试。
+func isNonRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, provider.ErrNotFound) || errors.Is(err, provider.ErrInvalidParams) {
+		return true
+	}
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "404") || strings.Contains(errStr, "not found") || strings.Contains(errStr, "invalid param")
+}
+
 // scan 执行一次只读量能扫描：拉取 K 线、评估信号、报告错误。
-// 支持通过 Context 取消，内置 10 分钟短效缓存与智能重试机制。
+// 支持通过 Context 取消，内置短效缓存与失败对称节流机制。
 func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 	items, err := c.loadList()
 	if err != nil || len(items) == 0 {
@@ -472,31 +516,43 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 		default:
 		}
 
-		query := item.QueryString()
-		cacheKey := item.Key()
-		klines, ok := c.getCachedKline(cacheKey)
-		if !ok {
-			var err error
-			klines, err = c.source.GetDailyKline(query)
-			// 智能重试：排除 404 等客户端错误，仅在网络/超时/限流时等待 2.5 秒后重试一次
-			if err != nil && !strings.Contains(err.Error(), "404") {
-				c.log.Warn("crocodile GetDailyKline 首次失败，重试", "query", query, "error", err)
-				select {
-				case <-ctx.Done():
-					errList = append(errList, "扫描提前取消")
-					return signals, errList
-				case <-time.After(2500 * time.Millisecond):
-				}
+		func() {
+			query := item.QueryString()
+			cacheKey := item.Key()
+			klines, ok := c.getCachedKline(cacheKey)
+			if !ok {
+				var err error
 				klines, err = c.source.GetDailyKline(query)
-			}
-			if err == nil {
+				// 智能重试：排除 404 / NotFound / 无效参数等客户端不可恢复错误，仅在网络抖动或偶发限流时等待 2.5 秒重试一次
+				if err != nil && !isNonRetryableError(err) {
+					if c.log != nil {
+						c.log.Warn("crocodile GetDailyKline 首次失败，重试", "item", item.Name, "query", query, "error", err)
+					}
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(2500 * time.Millisecond):
+					}
+					klines, err = c.source.GetDailyKline(query)
+				}
+				if err != nil {
+					errList = append(errList, fmt.Sprintf("%s: %v", item.Name, err))
+					return
+				}
 				c.setCachedKline(cacheKey, klines)
-			} else {
-				errList = append(errList, fmt.Sprintf("%s: %v", query, err))
-				continue
 			}
-		}
 
+			sig, err := evaluate(item, klines, rc)
+			if err != nil {
+				errList = append(errList, fmt.Sprintf("%s: %v", item.Name, err))
+				return
+			}
+			if sig != nil {
+				signals = append(signals, *sig)
+			}
+		}()
+
+		// 无论本轮成功还是失败，只要不是最后一个币种，都严格执行 2.5 秒平滑等待，杜绝连环雪崩
 		if i < len(items)-1 {
 			select {
 			case <-ctx.Done():
@@ -504,15 +560,6 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 				return signals, errList
 			case <-time.After(2500 * time.Millisecond):
 			}
-		}
-
-		sig, err := evaluate(item, klines, rc)
-		if err != nil {
-			errList = append(errList, fmt.Sprintf("%s: %v", item.Name, err))
-			continue
-		}
-		if sig != nil {
-			signals = append(signals, *sig)
 		}
 	}
 	return signals, errList

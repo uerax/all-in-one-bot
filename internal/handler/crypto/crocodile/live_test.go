@@ -26,8 +26,8 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 	}
 
 	targets := []Item{
-		{Network: "base", Name: "auki"},
-		{Network: "base", Name: "b3"},
+		{Network: "base", Name: "auki", Address: "0x2fa9d6085c91151200e61a3e627d35001772c0d1"},
+		{Network: "base", Name: "b3", Address: "0xb099c658e784b41ee435d48a8eb67e8f27285c93"},
 	}
 
 	for _, item := range targets {
