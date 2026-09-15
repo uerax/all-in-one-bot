@@ -7,9 +7,9 @@
 # 把结构化配置写在本文件，互不干扰。
 #
 # 用法:
-#   ./all-in-one-bot -config ./config.yaml
+#   ./aio -config ./config.yaml
 # 或在 systemd ExecStart 里:
-#   ExecStart=/opt/aio/all-in-one-bot -config /etc/all-in-one-bot/config.yaml
+#   ExecStart=/usr/local/bin/aio -config /etc/aio/config.yaml
 #
 # 不传 -config 时完全退回纯 env 模式，行为与改动前一致。
 # 本文件每一节括号内标注了对应的 env 变量名与内置默认值，可照此改写。

@@ -13,7 +13,7 @@ Cyan="\033[36m"
 Font="\033[0m"
 
 PRJ_NAME="aio"
-BIN_NAME="all-in-one-bot"
+BIN_NAME="aio"
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/aio"
 SYSTEMD_PATH="/etc/systemd/system/aio.service"
@@ -76,9 +76,9 @@ get_latest_version() {
 
 # 检查已安装的 lite 版本
 check_installed_lite() {
-    if [ -f "${INSTALL_DIR}/${BIN_NAME}" ] && [ -f "${SYSTEMD_PATH}" ]; then
+    if [ -f "${INSTALL_DIR}/${BIN_NAME}" ] && [ -f "${CONFIG_DIR}/config.yaml" ] && [ -f "${SYSTEMD_PATH}" ]; then
         echo -e "\n${Yellow}====================================================${Font}"
-        echo -e "${Yellow}提示：检测到当前已安装 all-in-one-bot (lite)！${Font}"
+        echo -e "${Yellow}提示：检测到当前已安装 aio (lite)！${Font}"
         echo -e "${Yellow}如仅需更新程序版本，建议使用更新功能 (选项 6)。${Font}"
         echo -e "${Yellow}====================================================${Font}"
         read -rp "是否继续重新安装？[y/N]: " reinstall
@@ -92,15 +92,14 @@ check_installed_lite() {
 # 检查旧版 (v2) 部署
 check_legacy_v2() {
     local legacy_cfg="/usr/local/etc/aio/all-in-one-bot.yml"
-    local legacy_bin="/usr/local/bin/aio"
 
-    if [ -f "$legacy_cfg" ] || [ -f "$legacy_bin" ]; then
+    if [ -f "$legacy_cfg" ] && [ ! -f "${CONFIG_DIR}/config.yaml" ]; then
         echo -e "\n${Yellow}====================================================${Font}"
         echo -e "${Yellow}提示：检测到当前服务器已安装旧版 (v2) 项目！${Font}"
-        echo -e "${Yellow}旧版二进制路径: ${legacy_bin}${Font}"
+        echo -e "${Yellow}旧版二进制路径: ${INSTALL_DIR}/${BIN_NAME}${Font}"
         echo -e "${Yellow}旧版配置文件: ${legacy_cfg}${Font}"
-        echo -e "${Yellow}注意：一键安装会将 Systemd 服务 aio.service 升级指向 lite 版本。${Font}"
-        echo -e "${Yellow}你的旧版配置文件和二进制会被完整保留在原目录，不会被删除。${Font}"
+        echo -e "${Yellow}注意：一键安装会将 Systemd 服务 aio.service 升级指向 lite 版本 (${CONFIG_DIR}/config.yaml)。${Font}"
+        echo -e "${Yellow}你的旧版配置文件会被完整保留在原目录，不会被删除。${Font}"
         echo -e "${Yellow}====================================================${Font}\n"
         read -rp "是否继续升级安装 lite 版本？[Y/n]: " continue_install
         if [[ "$continue_install" =~ ^[Nn]$ ]]; then
@@ -148,7 +147,7 @@ install_aio() {
         curl -sL "${ENV_URL}" -o "${CONFIG_DIR}/.env"
     fi
 
-    # 创建 systemd 服务（仅在服务文件不存在时创建，防止覆盖已有自定义配置）
+    # 创建或更新 systemd 服务
     if [ ! -f "${SYSTEMD_PATH}" ]; then
         echo -e "${Cyan}正在创建 systemd 服务 (${SYSTEMD_PATH}) ...${Font}"
         cat > "${SYSTEMD_PATH}" << EOF
@@ -174,12 +173,38 @@ EOF
 
         systemctl daemon-reload
         systemctl enable aio
+    elif ! grep -q -- "-config.*${CONFIG_DIR}/config.yaml" "${SYSTEMD_PATH}" 2>/dev/null; then
+        echo -e "${Yellow}检测到旧版或未适配的 systemd 服务文件 (${SYSTEMD_PATH})，正在备份并升级指向 lite 版本...${Font}"
+        cp "${SYSTEMD_PATH}" "${SYSTEMD_PATH}.bak"
+        cat > "${SYSTEMD_PATH}" << EOF
+[Unit]
+Description=all-in-one-bot (lite) Telegram Bot Service
+Documentation=https://github.com/uerax/all-in-one-bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=${CONFIG_DIR}
+ExecStart=${INSTALL_DIR}/${BIN_NAME} -config ${CONFIG_DIR}/config.yaml
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=65535
+LimitNPROC=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+        systemctl daemon-reload
+        systemctl enable aio
     else
-        echo -e "${Yellow}检测到已存在 systemd 服务文件 (${SYSTEMD_PATH})，跳过生成以保留现有配置。${Font}"
+        echo -e "${Yellow}检测到已存在适配 lite 版本的 systemd 服务文件 (${SYSTEMD_PATH})，跳过生成以保留现有自定义配置。${Font}"
     fi
 
     echo -e "\n${Green}====================================================${Font}"
-    echo -e "${Green}恭喜！all-in-one-bot 安装成功！${Font}"
+    echo -e "${Green}恭喜！aio 安装成功！${Font}"
     echo -e "${Green}二进制文件路径 : ${INSTALL_DIR}/${BIN_NAME}${Font}"
     echo -e "${Green}配置文件目录   : ${CONFIG_DIR}/config.yaml${Font}"
     echo -e "${Green}Systemd 服务名  : aio.service${Font}"
@@ -250,7 +275,7 @@ update_aio() {
 # 完全卸载
 uninstall_aio() {
     check_root
-    read -rp "确定要完全卸载 all-in-one-bot 吗？(包括配置文件) [y/N]: " confirm
+    read -rp "确定要完全卸载 aio 吗？(包括配置文件) [y/N]: " confirm
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         systemctl stop aio &>/dev/null
         systemctl disable aio &>/dev/null
@@ -260,7 +285,7 @@ uninstall_aio() {
         rm -f "${INSTALL_DIR}/${BIN_NAME}"
         rm -rf "${CONFIG_DIR}"
 
-        echo -e "${Green}已完全卸载 all-in-one-bot。${Font}"
+        echo -e "${Green}已完全卸载 aio。${Font}"
     else
         echo -e "${Yellow}已取消卸载操作。${Font}"
     fi

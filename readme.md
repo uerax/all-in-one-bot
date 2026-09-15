@@ -99,7 +99,7 @@ sudo bash install.sh
 ```
 
 **交互菜单功能**：
-- **1. 安装服务**：自动安装二进制至 `/usr/local/bin/all-in-one-bot`，并在 `/etc/aio/` 生成配置模板 `config.yaml` 与 `.env`。
+- **1. 安装服务**：自动安装二进制至 `/usr/local/bin/aio`，并在 `/etc/aio/` 生成配置模板 `config.yaml` 与 `.env`。
 - **2-4. 服务管理**：支持一键 `start` (启动)、`stop` (停止)、`restart` (重启)。
 - **5. 查看日志**：实时追踪 `journalctl -u aio -f` 服务输出日志。
 - **6. 自动更新**：自动从 GitHub Release 拉取最新发布二进制并无缝重启。
@@ -108,8 +108,10 @@ sudo bash install.sh
 ### 2. 本地手动编译与 Systemd 部署
 
 ```bash
-# 1. 编译二进制
-go build -o all-in-one-bot .
+# 1. 编译二进制并安装
+go build -o aio .
+sudo cp aio /usr/local/bin/aio
+sudo chmod +x /usr/local/bin/aio
 
 # 2. 复制配置示例
 mkdir -p /etc/aio
@@ -127,7 +129,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/local/bin/all-in-one-bot -config /etc/aio/config.yaml
+WorkingDirectory=/etc/aio
+ExecStart=/usr/local/bin/aio -config /etc/aio/config.yaml
 Restart=on-failure
 RestartSec=5s
 
