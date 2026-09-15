@@ -54,6 +54,48 @@ func TestEvaluate_ExcludesUnclosedToday(t *testing.T) {
 	}
 }
 
+func TestEvaluate_DescendingOrUnsortedKlines(t *testing.T) {
+	nowUTC := time.Now().UTC()
+	todayStr := nowUTC.Format("2006-01-02")
+	todayTime, _ := time.Parse("2006-01-02", todayStr)
+
+	// GeckoTerminal 等 API 默认返回倒序 K 线（最新在前，最旧在后）
+	descendingKlines := []provider.DailyKline{
+		{Timestamp: todayTime, Volume: 10, Close: 1.5},                    // Today (unclosed)
+		{Timestamp: todayTime.AddDate(0, 0, -1), Volume: 500, Close: 1.5}, // Yesterday (target, 5x spike)
+		{Timestamp: todayTime.AddDate(0, 0, -2), Volume: 100, Close: 1.0}, // Prev Day
+		{Timestamp: todayTime.AddDate(0, 0, -3), Volume: 100, Close: 1.0},
+		{Timestamp: todayTime.AddDate(0, 0, -4), Volume: 100, Close: 1.0},
+		{Timestamp: todayTime.AddDate(0, 0, -5), Volume: 100, Close: 1.0},
+		{Timestamp: todayTime.AddDate(0, 0, -6), Volume: 100, Close: 1.0},
+	}
+
+	rc := RuleConfig{
+		Lookback:          5,
+		YesterdayMultiple: 3.0,
+		AverageMultiple:   2.0,
+	}
+
+	item := Item{ID: "b3", Name: "b3"}
+
+	sig, err := evaluate(item, descendingKlines, rc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if sig == nil || !sig.Triggered {
+		t.Fatal("expected volume spike signal to be triggered from descending klines, got nil or untriggered")
+	}
+
+	if sig.Volume != 500 {
+		t.Errorf("sig.Volume = %f, want 500 (Yesterday's volume)", sig.Volume)
+	}
+
+	if sig.YesterdayRatio != 5.0 {
+		t.Errorf("sig.YesterdayRatio = %f, want 5.0", sig.YesterdayRatio)
+	}
+}
+
 type mockStore struct {
 	data      map[string]any
 	loadCount int

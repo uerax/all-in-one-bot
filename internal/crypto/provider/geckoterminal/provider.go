@@ -2,6 +2,7 @@ package geckoterminal
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -112,7 +113,7 @@ func (p *Provider) Search(query string) ([]provider.SearchResult, error) {
 			ID:              pool.ID,
 			Symbol:          symbol,
 			Name:            name,
-			Chain:           pool.Relationships.Network.Data.ID,
+			Chain:           extractNetwork(&pool),
 			PoolAddress:     pool.Attributes.Address,
 			ContractAddress: tokenInfo.Address,
 			PriceUSD:        parseFloat(pool.Attributes.BaseTokenPriceUSD),
@@ -136,8 +137,19 @@ func (p *Provider) GetDailyKline(query string) ([]provider.DailyKline, error) {
 		if err != nil || searchResp == nil || len(searchResp.Data) == 0 {
 			return nil, provider.ErrNotFound
 		}
-		network = searchResp.Data[0].Relationships.Network.Data.ID
-		addr = searchResp.Data[0].Attributes.Address
+		topPool := &searchResp.Data[0]
+		network = extractNetwork(topPool)
+		addr = topPool.Attributes.Address
+		if addr == "" {
+			parts := strings.SplitN(topPool.ID, "_", 2)
+			if len(parts) == 2 {
+				addr = parts[1]
+			}
+		}
+	}
+
+	if network == "" || addr == "" {
+		return nil, provider.ErrNotFound
 	}
 
 	ohlcvResp, err := p.client.GetPoolOHLCV(network, addr, "day", 100)
@@ -154,7 +166,7 @@ func (p *Provider) GetDailyKline(query string) ([]provider.DailyKline, error) {
 		if len(row) < 6 {
 			continue
 		}
-		ts := time.Unix(int64(row[0]), 0)
+		ts := time.Unix(int64(row[0]), 0).UTC()
 		klines = append(klines, provider.DailyKline{
 			Timestamp: ts,
 			Open:      row[1],
@@ -164,6 +176,12 @@ func (p *Provider) GetDailyKline(query string) ([]provider.DailyKline, error) {
 			Volume:    row[5],
 		})
 	}
+
+	// GeckoTerminal OHLCV 接口默认按时间倒序（降序，最新在前）返回。
+	// 按 DailyKline 契约统一按时间戳升序排序（从旧到新），确保与上层技术指标及评估算法对齐。
+	sort.Slice(klines, func(i, j int) bool {
+		return klines[i].Timestamp.Before(klines[j].Timestamp)
+	})
 
 	return klines, nil
 }
@@ -217,7 +235,7 @@ func (p *Provider) mapPoolDataToMarketData(pool *PoolData, included []IncludedIt
 	}
 
 	dexID := pool.Relationships.DEX.Data.ID
-	networkID := pool.Relationships.Network.Data.ID
+	networkID := extractNetwork(pool)
 
 	return &provider.MarketData{
 		Symbol:          symbol,
@@ -239,6 +257,31 @@ func (p *Provider) mapPoolDataToMarketData(pool *PoolData, included []IncludedIt
 		SourceType:      p.Type(),
 		UpdatedAt:       time.Now(),
 	}
+}
+
+// extractNetwork 从 GeckoTerminal 响应结构中鲁棒地提取网络/链标识。
+// GeckoTerminal API 的 relationships 中通常不直接提供 network 对象，其网络名标准格式编码在 pool.ID ("{network}_{pool_address}")
+// 或 base_token.data.ID ("{network}_{token_address}") 中。
+func extractNetwork(pool *PoolData) string {
+	if pool == nil {
+		return ""
+	}
+	if pool.Relationships.Network.Data.ID != "" {
+		return pool.Relationships.Network.Data.ID
+	}
+	if pool.ID != "" {
+		parts := strings.SplitN(pool.ID, "_", 2)
+		if len(parts) == 2 && parts[0] != "" {
+			return parts[0]
+		}
+	}
+	if pool.Relationships.BaseToken.Data.ID != "" {
+		parts := strings.SplitN(pool.Relationships.BaseToken.Data.ID, "_", 2)
+		if len(parts) == 2 && parts[0] != "" {
+			return parts[0]
+		}
+	}
+	return ""
 }
 
 func makeIncludedMap(included []IncludedItem) map[string]IncludedItemAttributes {

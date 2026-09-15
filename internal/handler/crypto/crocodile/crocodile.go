@@ -502,6 +502,11 @@ func evaluate(item Item, klines []provider.DailyKline, rc RuleConfig) (*Signal, 
 		return nil, fmt.Errorf("kline 数据为空")
 	}
 
+	// 防御性排序：确保 klines 严格按照时间戳升序排列（从旧到新，最后一个元素为最新）
+	sort.Slice(klines, func(i, j int) bool {
+		return klines[i].Timestamp.Before(klines[j].Timestamp)
+	})
+
 	// 剔除尚未闭合的当前 UTC 当天 K 线（例如在 UTC 00:05 运行时，当天的柱子仅有 5 分钟成交量）
 	todayUTC := time.Now().UTC().Format("2006-01-02")
 	if klines[len(klines)-1].Timestamp.UTC().Format("2006-01-02") == todayUTC {
