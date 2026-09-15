@@ -202,7 +202,7 @@ func (c *Crocodile) getItems() []Item {
 	return res
 }
 
-// Monitor 开启每日 UTC 00:05 量能扫描。
+// Monitor 开启每日 UTC 00:01 量能扫描。
 func (c *Crocodile) Monitor(chatID int64) {
 	c.mu.Lock()
 	if c.cancel != nil {
@@ -215,7 +215,7 @@ func (c *Crocodile) Monitor(chatID int64) {
 	c.cancel = cf
 	c.mu.Unlock()
 
-	c.ch <- models.Message{ChatID: chatID, Text: "Crocodile 监控已启动，将在每日 UTC 00:05 自动执行扫描"}
+	c.ch <- models.Message{ChatID: chatID, Text: "Crocodile 监控已启动，将在每日 UTC 00:01 自动执行扫描"}
 
 	go func() {
 		c.log.Info("Crocodile 监控已启动")
@@ -250,7 +250,15 @@ func (c *Crocodile) Stop(chatID int64) {
 
 // Handle 手动触发一次只读量能诊断扫描（/crocodile_check），返回包含所有币种量能现状的详细诊断报告。
 func (c *Crocodile) Handle(chatID int64) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// 动态分配上下文超时：默认至少 180 秒（3 分钟），或按监控条目数量（每条 3 秒 + 30 秒缓冲）动态放宽，确保平滑扫描完整执行
+	timeout := 180 * time.Second
+	if items, err := c.loadList(); err == nil && len(items) > 0 {
+		needed := time.Duration(len(items)*3+30) * time.Second
+		if needed > timeout {
+			timeout = needed
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	signals, errList := c.scan(ctx)
@@ -423,7 +431,7 @@ func (c *Crocodile) getCachedKline(coinID string) ([]provider.DailyKline, bool) 
 	if !ok {
 		return nil, false
 	}
-	// 由于每天 UTC 00:05 评估的是上一个完整 UTC 自然日的闭合 K 线，在同一 UTC 日期内该闭合数据不会改变。
+	// 由于每天 UTC 00:01 评估的是上一个完整 UTC 自然日的闭合 K 线，在同一 UTC 日期内该闭合数据不会改变。
 	// 双重安全校验：既要求属于同一个 UTC 自然日，又限制单次缓存最长不超过 12 小时（防止跨天边界遗留）。
 	todayUTC := time.Now().UTC().Format("2006-01-02")
 	if item.updatedAt.UTC().Format("2006-01-02") == todayUTC && time.Since(item.updatedAt) < 12*time.Hour {
@@ -470,14 +478,14 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 		if !ok {
 			var err error
 			klines, err = c.source.GetDailyKline(query)
-			// 智能重试：排除 404 等客户端错误，仅在网络/超时/限流时 500ms 重试一次
+			// 智能重试：排除 404 等客户端错误，仅在网络/超时/限流时等待 2.5 秒后重试一次
 			if err != nil && !strings.Contains(err.Error(), "404") {
 				c.log.Warn("crocodile GetDailyKline 首次失败，重试", "query", query, "error", err)
 				select {
 				case <-ctx.Done():
 					errList = append(errList, "扫描提前取消")
 					return signals, errList
-				case <-time.After(500 * time.Millisecond):
+				case <-time.After(2500 * time.Millisecond):
 				}
 				klines, err = c.source.GetDailyKline(query)
 			}
@@ -494,7 +502,7 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 			case <-ctx.Done():
 				errList = append(errList, "扫描提前取消")
 				return signals, errList
-			case <-time.After(150 * time.Millisecond):
+			case <-time.After(2500 * time.Millisecond):
 			}
 		}
 
@@ -609,7 +617,7 @@ func evaluate(item Item, klines []provider.DailyKline, rc RuleConfig) (*Signal, 
 		return klines[i].Timestamp.Before(klines[j].Timestamp)
 	})
 
-	// 剔除尚未闭合的当前 UTC 当天 K 线（例如在 UTC 00:05 运行时，当天的柱子仅有 5 分钟成交量）
+	// 剔除尚未闭合的当前 UTC 当天 K 线（例如在 UTC 00:01 运行时，当天的柱子仅有 1 分钟成交量）
 	todayUTC := time.Now().UTC().Format("2006-01-02")
 	if klines[len(klines)-1].Timestamp.UTC().Format("2006-01-02") == todayUTC {
 		klines = klines[:len(klines)-1]
@@ -658,10 +666,10 @@ func evaluate(item Item, klines []provider.DailyKline, rc RuleConfig) (*Signal, 
 	}, nil
 }
 
-// durationUntilNextRun 计算到下一个 UTC 00:05 的等待时长。
+// durationUntilNextRun 计算到下一个 UTC 00:01 的等待时长。
 func durationUntilNextRun() time.Duration {
 	now := time.Now().UTC()
-	next := time.Date(now.Year(), now.Month(), now.Day(), 0, 5, 0, 0, time.UTC)
+	next := time.Date(now.Year(), now.Month(), now.Day(), 0, 1, 0, 0, time.UTC)
 	if !next.After(now) {
 		next = next.Add(24 * time.Hour)
 	}

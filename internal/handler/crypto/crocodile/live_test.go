@@ -2,9 +2,11 @@ package crocodile
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/uerax/all-in-one-bot/lite/internal/crypto/provider"
 	"github.com/uerax/all-in-one-bot/lite/internal/crypto/provider/geckoterminal"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
 )
@@ -15,7 +17,7 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 	}
 
 	log := logger.NewLogger()
-	provider := geckoterminal.NewProvider("https://api.geckoterminal.com/api/v2", 20, log)
+	p := geckoterminal.NewProvider("https://api.geckoterminal.com/api/v2", 20, log)
 
 	rc := RuleConfig{
 		Lookback:          7,
@@ -34,7 +36,19 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 		fmt.Printf("【正在拉取 DEX 真实数据】标的: [%s] %s | 查询参数: %s\n", item.Network, item.Name, query)
 		fmt.Printf("================================================================================\n")
 
-		klines, err := provider.GetDailyKline(query)
+		var klines []provider.DailyKline
+		var err error
+		for range 3 {
+			klines, err = p.GetDailyKline(query)
+			if err == nil {
+				break
+			}
+			if strings.Contains(err.Error(), "rate limit") {
+				time.Sleep(3 * time.Second)
+				continue
+			}
+			break
+		}
 		if err != nil {
 			t.Fatalf("[%s] GetDailyKline 失败: %v", item.Name, err)
 		}
@@ -74,5 +88,6 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 		fmt.Printf("  均值倍数: %.2fx (规则阈值: %.1fx) -> %t\n", sig.AverageRatio, sig.AverageMultiple, sig.AverageRatio >= sig.AverageMultiple)
 		fmt.Printf("  🔥 监控最终触发放量突破信号: %t\n", sig.Triggered)
 		fmt.Printf("  Web 端核对链接: %s\n", item.DexLink())
+		time.Sleep(2500 * time.Millisecond)
 	}
 }

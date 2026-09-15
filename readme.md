@@ -24,12 +24,12 @@
 
 ## 一、 核心功能：Crocodile 鳄鱼量能突增监控引擎
 
-**Crocodile（鳄鱼引擎）** 是专为加密货币（CEX 现货代币 & 链上 DEX 池子/Meme 币）设计的每日 **UTC 00:05** 量能异动自动检测系统。
+**Crocodile（鳄鱼引擎）** 是专为加密货币（CEX 现货代币 & 链上 DEX 池子/Meme 币）设计的每日 **UTC 00:01** 量能异动自动检测系统。
 
 ### 1.1 工作原理与计算机制
 - **数据源驱动**：优先从 **GeckoTerminal DEX API** 获取链上交易对的精确 1day OHLCV K 线（极速捕捉 Solana、Ethereum、Base、BSC 等链上代币的真实成交量）；未找到时自动平滑降级至 **CoinGecko CEX** 数据源。
 - **UTC 00:00 自然日对齐与未闭合柱子剔除**：
-  - 在每日 **UTC 00:05** 触发扫描时，自动过滤刚开盘 5 分钟的当天柱子，精准锁定 **上一个刚刚闭合的完整 24 小时 UTC 自然日 K 线**（`targetDay`）。
+  - 在每日 **UTC 00:01** 触发扫描时，自动过滤刚开盘 1 分钟的当天柱子，精准锁定 **上一个刚刚闭合的完整 24 小时 UTC 自然日 K 线**（`targetDay`）。
 - **判定阈值算法**：
   - `yRatio`（对比昨日）：`最新闭合日成交量 / 前一天成交量 >= 昨日倍数`（默认 `3.0x`）。
   - `aRatio`（对比均值）：`最新闭合日成交量 / 过去 N 天平均成交量 >= 均值倍数`（默认 `2.0x`）。
@@ -40,7 +40,7 @@
 | 命令 | 功能说明 | 适用场景 / 返回说明 |
 | :--- | :--- | :--- |
 | **`/crocodile_check`** | **只读诊断扫描** | 手动即时触发，输出**完整诊断报告**：<br>• 扫描 UTC 时间与规则配置<br>• 🟢 **触发告警币种**：收盘价、量能、昨日倍数及均值倍数<br>• ⚪ **未触发币种现状**：展示全部监控币种的最新量能倍数<br>• ⚠️ **异常说明**：接口报错或无数据详情 |
-| **`/crocodile_monitor`** | **24h 自动化后台静默监控** | 开启每日 UTC 00:05 自动扫描。未触发信号时**静默无打扰**；触发信号时经当日去重后推送告警消息 |
+| **`/crocodile_monitor`** | **24h 自动化后台静默监控** | 开启每日 UTC 00:01 自动扫描。未触发信号时**静默无打扰**；触发信号时经当日去重后推送告警消息 |
 | **`/crocodile_stop`** | **关闭后台监控** | 停止 24h 自动定时任务 |
 | **`/crocodile_list`** | **查看监控列表** | 列出当前正在监控的所有币种、合约或池子 |
 | **`/crocodile_add <id> [名称]`** | **添加监控目标** | 支持填入 CoinGecko ID（如 `solana`）或链上合约/池子地址（如 `solana:JUPyi...` 或 `eth:0x6982...`） |
@@ -177,7 +177,7 @@ geckoterminal:
   base_url: "https://api.geckoterminal.com/api/v2"  # env GECKOTERMINAL_BASE_URL
   timeout: 15                                       # env GECKOTERMINAL_TIMEOUT (秒, 默认 15)
 
-# ───────── Crocodile (每日 UTC 00:05 量能突增扫描) ─────────
+# ───────── Crocodile (每日 UTC 00:01 量能突增扫描) ─────────
 crocodile:
   lookback: 5           # env CROCODILE_LOOKBACK (回看天数, 默认 5)
   yesterday_multiple: 3.0 # env CROCODILE_YESTERDAY_MULTIPLE (相对昨日倍数, 默认 3.0)

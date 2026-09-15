@@ -62,7 +62,7 @@ geckoterminal:
   base_url: "https://api.geckoterminal.com/api/v2"  # env GECKOTERMINAL_BASE_URL
   timeout: 15                                       # env GECKOTERMINAL_TIMEOUT (秒, 默认 15)
 
-# ───────── Crocodile (每日 UTC 00:05 量能突增扫描) ─────────
+# ───────── Crocodile (每日 UTC 00:01 量能突增扫描) ─────────
 crocodile:
   lookback: 7                           # env CROCODILE_LOOKBACK (回看天数, 默认 7)
   yesterday_multiple: 2.0                # env CROCODILE_YESTERDAY_MULTIPLE (相对昨日倍数, 默认 2.0)

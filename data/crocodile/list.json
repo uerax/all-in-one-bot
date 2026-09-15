@@ -2,31 +2,31 @@
   {
     "network": "base",
     "name": "auki",
-    "address": "",
+    "address": "0x2fa9d6085c91151200e61a3e627d35001772c0d1",
     "rule": ""
   },
   {
     "network": "eth",
     "name": "wquil",
-    "address": "",
+    "address": "0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64",
     "rule": ""
   },
   {
     "network": "base",
     "name": "DRB",
-    "address": "",
+    "address": "0x5116773e18a9c7bb03ebb961b38678e45e238923",
     "rule": ""
   },
   {
     "network": "base",
     "name": "b3",
-    "address": "",
+    "address": "0xb099c658e784b41ee435d48a8eb67e8f27285c93",
     "rule": ""
   },
   {
     "network": "base",
     "name": "tig",
-    "address": "",
+    "address": "0x5280d5e63b416277d0f81fae54bb1e0444cabdaa",
     "rule": ""
   }
 ]

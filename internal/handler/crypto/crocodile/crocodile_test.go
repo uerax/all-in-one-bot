@@ -311,3 +311,14 @@ func TestCrocodile_StartupSyncAndMemoryOnly(t *testing.T) {
 		t.Fatalf("expected store Load count to remain 1, got %d", ms.loadCount)
 	}
 }
+
+func TestDurationUntilNextRun(t *testing.T) {
+	d := durationUntilNextRun()
+	if d <= 0 || d > 24*time.Hour {
+		t.Fatalf("durationUntilNextRun() = %v, expected between 0 and 24h", d)
+	}
+	target := time.Now().UTC().Add(d)
+	if target.Minute() != 1 || target.Hour() != 0 {
+		t.Errorf("target time should be at 00:01 UTC, got %v", target)
+	}
+}
