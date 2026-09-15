@@ -68,9 +68,9 @@ func LoadConfig(configPath string) *Config {
 	}
 
 	config.Crocodile = Crocodile{
-		Lookback:          intOrDefaultBase("CROCODILE_LOOKBACK", base.Crocodile.Lookback, 5),
-		YesterdayMultiple: float64OrDefaultBase("CROCODILE_YESTERDAY_MULTIPLE", base.Crocodile.YesterdayMultiple, 3.0),
-		AverageMultiple:   float64OrDefaultBase("CROCODILE_AVERAGE_MULTIPLE", base.Crocodile.AverageMultiple, 2.0),
+		Lookback:          intOrDefaultBase("CROCODILE_LOOKBACK", base.Crocodile.Lookback, 7),
+		YesterdayMultiple: float64OrDefaultBase("CROCODILE_YESTERDAY_MULTIPLE", base.Crocodile.YesterdayMultiple, 2.0),
+		AverageMultiple:   float64OrDefaultBase("CROCODILE_AVERAGE_MULTIPLE", base.Crocodile.AverageMultiple, 3.0),
 		Interval:          intOrDefaultBase("CROCODILE_INTERVAL", base.Crocodile.Interval, 86400),
 	}
 

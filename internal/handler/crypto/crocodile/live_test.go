@@ -18,9 +18,9 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 	provider := geckoterminal.NewProvider("https://api.geckoterminal.com/api/v2", 20, log)
 
 	rc := RuleConfig{
-		Lookback:          5,
-		YesterdayMultiple: 3.0,
-		AverageMultiple:   2.0,
+		Lookback:          7,
+		YesterdayMultiple: 2.0,
+		AverageMultiple:   3.0,
 	}
 
 	targets := []Item{
@@ -66,13 +66,13 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 		fmt.Println("---【Crocodile 量能监控诊断与计算过程】---")
 		fmt.Printf("  当前系统时间: %s UTC\n", time.Now().UTC().Format("2006-01-02 15:04:05"))
 		fmt.Printf("  评估目标日 (昨天完整日): %s\n", sig.Time.Format("2006-01-02"))
-		fmt.Printf("  评估收盘价: %s\n", formatPrice(sig.Close))
+		fmt.Printf("  评估收盘价: %s (%s)\n", formatPrice(sig.Close), formatChange(sig.PriceChangePct))
 		fmt.Printf("  目标日成交量: $%.2f\n", sig.Volume)
 		fmt.Printf("  前日成交量:   $%.2f\n", sig.PreviousVolume)
-		fmt.Printf("  前 5 日均量:  $%.2f\n", sig.PreviousAverageVol)
+		fmt.Printf("  前 7 日均量:  $%.2f\n", sig.PreviousAverageVol)
 		fmt.Printf("  昨日倍数: %.2fx (规则阈值: %.1fx) -> %t\n", sig.YesterdayRatio, sig.YesterdayMultiple, sig.YesterdayRatio >= sig.YesterdayMultiple)
 		fmt.Printf("  均值倍数: %.2fx (规则阈值: %.1fx) -> %t\n", sig.AverageRatio, sig.AverageMultiple, sig.AverageRatio >= sig.AverageMultiple)
-		fmt.Printf("  🔥 监控最终触发买入信号: %t\n", sig.Triggered)
+		fmt.Printf("  🔥 监控最终触发放量突破信号: %t\n", sig.Triggered)
 		fmt.Printf("  Web 端核对链接: %s\n", item.DexLink())
 	}
 }

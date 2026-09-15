@@ -16,8 +16,10 @@ func TestEvaluate_ExcludesUnclosedToday(t *testing.T) {
 	todayStr := nowUTC.Format("2006-01-02")
 	todayTime, _ := time.Parse("2006-01-02", todayStr)
 
-	// Create 7 daily klines: 5 historical days, yesterday (target), today (unclosed 5-min candle)
+	// Create 9 daily klines: 7 historical days, yesterday (target), today (unclosed 5-min candle)
 	klines := []provider.DailyKline{
+		{Timestamp: todayTime.AddDate(0, 0, -8), Volume: 100, Close: 1.0},
+		{Timestamp: todayTime.AddDate(0, 0, -7), Volume: 100, Close: 1.0},
 		{Timestamp: todayTime.AddDate(0, 0, -6), Volume: 100, Close: 1.0},
 		{Timestamp: todayTime.AddDate(0, 0, -5), Volume: 100, Close: 1.0},
 		{Timestamp: todayTime.AddDate(0, 0, -4), Volume: 100, Close: 1.0},
@@ -28,9 +30,9 @@ func TestEvaluate_ExcludesUnclosedToday(t *testing.T) {
 	}
 
 	rc := RuleConfig{
-		Lookback:          5,
-		YesterdayMultiple: 3.0,
-		AverageMultiple:   2.0,
+		Lookback:          7,
+		YesterdayMultiple: 2.0,
+		AverageMultiple:   3.0,
 	}
 
 	item := Item{Network: "solana", Name: "SOL"}
@@ -52,6 +54,14 @@ func TestEvaluate_ExcludesUnclosedToday(t *testing.T) {
 	if sig.YesterdayRatio != 4.0 {
 		t.Errorf("sig.YesterdayRatio = %f, want 4.0", sig.YesterdayRatio)
 	}
+
+	if sig.AverageRatio != 4.0 {
+		t.Errorf("sig.AverageRatio = %f, want 4.0", sig.AverageRatio)
+	}
+
+	if sig.PriceChangePct < 49.9 || sig.PriceChangePct > 50.1 {
+		t.Errorf("sig.PriceChangePct = %f, want 50.0%%", sig.PriceChangePct)
+	}
 }
 
 func TestEvaluate_DescendingOrUnsortedKlines(t *testing.T) {
@@ -62,18 +72,20 @@ func TestEvaluate_DescendingOrUnsortedKlines(t *testing.T) {
 	// GeckoTerminal 等 API 默认返回倒序 K 线（最新在前，最旧在后）
 	descendingKlines := []provider.DailyKline{
 		{Timestamp: todayTime, Volume: 10, Close: 1.5},                    // Today (unclosed)
-		{Timestamp: todayTime.AddDate(0, 0, -1), Volume: 500, Close: 1.5}, // Yesterday (target, 5x spike)
+		{Timestamp: todayTime.AddDate(0, 0, -1), Volume: 500, Close: 1.2}, // Yesterday (target, 5x spike)
 		{Timestamp: todayTime.AddDate(0, 0, -2), Volume: 100, Close: 1.0}, // Prev Day
 		{Timestamp: todayTime.AddDate(0, 0, -3), Volume: 100, Close: 1.0},
 		{Timestamp: todayTime.AddDate(0, 0, -4), Volume: 100, Close: 1.0},
 		{Timestamp: todayTime.AddDate(0, 0, -5), Volume: 100, Close: 1.0},
 		{Timestamp: todayTime.AddDate(0, 0, -6), Volume: 100, Close: 1.0},
+		{Timestamp: todayTime.AddDate(0, 0, -7), Volume: 100, Close: 1.0},
+		{Timestamp: todayTime.AddDate(0, 0, -8), Volume: 100, Close: 1.0},
 	}
 
 	rc := RuleConfig{
-		Lookback:          5,
-		YesterdayMultiple: 3.0,
-		AverageMultiple:   2.0,
+		Lookback:          7,
+		YesterdayMultiple: 2.0,
+		AverageMultiple:   3.0,
 	}
 
 	item := Item{Network: "base", Name: "b3"}
@@ -93,6 +105,14 @@ func TestEvaluate_DescendingOrUnsortedKlines(t *testing.T) {
 
 	if sig.YesterdayRatio != 5.0 {
 		t.Errorf("sig.YesterdayRatio = %f, want 5.0", sig.YesterdayRatio)
+	}
+
+	if sig.AverageRatio != 5.0 {
+		t.Errorf("sig.AverageRatio = %f, want 5.0", sig.AverageRatio)
+	}
+
+	if sig.PriceChangePct < 19.9 || sig.PriceChangePct > 20.1 {
+		t.Errorf("sig.PriceChangePct = %f, want 20.0%%", sig.PriceChangePct)
 	}
 }
 

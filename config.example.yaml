@@ -64,7 +64,7 @@ geckoterminal:
 
 # ───────── Crocodile (每日 UTC 00:05 量能突增扫描) ─────────
 crocodile:
-  lookback: 5                           # env CROCODILE_LOOKBACK (回看天数, 默认 5)
-  yesterday_multiple: 3.0                # env CROCODILE_YESTERDAY_MULTIPLE (相对昨日倍数, 默认 3.0)
-  average_multiple: 2.0                  # env CROCODILE_AVERAGE_MULTIPLE (相对均值倍数, 默认 2.0)
+  lookback: 7                           # env CROCODILE_LOOKBACK (回看天数, 默认 7)
+  yesterday_multiple: 2.0                # env CROCODILE_YESTERDAY_MULTIPLE (相对昨日倍数, 默认 2.0)
+  average_multiple: 3.0                  # env CROCODILE_AVERAGE_MULTIPLE (相对均值倍数, 默认 3.0)
   interval: 86400                        # env CROCODILE_INTERVAL (扫描间隔秒, 默认 86400 = 每天)

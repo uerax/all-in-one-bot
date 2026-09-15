@@ -83,6 +83,13 @@ func formatPrice(price float64) string {
 	return "$0.00"
 }
 
+func formatChange(pct float64) string {
+	if pct > 0 {
+		return fmt.Sprintf("+%.2f%%", pct)
+	}
+	return fmt.Sprintf("%.2f%%", pct)
+}
+
 // RuleConfig 存储量能扫描的阈值配置。
 type RuleConfig struct {
 	Lookback          int
@@ -96,6 +103,7 @@ type Signal struct {
 	RuleConfig
 	Time               time.Time
 	Close              float64
+	PriceChangePct     float64
 	Volume             float64
 	PreviousVolume     float64
 	PreviousAverageVol float64
@@ -131,13 +139,26 @@ type Crocodile struct {
 }
 
 func NewCrocodile(db store.Store, source klineSource, ch chan<- models.Message, cfg config.Crocodile, log logger.Log) *Crocodile {
+	lookback := cfg.Lookback
+	if lookback <= 0 {
+		lookback = 7
+	}
+	yesterday := cfg.YesterdayMultiple
+	if yesterday <= 0 {
+		yesterday = 2.0
+	}
+	average := cfg.AverageMultiple
+	if average <= 0 {
+		average = 3.0
+	}
+
 	c := &Crocodile{
 		db:     db,
 		source: source,
 		ruleConfig: RuleConfig{
-			Lookback:          cfg.Lookback,
-			YesterdayMultiple: cfg.YesterdayMultiple,
-			AverageMultiple:   cfg.AverageMultiple,
+			Lookback:          lookback,
+			YesterdayMultiple: yesterday,
+			AverageMultiple:   average,
 		},
 		lastTrigger: make(map[string]string),
 		klineCache:  make(map[string]klineCacheItem),
@@ -268,7 +289,7 @@ func (c *Crocodile) Handle(chatID int64) {
 				netStr = "DEX"
 			}
 			fmt.Fprintf(&sb, "🟢 [%s](%s) (`%s`)\n", escapeMarkdown(sig.Name), link, netStr)
-			fmt.Fprintf(&sb, "  收盘价: `%s` | 今日量能: `%.2f`\n", formatPrice(sig.Close), sig.Volume)
+			fmt.Fprintf(&sb, "  收盘价: `%s` (`%s`) | 昨日量能: `%.2f`\n", formatPrice(sig.Close), formatChange(sig.PriceChangePct), sig.Volume)
 			fmt.Fprintf(&sb, "  昨日倍数: *%.2fx* (阈值 %.1fx) | 均值倍数: *%.2fx* (阈值 %.1fx)\n\n",
 				sig.YesterdayRatio, sig.YesterdayMultiple, sig.AverageRatio, sig.AverageMultiple)
 		}
@@ -277,8 +298,8 @@ func (c *Crocodile) Handle(chatID int64) {
 	if len(untriggered) > 0 {
 		sb.WriteString("*【⚪ 未触发币种量能现状】*\n")
 		for _, sig := range untriggered {
-			fmt.Fprintf(&sb, "⚪ `%s`: 收盘 `%s` | 昨日倍数: `%.2fx` | 均值倍数: `%.2fx`\n",
-				sig.Name, formatPrice(sig.Close), sig.YesterdayRatio, sig.AverageRatio)
+			fmt.Fprintf(&sb, "⚪ `%s`: 收盘 `%s` (`%s`) | 昨日倍数: `%.2fx` | 均值倍数: `%.2fx`\n",
+				sig.Name, formatPrice(sig.Close), formatChange(sig.PriceChangePct), sig.YesterdayRatio, sig.AverageRatio)
 		}
 		sb.WriteString("\n")
 	}
@@ -370,7 +391,7 @@ func (c *Crocodile) RuleTip(chatID int64) {
 	c.mu.Unlock()
 	c.ch <- models.Message{
 		ChatID: chatID,
-		Text: fmt.Sprintf("*当前规则配置*\n回望天数: `%d`\n今日倍数: `%.1f`\n均值倍数: `%.1f`\n\n请输入新参数: `lookback today avg` 例如: `5 3 2`",
+		Text: fmt.Sprintf("*当前规则配置*\n回望天数: `%d`\n昨日倍数: `%.1f`\n均值倍数: `%.1f`\n\n请输入新参数: `lookback yesterday avg` 例如: `7 2 3`",
 			rc.Lookback, rc.YesterdayMultiple, rc.AverageMultiple),
 		Kind: models.KindMarkdown,
 	}
@@ -551,14 +572,14 @@ func (c *Crocodile) sendSignals(chatID int64, signals []Signal) {
 			netStr = "DEX"
 		}
 		text := fmt.Sprintf(
-			"🐊 *[%s]* [%s](%s) 触发买入信号\n"+
+			"🐊 *[%s]* [%s](%s) 触发日线放量突破信号\n"+
 				"日期: `%s`\n"+
-				"收盘价: `%s`\n"+
-				"今日量能倍数: `%.2fx` (阈值 %.1fx)\n"+
+				"收盘价: `%s` (`%s`)\n"+
+				"昨日量能倍数: `%.2fx` (阈值 %.1fx)\n"+
 				"均值量能倍数: `%.2fx` (阈值 %.1fx)",
 			netStr, escapeMarkdown(sig.Name), link,
 			sig.Time.Format("2006-01-02"),
-			formatPrice(sig.Close),
+			formatPrice(sig.Close), formatChange(sig.PriceChangePct),
 			sig.YesterdayRatio, sig.YesterdayMultiple,
 			sig.AverageRatio, sig.AverageMultiple,
 		)
@@ -607,7 +628,7 @@ func evaluate(item Item, klines []provider.DailyKline, rc RuleConfig) (*Signal, 
 	for _, k := range recent[:rc.Lookback] {
 		sumVol += k.Volume
 	}
-	avg := sumVol / float64(rc.Lookback) // 包含前天在内，此前 Lookback (例如 5) 天的平均成交量
+	avg := sumVol / float64(rc.Lookback) // 包含前天在内，此前 Lookback 天的平均成交量
 
 	if avg == 0 || prevDay.Volume == 0 {
 		return nil, nil
@@ -617,11 +638,17 @@ func evaluate(item Item, klines []provider.DailyKline, rc RuleConfig) (*Signal, 
 	aRatio := targetDay.Volume / avg
 	triggered := yRatio >= rc.YesterdayMultiple && aRatio >= rc.AverageMultiple
 
+	var changePct float64
+	if prevDay.Close > 0 {
+		changePct = (targetDay.Close - prevDay.Close) / prevDay.Close * 100
+	}
+
 	return &Signal{
 		Item:               item,
 		RuleConfig:         rc,
 		Time:               targetDay.Timestamp,
 		Close:              targetDay.Close,
+		PriceChangePct:     changePct,
 		Volume:             targetDay.Volume,
 		PreviousVolume:     prevDay.Volume,
 		PreviousAverageVol: avg,
