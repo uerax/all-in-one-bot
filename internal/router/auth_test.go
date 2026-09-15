@@ -28,10 +28,12 @@ func TestIsAuthorized(t *testing.T) {
 	}{
 		{"未配置白名单 → 全部放行", nil, "/crocodile_list", 1, true},
 		{"/chatid 放行（sender 非管理员）", admin, "/chatid", 1, true},
+		{"/start 放行（sender 非管理员）", admin, "/start", 1, true},
 		{"管理员放行", admin, "/crocodile_list", 100, true},
 		{"非管理员丢弃", admin, "/crocodile_list", 200, false},
 		{"sender 0（未知）丢弃", admin, "/crocodile_list", 0, false},
 		{"未配置时 /chatid 也放行", nil, "/chatid", 0, true},
+		{"未配置时 /start 也放行", nil, "/start", 0, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

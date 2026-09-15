@@ -37,6 +37,8 @@ func (d *Dispatcher) Start(ctx context.Context) {
 				}
 				if err != nil {
 					d.log.Error("dispatcher: 发送消息失败", "chatID", msg.ChatID, "error", err)
+				} else {
+					d.log.Info("dispatcher: 消息已发送", "chatID", msg.ChatID)
 				}
 			}
 		}

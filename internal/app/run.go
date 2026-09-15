@@ -24,7 +24,7 @@ func Run() {
 
 	cfg := config.LoadConfig(*configPath)
 
-	b, err := telegram.NewBot(cfg.Telegram)
+	b, err := telegram.NewBot(cfg.Telegram, log)
 	if err != nil {
 		log.Error(
 			"FATAL: Application initialization failed",

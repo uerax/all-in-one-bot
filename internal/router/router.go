@@ -1,6 +1,8 @@
 package router
 
 import (
+	"strings"
+
 	"github.com/uerax/all-in-one-bot/lite/internal/crypto/provider"
 	cgprovider "github.com/uerax/all-in-one-bot/lite/internal/crypto/provider/coingecko"
 	gtprovider "github.com/uerax/all-in-one-bot/lite/internal/crypto/provider/geckoterminal"
@@ -30,6 +32,7 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	var handlers []Handler
 
 	// telegram handlers
+	handlers = append(handlers, telegram.NewStartHandle(r.msgCh))
 	handlers = append(handlers, telegram.NewChatIDHandle(deps.Logger))
 
 	// bitcointalk handlers
@@ -90,4 +93,33 @@ func (r *Router) RegisterHandlers(b *tb.Bot, deps *Dependencies) {
 		mw := authorizedOnly(deps.AdminIDs, h.Cmd(), deps.Logger, h.Handle)
 		b.Handle(h.Cmd(), mw)
 	}
+
+	// 兜底监听：捕获未匹配的命令与普通文本消息并记录日志，避免静默黑盒
+	b.Handle(tb.OnText, func(c tb.Context) error {
+		senderID := int64(0)
+		if c.Sender() != nil {
+			senderID = c.Sender().ID
+		}
+		chatID := int64(0)
+		if c.Chat() != nil {
+			chatID = c.Chat().ID
+		}
+		text := c.Text()
+		if strings.HasPrefix(text, "/") {
+			deps.Logger.Warn(
+				"unrecognized command received",
+				"command", text,
+				"sender_id", senderID,
+				"chat_id", chatID,
+			)
+		} else {
+			deps.Logger.Info(
+				"message received (unhandled)",
+				"text", text,
+				"sender_id", senderID,
+				"chat_id", chatID,
+			)
+		}
+		return nil
+	})
 }

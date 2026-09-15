@@ -21,13 +21,13 @@ func AdminIDsSet(ids []int64) map[int64]bool {
 
 // isAuthorized 决定命令是否被允许执行：
 //   - AdminIDs 为空（未配置）→ 放行，维持现状行为。
-//   - cmd 属于放行白名单（如 /chatid）→ 放行，供任何人查询 chat ID 以便配置。
+//   - cmd 属于放行白名单（如 /chatid, /start）→ 放行，供用户查询 ID 或获取欢迎信息。
 //   - senderID 在白名单内 → 放行。
 func isAuthorized(adminIDs map[int64]bool, cmd string, senderID int64) bool {
 	if len(adminIDs) == 0 {
 		return true
 	}
-	if cmd == "/chatid" {
+	if cmd == "/chatid" || cmd == "/start" {
 		return true
 	}
 	return adminIDs[senderID]
@@ -41,19 +41,32 @@ func authorizedOnly(adminIDs map[int64]bool, cmd string, log logger.Log, next fu
 		if sender != nil {
 			senderID = sender.ID
 		}
+		chatID := int64(0)
+		if c.Chat() != nil {
+			chatID = c.Chat().ID
+		}
+		payload := ""
+		if c.Message() != nil {
+			payload = c.Message().Payload
+		}
+
 		if !isAuthorized(adminIDs, cmd, senderID) {
 			log.Warn(
 				"unauthorized command dropped",
 				"command", cmd,
+				"payload", payload,
 				"sender_id", senderID,
+				"chat_id", chatID,
 			)
 			return nil // 静默丢弃，不回复
 		}
+
 		log.Info(
-			"command processed",
+			"received command",
 			"command", cmd,
+			"payload", payload,
 			"sender_id", senderID,
-			"chat_id", c.Chat().ID,
+			"chat_id", chatID,
 		)
 		return next(c)
 	}
