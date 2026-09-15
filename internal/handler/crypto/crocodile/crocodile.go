@@ -16,11 +16,71 @@ import (
 	"github.com/uerax/all-in-one-bot/lite/internal/store"
 )
 
-// Item 表示一个监控币种。
+// Item 表示一个 DEX 监控币种。
 type Item struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-	Rule string `json:"rule,omitempty"`
+	Network string `json:"network"`           // 链名，如 "base", "eth", "solana"
+	Name    string `json:"name"`              // 代币名称/符号，如 "auki", "wquil"
+	Address string `json:"address,omitempty"` // 可选：代币合约地址或池子地址
+	Rule    string `json:"rule,omitempty"`    // 规则
+	ID      string `json:"id,omitempty"`      // 兼容旧字段
+}
+
+// QueryString 返回用于向 DEX Provider 查询的入参字符串。
+func (item Item) QueryString() string {
+	if item.Address != "" {
+		if item.Network != "" {
+			return item.Network + ":" + item.Address
+		}
+		return item.Address
+	}
+	if item.Network != "" {
+		return item.Network + ":" + item.Name
+	}
+	if item.ID != "" {
+		return item.ID
+	}
+	return item.Name
+}
+
+// Key 返回币种唯一标识键。
+func (item Item) Key() string {
+	if item.Network != "" && item.Name != "" {
+		return strings.ToLower(item.Network + ":" + item.Name)
+	}
+	if item.Address != "" {
+		return strings.ToLower(item.Address)
+	}
+	if item.Name != "" {
+		return strings.ToLower(item.Name)
+	}
+	return strings.ToLower(item.ID)
+}
+
+// DexLink 生成指向 GeckoTerminal 的真实池子或网络搜索链接。
+func (item Item) DexLink() string {
+	if item.Network != "" && item.Address != "" {
+		return fmt.Sprintf("https://www.geckoterminal.com/%s/pools/%s", item.Network, item.Address)
+	}
+	if item.Network != "" {
+		return fmt.Sprintf("https://www.geckoterminal.com/%s/pools?search=%s", item.Network, item.Name)
+	}
+	return fmt.Sprintf("https://www.geckoterminal.com/search?query=%s", item.Name)
+}
+
+func formatPrice(price float64) string {
+	if price >= 1.0 {
+		return fmt.Sprintf("$%.2f", price)
+	}
+	if price >= 0.01 {
+		return fmt.Sprintf("$%.4f", price)
+	}
+	if price >= 0.0001 {
+		return fmt.Sprintf("$%.6f", price)
+	}
+	if price > 0 {
+		return fmt.Sprintf("$%.8f", price)
+	}
+	return "$0.00"
 }
 
 // RuleConfig 存储量能扫描的阈值配置。
@@ -202,9 +262,13 @@ func (c *Crocodile) Handle(chatID int64) {
 	if len(triggered) > 0 {
 		sb.WriteString("*【🟢 触发量能信号币种】*\n")
 		for _, sig := range triggered {
-			link := fmt.Sprintf("https://www.coingecko.com/en/coins/%s", sig.ID)
-			fmt.Fprintf(&sb, "🟢 [%s](%s) (`%s`)\n", escapeMarkdown(sig.Name), link, sig.ID)
-			fmt.Fprintf(&sb, "  收盘价: `$%.4f` | 今日量能: `%.2f`\n", sig.Close, sig.Volume)
+			link := sig.DexLink()
+			netStr := strings.ToUpper(sig.Network)
+			if netStr == "" {
+				netStr = "DEX"
+			}
+			fmt.Fprintf(&sb, "🟢 [%s](%s) (`%s`)\n", escapeMarkdown(sig.Name), link, netStr)
+			fmt.Fprintf(&sb, "  收盘价: `%s` | 今日量能: `%.2f`\n", formatPrice(sig.Close), sig.Volume)
 			fmt.Fprintf(&sb, "  昨日倍数: *%.2fx* (阈值 %.1fx) | 均值倍数: *%.2fx* (阈值 %.1fx)\n\n",
 				sig.YesterdayRatio, sig.YesterdayMultiple, sig.AverageRatio, sig.AverageMultiple)
 		}
@@ -213,8 +277,8 @@ func (c *Crocodile) Handle(chatID int64) {
 	if len(untriggered) > 0 {
 		sb.WriteString("*【⚪ 未触发币种量能现状】*\n")
 		for _, sig := range untriggered {
-			fmt.Fprintf(&sb, "⚪ `%s`: 收盘 `$%.4f` | 昨日倍数: `%.2fx` | 均值倍数: `%.2fx`\n",
-				sig.Name, sig.Close, sig.YesterdayRatio, sig.AverageRatio)
+			fmt.Fprintf(&sb, "⚪ `%s`: 收盘 `%s` | 昨日倍数: `%.2fx` | 均值倍数: `%.2fx`\n",
+				sig.Name, formatPrice(sig.Close), sig.YesterdayRatio, sig.AverageRatio)
 		}
 		sb.WriteString("\n")
 	}
@@ -242,50 +306,61 @@ func (c *Crocodile) ListMonitor(chatID int64) {
 		return
 	}
 	var sb strings.Builder
-	sb.WriteString("*Crocodile 监控列表*\n")
+	sb.WriteString("🐊 *Crocodile DEX 监控列表*\n")
 	for _, item := range items {
-		link := fmt.Sprintf("https://www.coingecko.com/en/coins/%s", item.ID)
-		fmt.Fprintf(&sb, "`%s`: [%s](%s)\n", item.Name, item.ID, link)
+		link := item.DexLink()
+		net := strings.ToUpper(item.Network)
+		if net == "" {
+			net = "DEX"
+		}
+		fmt.Fprintf(&sb, "- `[%s]` [%s](%s)\n", net, escapeMarkdown(item.Name), link)
 	}
 	c.ch <- models.Message{ChatID: chatID, Text: sb.String(), Kind: models.KindMarkdown}
 }
 
-// AddMonitor 添加一个监控币种。
-func (c *Crocodile) AddMonitor(chatID int64, id, name string) {
-	id = strings.TrimSpace(id)
+// AddMonitor 添加一个监控币种（支持 network, name, address）。
+func (c *Crocodile) AddMonitor(chatID int64, network, name, address string) {
+	network = strings.ToLower(strings.TrimSpace(network))
 	name = strings.TrimSpace(name)
-	if id == "" {
-		c.ch <- models.Message{ChatID: chatID, Text: "参数有误: 币种 ID 不能为空"}
+	address = strings.TrimSpace(address)
+	if network == "" && name == "" {
+		c.ch <- models.Message{ChatID: chatID, Text: "参数有误: 请输入链名和代币名称，例如: base auki"}
 		return
 	}
 	if name == "" {
-		name = id
+		name = network
+		network = "base"
 	}
-	if err := c.addItem(Item{ID: id, Name: name}); err != nil {
+	item := Item{Network: network, Name: name, Address: address}
+	if err := c.addItem(item); err != nil {
 		c.ch <- models.Message{ChatID: chatID, Text: "添加失败: " + err.Error()}
 		return
 	}
-	c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("已添加监控: `%s` (%s)", id, name), Kind: models.KindMarkdown}
+	c.ch <- models.Message{
+		ChatID: chatID,
+		Text:   fmt.Sprintf("已添加 DEX 监控: `[%s]` *%s*", strings.ToUpper(network), escapeMarkdown(name)),
+		Kind:   models.KindMarkdown,
+	}
 }
 
 // DeleteMonitor 从监控列表中移除指定币种。
-func (c *Crocodile) DeleteMonitor(chatID int64, id string) {
-	id = strings.TrimSpace(id)
-	if id == "" {
-		c.ch <- models.Message{ChatID: chatID, Text: "参数有误: 币种 ID 不能为空"}
+func (c *Crocodile) DeleteMonitor(chatID int64, target string) {
+	target = strings.TrimSpace(target)
+	if target == "" {
+		c.ch <- models.Message{ChatID: chatID, Text: "参数有误: 币种名称不能为空"}
 		return
 	}
-	deleted, deletedID, err := c.deleteItem(id)
+	deleted, deletedLabel, err := c.deleteItem(target)
 	if err != nil {
 		c.ch <- models.Message{ChatID: chatID, Text: "删除失败: " + err.Error()}
 		return
 	}
 	if !deleted {
-		c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("未在监控列表中找到币种: `%s`", id), Kind: models.KindMarkdown}
+		c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("未在监控列表中找到币种: `%s`", target), Kind: models.KindMarkdown}
 		return
 	}
 
-	c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("已删除监控: `%s`", deletedID), Kind: models.KindMarkdown}
+	c.ch <- models.Message{ChatID: chatID, Text: fmt.Sprintf("已删除 DEX 监控: `%s`", deletedLabel), Kind: models.KindMarkdown}
 }
 
 // RuleTip 返回当前规则配置说明。
@@ -368,25 +443,27 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 		default:
 		}
 
-		klines, ok := c.getCachedKline(item.ID)
+		query := item.QueryString()
+		cacheKey := item.Key()
+		klines, ok := c.getCachedKline(cacheKey)
 		if !ok {
 			var err error
-			klines, err = c.source.GetDailyKline(item.ID)
+			klines, err = c.source.GetDailyKline(query)
 			// 智能重试：排除 404 等客户端错误，仅在网络/超时/限流时 500ms 重试一次
 			if err != nil && !strings.Contains(err.Error(), "404") {
-				c.log.Warn("crocodile GetDailyKline 首次失败，重试", "id", item.ID, "error", err)
+				c.log.Warn("crocodile GetDailyKline 首次失败，重试", "query", query, "error", err)
 				select {
 				case <-ctx.Done():
 					errList = append(errList, "扫描提前取消")
 					return signals, errList
 				case <-time.After(500 * time.Millisecond):
 				}
-				klines, err = c.source.GetDailyKline(item.ID)
+				klines, err = c.source.GetDailyKline(query)
 			}
 			if err == nil {
-				c.setCachedKline(item.ID, klines)
+				c.setCachedKline(cacheKey, klines)
 			} else {
-				errList = append(errList, fmt.Sprintf("%s: %v", item.ID, err))
+				errList = append(errList, fmt.Sprintf("%s: %v", query, err))
 				continue
 			}
 		}
@@ -402,7 +479,7 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 
 		sig, err := evaluate(item, klines, rc)
 		if err != nil {
-			errList = append(errList, fmt.Sprintf("%s: %v", item.ID, err))
+			errList = append(errList, fmt.Sprintf("%s: %v", item.Name, err))
 			continue
 		}
 		if sig != nil {
@@ -430,7 +507,7 @@ func (c *Crocodile) check(chatID int64) {
 		if !sig.Triggered {
 			continue
 		}
-		key := sig.Item.ID + ":volume_spike"
+		key := sig.Item.Key() + ":volume_spike"
 		day := sig.Time.Format("2006-01-02")
 		c.mu.Lock()
 		already := c.lastTrigger[key] == day
@@ -468,16 +545,20 @@ func (c *Crocodile) check(chatID int64) {
 // sendSignals 将信号结果以 Markdown 格式发送。
 func (c *Crocodile) sendSignals(chatID int64, signals []Signal) {
 	for _, sig := range signals {
-		link := fmt.Sprintf("https://www.coingecko.com/en/coins/%s", sig.ID)
+		link := sig.DexLink()
+		netStr := strings.ToUpper(sig.Network)
+		if netStr == "" {
+			netStr = "DEX"
+		}
 		text := fmt.Sprintf(
-			"🐊 [%s](%s) 触发买入信号\n"+
+			"🐊 *[%s]* [%s](%s) 触发买入信号\n"+
 				"日期: `%s`\n"+
-				"收盘价: `$%.4f`\n"+
+				"收盘价: `%s`\n"+
 				"今日量能倍数: `%.2fx` (阈值 %.1fx)\n"+
 				"均值量能倍数: `%.2fx` (阈值 %.1fx)",
-			escapeMarkdown(sig.Name), link,
+			netStr, escapeMarkdown(sig.Name), link,
 			sig.Time.Format("2006-01-02"),
-			sig.Close,
+			formatPrice(sig.Close),
 			sig.YesterdayRatio, sig.YesterdayMultiple,
 			sig.AverageRatio, sig.AverageMultiple,
 		)
@@ -599,7 +680,7 @@ func (c *Crocodile) addItem(item Item) error {
 
 	found := false
 	for i, e := range c.items {
-		if strings.EqualFold(e.ID, item.ID) {
+		if strings.EqualFold(e.Key(), item.Key()) || (strings.EqualFold(e.Name, item.Name) && strings.EqualFold(e.Network, item.Network)) {
 			c.items[i] = item
 			found = true
 			break
@@ -614,7 +695,7 @@ func (c *Crocodile) addItem(item Item) error {
 	return c.db.Save("crocodile", "list", c.items)
 }
 
-// deleteItem 从监控列表中移除指定 ID 或 Name 的币种（支持大小写不敏感匹配）。
+// deleteItem 从监控列表中移除指定币种（支持按 name, network:name 或 address 匹配）。
 func (c *Crocodile) deleteItem(target string) (bool, string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -629,11 +710,22 @@ func (c *Crocodile) deleteItem(target string) (bool, string, error) {
 
 	newList := make([]Item, 0, len(c.items))
 	found := false
-	deletedID := ""
+	deletedLabel := ""
 	for _, item := range c.items {
-		if !found && (strings.EqualFold(item.ID, target) || strings.EqualFold(item.Name, target)) {
+		if !found && (strings.EqualFold(item.Name, target) || strings.EqualFold(item.Key(), target) || strings.EqualFold(item.ID, target) || (item.Address != "" && strings.EqualFold(item.Address, target))) {
 			found = true
-			deletedID = item.ID
+			net := strings.ToUpper(item.Network)
+			if net == "" {
+				net = "DEX"
+			}
+			deletedLabel = fmt.Sprintf("[%s] %s", net, item.Name)
+			// 清理该币种在内存中的 kline 缓存与去重触发记录
+			delete(c.klineCache, item.Key())
+			for k := range c.lastTrigger {
+				if strings.HasPrefix(k, item.Key()+":") {
+					delete(c.lastTrigger, k)
+				}
+			}
 			continue
 		}
 		newList = append(newList, item)
@@ -644,19 +736,11 @@ func (c *Crocodile) deleteItem(target string) (bool, string, error) {
 
 	c.items = newList
 
-	// 清理该币种在内存中的 kline 缓存与去重触发记录
-	delete(c.klineCache, deletedID)
-	for k := range c.lastTrigger {
-		if strings.HasPrefix(k, deletedID+":") {
-			delete(c.lastTrigger, k)
-		}
-	}
-
 	if c.db == nil {
 		return false, "", fmt.Errorf("db store 未初始化")
 	}
 	if err := c.db.Save("crocodile", "list", c.items); err != nil {
 		return false, "", err
 	}
-	return true, deletedID, nil
+	return true, deletedLabel, nil
 }

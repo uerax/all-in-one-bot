@@ -1,27 +1,32 @@
 [
   {
-    "name": "wquil",
-    "id": "wrapped-quil",
-    "rule": ""
-  },
-  {
-    "name": "DRB",
-    "id": "debtreliefbot",
-    "rule": ""
-  },
-  {
+    "network": "base",
     "name": "auki",
-    "id": "auki-labs",
+    "address": "",
     "rule": ""
   },
   {
+    "network": "eth",
+    "name": "wquil",
+    "address": "",
+    "rule": ""
+  },
+  {
+    "network": "base",
+    "name": "DRB",
+    "address": "",
+    "rule": ""
+  },
+  {
+    "network": "base",
     "name": "b3",
-    "id": "b3",
+    "address": "",
     "rule": ""
   },
   {
+    "network": "base",
     "name": "tig",
-    "id": "the-innovation-game",
+    "address": "",
     "rule": ""
   }
 ]

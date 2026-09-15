@@ -56,7 +56,7 @@ func (h *crocodileListHandle) Handle(c tb.Context) error {
 	return nil
 }
 
-// crocodileAddHandle 添加监控币种（/crocodile_add <id> [name]）
+// crocodileAddHandle 添加监控币种（/crocodile_add <network> <name> [address] 或 /crocodile_add <network:name>）
 type crocodileAddHandle struct{ svc *Crocodile }
 
 func NewCrocodileAddHandle(svc *Crocodile) *crocodileAddHandle {
@@ -72,19 +72,36 @@ func (h *crocodileAddHandle) Handle(c tb.Context) error {
 		}
 	}
 	if args == "" {
-		return c.Send("用法: /crocodile_add <id> [name]")
+		return c.Send("用法: /crocodile_add <network> <name> [address] 或 /crocodile_add <network:name>\n例如: /crocodile_add base auki")
 	}
-	parts := strings.SplitN(args, " ", 2)
-	id := parts[0]
+
+	parts := strings.Fields(args)
+	network := ""
 	name := ""
-	if len(parts) > 1 {
+	address := ""
+
+	if len(parts) == 1 {
+		if strings.Contains(parts[0], ":") {
+			sub := strings.SplitN(parts[0], ":", 2)
+			network = sub[0]
+			name = sub[1]
+		} else {
+			network = "base"
+			name = parts[0]
+		}
+	} else if len(parts) >= 2 {
+		network = parts[0]
 		name = parts[1]
+		if len(parts) >= 3 {
+			address = parts[2]
+		}
 	}
-	go h.svc.AddMonitor(c.Chat().ID, id, name)
+
+	go h.svc.AddMonitor(c.Chat().ID, network, name, address)
 	return nil
 }
 
-// crocodileDelHandle 从监控列表中删除币种（/crocodile_del <id>）
+// crocodileDelHandle 从监控列表中删除币种（/crocodile_del <name> 或 /crocodile_del <network:name>）
 type crocodileDelHandle struct{ svc *Crocodile }
 
 func NewCrocodileDelHandle(svc *Crocodile) *crocodileDelHandle {
@@ -100,10 +117,10 @@ func (h *crocodileDelHandle) Handle(c tb.Context) error {
 		}
 	}
 	if args == "" {
-		return c.Send("用法: /crocodile_del <id>")
+		return c.Send("用法: /crocodile_del <name> 或 /crocodile_del <network:name>\n例如: /crocodile_del auki")
 	}
-	id := strings.Fields(args)[0]
-	go h.svc.DeleteMonitor(c.Chat().ID, id)
+	target := strings.Fields(args)[0]
+	go h.svc.DeleteMonitor(c.Chat().ID, target)
 	return nil
 }
 

@@ -115,21 +115,12 @@ func (m *Manager) Search(query string) (*MultiSearchResult, error) {
 	return res, nil
 }
 
-// GetDailyKline fetches daily K-line data for Crocodile scanner, prioritizing DEX provider (GeckoTerminal) for accurate volume & price metrics, with CEX fallback.
+// GetDailyKline fetches daily K-line data for Crocodile scanner strictly from DEX provider (GeckoTerminal).
 func (m *Manager) GetDailyKline(query string) ([]DailyKline, error) {
 	q := strings.TrimSpace(query)
 
-	// Try DEX provider (GeckoTerminal) first for accurate on-chain DEX volume/OHLCV data
 	if m.gtKline != nil {
-		klines, err := m.gtKline.GetDailyKline(q)
-		if err == nil && len(klines) > 0 {
-			return klines, nil
-		}
-	}
-
-	// Fallback to CEX provider (CoinGecko)
-	if m.cgKline != nil {
-		return m.cgKline.GetDailyKline(q)
+		return m.gtKline.GetDailyKline(q)
 	}
 
 	return nil, ErrNotFound

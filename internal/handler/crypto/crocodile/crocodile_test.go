@@ -33,7 +33,7 @@ func TestEvaluate_ExcludesUnclosedToday(t *testing.T) {
 		AverageMultiple:   2.0,
 	}
 
-	item := Item{ID: "solana", Name: "Solana"}
+	item := Item{Network: "solana", Name: "SOL"}
 
 	sig, err := evaluate(item, klines, rc)
 	if err != nil {
@@ -76,7 +76,7 @@ func TestEvaluate_DescendingOrUnsortedKlines(t *testing.T) {
 		AverageMultiple:   2.0,
 	}
 
-	item := Item{ID: "b3", Name: "b3"}
+	item := Item{Network: "base", Name: "b3"}
 
 	sig, err := evaluate(item, descendingKlines, rc)
 	if err != nil {
@@ -93,6 +93,28 @@ func TestEvaluate_DescendingOrUnsortedKlines(t *testing.T) {
 
 	if sig.YesterdayRatio != 5.0 {
 		t.Errorf("sig.YesterdayRatio = %f, want 5.0", sig.YesterdayRatio)
+	}
+}
+
+func TestFormatPrice(t *testing.T) {
+	tests := []struct {
+		price    float64
+		expected string
+	}{
+		{123.456, "$123.46"},
+		{1.0, "$1.00"},
+		{0.0512, "$0.0512"},
+		{0.005126, "$0.005126"},
+		{0.000185, "$0.000185"},
+		{0.00000399, "$0.00000399"},
+		{0.0, "$0.00"},
+	}
+
+	for _, tt := range tests {
+		got := formatPrice(tt.price)
+		if got != tt.expected {
+			t.Errorf("formatPrice(%f) = %q, want %q", tt.price, got, tt.expected)
+		}
 	}
 }
 
@@ -135,11 +157,11 @@ func TestCrocodile_AddAndDeleteItem(t *testing.T) {
 		ch:          msgCh,
 	}
 
-	// 1. Add items
-	if err := c.addItem(Item{ID: "bitcoin", Name: "BTC"}); err != nil {
+	// 1. Add items with network and name
+	if err := c.addItem(Item{Network: "base", Name: "auki"}); err != nil {
 		t.Fatalf("addItem failed: %v", err)
 	}
-	if err := c.addItem(Item{ID: "ethereum", Name: "ETH"}); err != nil {
+	if err := c.addItem(Item{Network: "eth", Name: "wquil"}); err != nil {
 		t.Fatalf("addItem failed: %v", err)
 	}
 
@@ -157,39 +179,39 @@ func TestCrocodile_AddAndDeleteItem(t *testing.T) {
 		t.Fatalf("expected deleted=false for non-existent item")
 	}
 
-	// 3. Delete case-insensitively
-	deleted, deletedID, err := c.deleteItem("BitCoin")
+	// 3. Delete case-insensitively by name
+	deleted, deletedLabel, err := c.deleteItem("Auki")
 	if err != nil {
 		t.Fatalf("deleteItem error: %v", err)
 	}
-	if !deleted || deletedID != "bitcoin" {
-		t.Fatalf("expected deleted=true and deletedID='bitcoin', got deleted=%v, id=%s", deleted, deletedID)
+	if !deleted || deletedLabel != "[BASE] auki" {
+		t.Fatalf("expected deleted=true and label='[BASE] auki', got deleted=%v, label=%s", deleted, deletedLabel)
 	}
 
 	list, _ = c.loadList()
-	if len(list) != 1 || list[0].ID != "ethereum" {
-		t.Fatalf("expected 1 item 'ethereum', got: %+v", list)
+	if len(list) != 1 || list[0].Name != "wquil" {
+		t.Fatalf("expected 1 item 'wquil', got: %+v", list)
 	}
 
 	// 4. Delete via DeleteMonitor with cache & trigger cleanup
-	c.klineCache["ethereum"] = klineCacheItem{}
-	c.lastTrigger["ethereum:volume_spike"] = "2026-09-14"
+	c.klineCache["eth:wquil"] = klineCacheItem{}
+	c.lastTrigger["eth:wquil:volume_spike"] = "2026-09-14"
 
-	c.DeleteMonitor(100, "ethereum")
+	c.DeleteMonitor(100, "wquil")
 
 	select {
 	case msg := <-msgCh:
-		if !strings.Contains(msg.Text, "已删除监控: `ethereum`") {
+		if !strings.Contains(msg.Text, "已删除 DEX 监控: `[ETH] wquil`") {
 			t.Errorf("unexpected message: %s", msg.Text)
 		}
 	default:
 		t.Fatal("expected message in msgCh")
 	}
 
-	if _, ok := c.klineCache["ethereum"]; ok {
+	if _, ok := c.klineCache["eth:wquil"]; ok {
 		t.Error("expected klineCache to be cleared")
 	}
-	if _, ok := c.lastTrigger["ethereum:volume_spike"]; ok {
+	if _, ok := c.lastTrigger["eth:wquil:volume_spike"]; ok {
 		t.Error("expected lastTrigger to be cleared")
 	}
 
@@ -197,25 +219,12 @@ func TestCrocodile_AddAndDeleteItem(t *testing.T) {
 	if len(list) != 0 {
 		t.Fatalf("expected empty list, got: %+v", list)
 	}
-
-	// 5. Add and delete by Name (case-insensitive)
-	if err := c.addItem(Item{ID: "debtreliefbot", Name: "DRB"}); err != nil {
-		t.Fatalf("addItem failed: %v", err)
-	}
-	deleted, deletedID, err = c.deleteItem("drb")
-	if err != nil || !deleted || deletedID != "debtreliefbot" {
-		t.Fatalf("expected deleted by name 'drb' -> 'debtreliefbot', got deleted=%v, id=%s, err=%v", deleted, deletedID, err)
-	}
-	list, _ = c.loadList()
-	if len(list) != 0 {
-		t.Fatalf("expected empty list after name delete, got: %+v", list)
-	}
 }
 
 func TestCrocodile_StartupSyncAndMemoryOnly(t *testing.T) {
 	initialItems := []Item{
-		{ID: "wrapped-quil", Name: "wquil"},
-		{ID: "debtreliefbot", Name: "DRB"},
+		{Network: "eth", Name: "wquil"},
+		{Network: "base", Name: "DRB"},
 	}
 
 	ms := &mockStore{
@@ -241,7 +250,7 @@ func TestCrocodile_StartupSyncAndMemoryOnly(t *testing.T) {
 	c.ListMonitor(100)
 	select {
 	case msg := <-msgCh:
-		if !strings.Contains(msg.Text, "wrapped-quil") || !strings.Contains(msg.Text, "debtreliefbot") {
+		if !strings.Contains(msg.Text, "wquil") || !strings.Contains(msg.Text, "DRB") {
 			t.Fatalf("unexpected ListMonitor message: %s", msg.Text)
 		}
 	default:
@@ -255,7 +264,7 @@ func TestCrocodile_StartupSyncAndMemoryOnly(t *testing.T) {
 	c.DeleteMonitor(100, "wquil")
 	select {
 	case msg := <-msgCh:
-		if !strings.Contains(msg.Text, "已删除监控: `wrapped-quil`") {
+		if !strings.Contains(msg.Text, "已删除 DEX 监控: `[ETH] wquil`") {
 			t.Fatalf("unexpected DeleteMonitor message: %s", msg.Text)
 		}
 	default:
@@ -269,10 +278,10 @@ func TestCrocodile_StartupSyncAndMemoryOnly(t *testing.T) {
 	c.ListMonitor(100)
 	select {
 	case msg := <-msgCh:
-		if strings.Contains(msg.Text, "wrapped-quil") {
+		if strings.Contains(msg.Text, "wquil") {
 			t.Fatalf("deleted coin should not be present in list: %s", msg.Text)
 		}
-		if !strings.Contains(msg.Text, "debtreliefbot") {
+		if !strings.Contains(msg.Text, "DRB") {
 			t.Fatalf("remaining coin should be present: %s", msg.Text)
 		}
 	default:

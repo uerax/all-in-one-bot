@@ -128,16 +128,35 @@ func (p *Provider) Search(query string) ([]provider.SearchResult, error) {
 }
 
 // GetDailyKline fetches daily OHLCV K-line data for a DEX pool.
+// query supports: "network:address", "address", "network:name", or "name".
 func (p *Provider) GetDailyKline(query string) ([]provider.DailyKline, error) {
-	network, addr, _ := p.parseQuery(query)
+	network, addr, searchTerm := p.parseKlineQuery(query)
 
 	if addr == "" {
+		if searchTerm == "" {
+			return nil, provider.ErrInvalidParams
+		}
 		// Search pool first to get network & address
-		searchResp, err := p.client.SearchPools(query)
+		searchResp, err := p.client.SearchPools(searchTerm)
 		if err != nil || searchResp == nil || len(searchResp.Data) == 0 {
 			return nil, provider.ErrNotFound
 		}
-		topPool := &searchResp.Data[0]
+
+		var topPool *PoolData
+		// If a specific network is specified (e.g. "base:auki"), prioritize pools on that network
+		if network != "" {
+			for i := range searchResp.Data {
+				if strings.EqualFold(extractNetwork(&searchResp.Data[i]), network) {
+					topPool = &searchResp.Data[i]
+					break
+				}
+			}
+		}
+
+		if topPool == nil {
+			topPool = &searchResp.Data[0]
+		}
+
 		network = extractNetwork(topPool)
 		addr = topPool.Attributes.Address
 		if addr == "" {
@@ -184,6 +203,33 @@ func (p *Provider) GetDailyKline(query string) ([]provider.DailyKline, error) {
 	})
 
 	return klines, nil
+}
+
+// parseKlineQuery parses query into (network, address, searchTerm).
+func (p *Provider) parseKlineQuery(query string) (network string, address string, searchTerm string) {
+	query = strings.TrimSpace(query)
+	parts := strings.SplitN(query, ":", 2)
+	if len(parts) == 2 {
+		net := strings.ToLower(strings.TrimSpace(parts[0]))
+		target := strings.TrimSpace(parts[1])
+		if isAddress(target) {
+			return net, target, ""
+		}
+		return net, "", target
+	}
+
+	if isAddress(query) {
+		if evmAddrRegex.MatchString(query) {
+			return "eth", query, ""
+		}
+		return "solana", query, ""
+	}
+
+	return "", "", query
+}
+
+func isAddress(s string) bool {
+	return evmAddrRegex.MatchString(s) || (solanaAddrRegex.MatchString(s) && !strings.Contains(s, " "))
 }
 
 // GetTrending fetches top trending DEX pools on a specified network or globally.
