@@ -8,6 +8,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 
 	"github.com/uerax/all-in-one-bot/lite/internal/bot"
+	"github.com/uerax/all-in-one-bot/lite/internal/cache"
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/models"
 	"github.com/uerax/all-in-one-bot/lite/internal/pkg/logger"
@@ -34,12 +35,14 @@ func Run() {
 	}
 
 	db := store.NewStore(cfg.Database, log)
+	cacher := cache.NewCache()
 
 	// 依赖注入
 	dependencies := &router.Dependencies{}
 	dependencies.Logger = log
 	dependencies.Config = cfg
 	dependencies.Store = db
+	dependencies.Cache = cacher
 	dependencies.AdminIDs = router.AdminIDsSet(cfg.Telegram.AdminIDs)
 
 	// 创建 Dispatcher 用于消息分发

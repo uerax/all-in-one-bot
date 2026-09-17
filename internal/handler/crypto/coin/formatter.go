@@ -60,7 +60,8 @@ func FormatMarketData(data *provider.MarketData) string {
 		}
 		title += fmt.Sprintf(" [%s]", chainInfo)
 	}
-	sb.WriteString(title + "\n")
+	sb.WriteString(title)
+	sb.WriteByte('\n')
 
 	if data.ContractAddress != "" {
 		sb.WriteString(fmt.Sprintf("合约: `%s`\n", data.ContractAddress))
@@ -84,7 +85,8 @@ func FormatMarketData(data *provider.MarketData) string {
 	}
 	changes = append(changes, fmt.Sprintf("24h: *%s*", formatPercent(data.Change24h)))
 
-	sb.WriteString(strings.Join(changes, " | ") + "\n")
+	sb.WriteString(strings.Join(changes, " | "))
+	sb.WriteByte('\n')
 
 	if data.Volume24hUSD > 0 {
 		sb.WriteString(fmt.Sprintf("24h 成交量: *%s*\n", formatUSD(data.Volume24hUSD)))

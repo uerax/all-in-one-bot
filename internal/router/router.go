@@ -53,7 +53,7 @@ func (r *Router) Handlers(deps *Dependencies) []Handler {
 	// crypto providers & manager
 	cgProv := cgprovider.NewProvider(deps.Config.Coingecko, deps.Logger)
 	gtProv := gtprovider.NewProvider(deps.Config.GeckoTerminal.BaseURL, deps.Config.GeckoTerminal.Timeout, deps.Logger)
-	providerMgr := provider.NewManager(cgProv, cgProv, cgProv, gtProv, gtProv, gtProv, gtProv)
+	providerMgr := provider.NewManager(cgProv, cgProv, cgProv, gtProv, gtProv, gtProv, gtProv, deps.Cache)
 
 	// coin handlers
 	coinService := coinhandler.NewService(deps.Store, providerMgr, r.msgCh, deps.Logger)

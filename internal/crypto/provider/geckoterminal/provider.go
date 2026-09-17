@@ -63,7 +63,42 @@ func (p *Provider) GetPrice(query string) (*provider.MarketData, error) {
 		return nil, provider.ErrNotFound
 	}
 
-	return p.mapPoolDataToMarketData(&searchResp.Data[0], searchResp.Included), nil
+	// 增加相关度匹配检查：校验 query 是否与池子名称、Symbol 或代币名称相关，防止盲取 Data[0] 错配无关池子
+	var matchedPool *PoolData
+	includedMap := makeIncludedMap(searchResp.Included)
+
+	for i := range searchResp.Data {
+		pool := &searchResp.Data[i]
+		baseTokenID := pool.Relationships.BaseToken.Data.ID
+		tokenInfo := includedMap[baseTokenID]
+		if isRelevantPool(query, pool, tokenInfo) {
+			matchedPool = pool
+			break
+		}
+	}
+
+	if matchedPool == nil {
+		return nil, provider.ErrNotFound
+	}
+
+	return p.mapPoolDataToMarketData(matchedPool, searchResp.Included), nil
+}
+
+// isRelevantPool 校验 query 与池子名称、Symbol、Token 名称的相关度。
+func isRelevantPool(query string, pool *PoolData, tokenInfo IncludedItemAttributes) bool {
+	cleanQuery := strings.ToLower(strings.TrimSpace(query))
+	if cleanQuery == "" {
+		return false
+	}
+
+	symbol := strings.ToLower(tokenInfo.Symbol)
+	name := strings.ToLower(tokenInfo.Name)
+	poolName := strings.ToLower(pool.Attributes.Name)
+
+	return strings.EqualFold(symbol, cleanQuery) || strings.EqualFold(name, cleanQuery) ||
+		strings.Contains(symbol, cleanQuery) || strings.Contains(name, cleanQuery) ||
+		strings.Contains(cleanQuery, symbol) || strings.Contains(cleanQuery, name) ||
+		strings.Contains(poolName, cleanQuery)
 }
 
 // GetMultiPrices retrieves price data for multiple token/pool queries.

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/uerax/all-in-one-bot/lite/internal/cache"
 	"github.com/uerax/all-in-one-bot/lite/internal/config"
 	"github.com/uerax/all-in-one-bot/lite/internal/crypto/provider"
 	cgprovider "github.com/uerax/all-in-one-bot/lite/internal/crypto/provider/coingecko"
@@ -56,7 +57,8 @@ func TestRealCoinPriceSources(t *testing.T) {
 	log := logger.NewLogger()
 	cgProv := cgprovider.NewProvider(cfg.Coingecko, log)
 	gtProv := gtprovider.NewProvider(cfg.GeckoTerminal.BaseURL, cfg.GeckoTerminal.Timeout, log)
-	mgr := provider.NewManager(cgProv, cgProv, cgProv, gtProv, gtProv, gtProv, gtProv)
+	cacher := cache.NewCache()
+	mgr := provider.NewManager(cgProv, cgProv, cgProv, gtProv, gtProv, gtProv, gtProv, cacher)
 
 	// 3. 逐个真实请求并分析数据源
 	keys := []string{

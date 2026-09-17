@@ -163,3 +163,71 @@ func TestParseKlineQuery(t *testing.T) {
 		}
 	}
 }
+
+func TestIsRelevantPool(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    string
+		pool     *PoolData
+		token    IncludedItemAttributes
+		expected bool
+	}{
+		{
+			name:  "qubic-network query vs TKN/WBNB pool should be false",
+			query: "qubic-network",
+			pool: &PoolData{
+				Attributes: PoolAttributes{Name: "TKN / WBNB"},
+			},
+			token: IncludedItemAttributes{
+				Symbol: "TKN",
+				Name:   "Token",
+			},
+			expected: false,
+		},
+		{
+			name:  "qubic-network query vs QUBIC/USDT pool should be true",
+			query: "qubic-network",
+			pool: &PoolData{
+				Attributes: PoolAttributes{Name: "QUBIC / USDT"},
+			},
+			token: IncludedItemAttributes{
+				Symbol: "QUBIC",
+				Name:   "Qubic Network",
+			},
+			expected: true,
+		},
+		{
+			name:  "auki query vs AUKI/WETH pool should be true",
+			query: "auki",
+			pool: &PoolData{
+				Attributes: PoolAttributes{Name: "AUKI / WETH 1%"},
+			},
+			token: IncludedItemAttributes{
+				Symbol: "AUKI",
+				Name:   "Auki Labs",
+			},
+			expected: true,
+		},
+		{
+			name:  "empty query should be false",
+			query: "   ",
+			pool: &PoolData{
+				Attributes: PoolAttributes{Name: "AUKI / WETH 1%"},
+			},
+			token: IncludedItemAttributes{
+				Symbol: "AUKI",
+				Name:   "Auki",
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isRelevantPool(tt.query, tt.pool, tt.token)
+			if got != tt.expected {
+				t.Errorf("isRelevantPool(%q) = %v, want %v", tt.query, got, tt.expected)
+			}
+		})
+	}
+}

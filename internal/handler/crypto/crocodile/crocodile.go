@@ -507,8 +507,9 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 
 	var signals []Signal
 	var errList []string
+	var lastNetworkReq time.Time
 
-	for i, item := range items {
+	for _, item := range items {
 		select {
 		case <-ctx.Done():
 			errList = append(errList, "扫描提前取消")
@@ -521,12 +522,26 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 			cacheKey := item.Key()
 			klines, ok := c.getCachedKline(cacheKey)
 			if !ok {
+				// 准备发起物理网络请求前：精准补齐与上一次网络请求的 3 秒安全差额，若已过 3 秒或首次请求则 0 等待
+				if !lastNetworkReq.IsZero() {
+					if elapsed := time.Since(lastNetworkReq); elapsed < 3000*time.Millisecond {
+						sleepDuration := 3000*time.Millisecond - elapsed
+						select {
+						case <-ctx.Done():
+							return
+						case <-time.After(sleepDuration):
+						}
+					}
+				}
+
 				var err error
 				klines, err = c.source.GetDailyKline(query)
-				// 智能重试：排除 404 / NotFound / 无效参数等客户端不可恢复错误，仅在网络抖动或偶发限流时等待 2.5 秒重试一次
+				lastNetworkReq = time.Now()
+
+				// 智能重试：排除 404 / NotFound / 无效参数等客户端不可恢复错误，仅在网络抖动或偶发限流时等待 6 秒重试一次
 				if err != nil && !isNonRetryableError(err) {
 					if c.log != nil {
-						c.log.Warn("crocodile GetDailyKline 首次失败，重试", "item", item.Name, "query", query, "error", err)
+						c.log.Warn("crocodile GetDailyKline 首次失败，等待重试", "item", item.Name, "query", query, "error", err)
 					}
 					select {
 					case <-ctx.Done():
@@ -534,6 +549,7 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 					case <-time.After(6 * time.Second):
 					}
 					klines, err = c.source.GetDailyKline(query)
+					lastNetworkReq = time.Now()
 				}
 				if err != nil {
 					errList = append(errList, fmt.Sprintf("%s: %v", item.Name, err))
@@ -551,16 +567,6 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 				signals = append(signals, *sig)
 			}
 		}()
-
-		// 无论本轮成功还是失败，只要不是最后一个币种，都严格执行 3.0 秒平滑等待，杜绝连环雪崩
-		if i < len(items)-1 {
-			select {
-			case <-ctx.Done():
-				errList = append(errList, "扫描提前取消")
-				return signals, errList
-			case <-time.After(3000 * time.Millisecond):
-			}
-		}
 	}
 	return signals, errList
 }

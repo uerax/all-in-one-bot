@@ -1,6 +1,7 @@
 package crocodile
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -388,5 +389,54 @@ func TestCrocodile_IsNonRetryableError(t *testing.T) {
 	}
 	if isNonRetryableError(errors.New("connection reset by peer")) {
 		t.Error("network error should be retryable")
+	}
+}
+
+func TestCrocodile_ScanCacheNoSleep(t *testing.T) {
+	items := []Item{
+		{Network: "base", Name: "auki", Address: "0x2fa9d6085c91151200e61a3e627d35001772c0d1"},
+		{Network: "eth", Name: "wquil", Address: "0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64"},
+		{Network: "base", Name: "DRB", Address: "0x5116773e18a9c7bb03ebb961b38678e45e238923"},
+		{Network: "base", Name: "b3", Address: "0xb099c658e784b41ee435d48a8eb67e8f27285c93"},
+		{Network: "base", Name: "tig", Address: "0x5280d5e63b416277d0f81fae54bb1e0444cabdaa"},
+	}
+
+	ms := &mockStore{
+		data: map[string]any{
+			"crocodile:list": items,
+		},
+	}
+	msgCh := make(chan models.Message, 10)
+	c := NewCrocodile(ms, nil, msgCh, config.Crocodile{}, nil)
+
+	// 构造 10 根符合评估要求的日 K 线并写入缓存
+	now := time.Now().UTC()
+	var fakeKlines []provider.DailyKline
+	for i := 10; i >= 0; i-- {
+		fakeKlines = append(fakeKlines, provider.DailyKline{
+			Timestamp: now.Add(-time.Duration(i*24) * time.Hour),
+			Close:     1.0,
+			Volume:    1000,
+		})
+	}
+
+	for _, it := range items {
+		c.setCachedKline(it.Key(), fakeKlines)
+	}
+
+	start := time.Now()
+	signals, errList := c.scan(context.Background())
+	duration := time.Since(start)
+
+	if len(errList) != 0 {
+		t.Fatalf("expected no errors, got: %v", errList)
+	}
+	if len(signals) != len(items) {
+		t.Fatalf("expected %d signals, got %d", len(items), len(signals))
+	}
+
+	// 5 个币种全走缓存时，耗时必须 < 100 毫秒（若无脑 sleep 则需 12 秒以上）
+	if duration > 100*time.Millisecond {
+		t.Errorf("expected cached scan to be instantaneous (<100ms), but took %v", duration)
 	}
 }
