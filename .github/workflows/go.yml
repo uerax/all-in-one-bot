@@ -8,8 +8,6 @@ on:
 jobs:
   build-go-binary:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     strategy:
       matrix:
         goos: [linux, windows, darwin] # 需要打包的系统
@@ -31,28 +29,38 @@ jobs:
       with:
         go-version: '1.24'
 
-    - name: Get version from tag
-      id: get_version
-      run: |
-        VERSION=${GITHUB_REF#refs/tags/}
-        echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
-    - name: Create output directory
-      run: mkdir -p build/${{ steps.get_version.outputs.version }}
-
     - name: Build
       env:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
         EXT: ${{ matrix.goos == 'windows' && '.exe' || '' }}
       run: |
-        OUTPUT="build/${{ steps.get_version.outputs.version }}/Aio-${{ matrix.goos }}-${{ matrix.goarch }}${EXT}"
+        mkdir -p dist
+        OUTPUT="dist/Aio-${{ matrix.goos }}-${{ matrix.goarch }}${EXT}"
         go build -o "${OUTPUT}" -trimpath -ldflags "-s -w -buildid=" main.go
         echo "Built: ${OUTPUT}"
 
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Aio-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: dist/*
+        retention-days: 1
+
+  release:
+    needs: build-go-binary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-assets
+        merge-multiple: true
+
     - name: Upload to Release
-      if: success()
       uses: softprops/action-gh-release@v2
       with:
-        files: |
-          build/${{ steps.get_version.outputs.version }}/*
+        files: release-assets/*
+
