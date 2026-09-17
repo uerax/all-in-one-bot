@@ -34,7 +34,7 @@ func NewClient(baseURL string, timeoutSec int, log logger.Log) *Client {
 			Timeout: time.Duration(timeoutSec) * time.Second,
 		},
 		cache:   newTTLCache(30 * time.Second),
-		limiter: newRateLimiter(25), // 25 req/min (under 30 req/min limit)
+		limiter: newRateLimiter(20, 2000*time.Millisecond), // 20 req/min, 最小请求间隔 2.0s 杜绝突发
 		log:     log,
 	}
 }
@@ -44,9 +44,8 @@ func (c *Client) doGet(endpoint string) ([]byte, error) {
 		return cached.([]byte), nil
 	}
 
-	if !c.limiter.Allow() {
-		return nil, provider.ErrRateLimited
-	}
+	// 客户端平滑节流等待：确保两次物理请求间隔 >= 2.0s，每分钟 <= 20 次
+	c.limiter.Wait()
 
 	fullURL := c.baseURL + endpoint
 	req, err := http.NewRequest("GET", fullURL, nil)
@@ -57,6 +56,10 @@ func (c *Client) doGet(endpoint string) ([]byte, error) {
 	req.Header.Set("Accept", "application/json;version=20230302")
 	req.Header.Set("User-Agent", "all-in-one-bot/1.0")
 
+	if c.log != nil {
+		c.log.Info("geckoterminal sending request", "endpoint", endpoint)
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("geckoterminal: http error: %w", err)
@@ -64,6 +67,27 @@ func (c *Client) doGet(endpoint string) ([]byte, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusTooManyRequests {
+		if c.log != nil {
+			c.log.Warn("geckoterminal 触发远端 429 限流，等待 6 秒退避重试", "endpoint", endpoint)
+		}
+		// 远端 429 冷却退避：等待 6 秒使 Cloudflare / GeckoTerminal 窗口恢复
+		time.Sleep(6 * time.Second)
+		reqRetry, errRetry := http.NewRequest("GET", fullURL, nil)
+		if errRetry == nil {
+			reqRetry.Header.Set("Accept", "application/json;version=20230302")
+			reqRetry.Header.Set("User-Agent", "all-in-one-bot/1.0")
+			respRetry, errDo := c.httpClient.Do(reqRetry)
+			if errDo == nil {
+				defer respRetry.Body.Close()
+				if respRetry.StatusCode == http.StatusOK {
+					body, errRead := io.ReadAll(respRetry.Body)
+					if errRead == nil {
+						c.cache.Set(endpoint, body)
+						return body, nil
+					}
+				}
+			}
+		}
 		return nil, provider.ErrRateLimited
 	}
 

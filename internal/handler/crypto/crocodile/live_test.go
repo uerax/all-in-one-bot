@@ -27,7 +27,10 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 
 	targets := []Item{
 		{Network: "base", Name: "auki", Address: "0x2fa9d6085c91151200e61a3e627d35001772c0d1"},
+		{Network: "eth", Name: "wquil", Address: "0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64"},
+		{Network: "base", Name: "DRB", Address: "0x5116773e18a9c7bb03ebb961b38678e45e238923"},
 		{Network: "base", Name: "b3", Address: "0xb099c658e784b41ee435d48a8eb67e8f27285c93"},
+		{Network: "base", Name: "tig", Address: "0x5280d5e63b416277d0f81fae54bb1e0444cabdaa"},
 	}
 
 	for _, item := range targets {
@@ -88,6 +91,6 @@ func TestRealFetchB3AndAuki(t *testing.T) {
 		fmt.Printf("  均值倍数: %.2fx (规则阈值: %.1fx) -> %t\n", sig.AverageRatio, sig.AverageMultiple, sig.AverageRatio >= sig.AverageMultiple)
 		fmt.Printf("  🔥 监控最终触发放量突破信号: %t\n", sig.Triggered)
 		fmt.Printf("  Web 端核对链接: %s\n", item.DexLink())
-		time.Sleep(2500 * time.Millisecond)
+		time.Sleep(3000 * time.Millisecond)
 	}
 }

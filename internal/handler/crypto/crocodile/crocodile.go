@@ -281,10 +281,10 @@ func (c *Crocodile) Stop(chatID int64) {
 
 // Handle 手动触发一次只读量能诊断扫描（/crocodile_check），返回包含所有币种量能现状的详细诊断报告。
 func (c *Crocodile) Handle(chatID int64) {
-	// 动态分配上下文超时：默认至少 180 秒（3 分钟），或按监控条目数量（每条 3 秒 + 30 秒缓冲）动态放宽，确保平滑扫描完整执行
+	// 动态分配上下文超时：默认至少 180 秒（3 分钟），或按监控条目数量（每条 4 秒 + 30 秒缓冲）动态放宽，确保平滑扫描完整执行
 	timeout := 180 * time.Second
 	if items, err := c.loadList(); err == nil && len(items) > 0 {
-		needed := time.Duration(len(items)*3+30) * time.Second
+		needed := time.Duration(len(items)*4+30) * time.Second
 		if needed > timeout {
 			timeout = needed
 		}
@@ -531,7 +531,7 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 					select {
 					case <-ctx.Done():
 						return
-					case <-time.After(2500 * time.Millisecond):
+					case <-time.After(6 * time.Second):
 					}
 					klines, err = c.source.GetDailyKline(query)
 				}
@@ -552,13 +552,13 @@ func (c *Crocodile) scan(ctx context.Context) ([]Signal, []string) {
 			}
 		}()
 
-		// 无论本轮成功还是失败，只要不是最后一个币种，都严格执行 2.5 秒平滑等待，杜绝连环雪崩
+		// 无论本轮成功还是失败，只要不是最后一个币种，都严格执行 3.0 秒平滑等待，杜绝连环雪崩
 		if i < len(items)-1 {
 			select {
 			case <-ctx.Done():
 				errList = append(errList, "扫描提前取消")
 				return signals, errList
-			case <-time.After(2500 * time.Millisecond):
+			case <-time.After(3000 * time.Millisecond):
 			}
 		}
 	}

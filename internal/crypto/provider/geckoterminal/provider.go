@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	evmAddrRegex    = regexp.MustCompile(`^0x[0-9a-fA-F]{40}$`)
+	evmAddrRegex    = regexp.MustCompile(`^0x[0-9a-fA-F]{40,64}$`)
 	solanaAddrRegex = regexp.MustCompile(`^[1-9A-HJ-NP-Za-km-z]{32,44}$`)
 )
 

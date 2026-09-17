@@ -130,6 +130,18 @@ func TestParseKlineQuery(t *testing.T) {
 			expectedSearch: "",
 		},
 		{
+			query:          "eth:0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64",
+			expectedNet:    "eth",
+			expectedAddr:   "0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64",
+			expectedSearch: "",
+		},
+		{
+			query:          "0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64",
+			expectedNet:    "eth",
+			expectedAddr:   "0xaa75ef32980beb40b449dd7c9d1dce046a1d293702111af02f112b68564dee64",
+			expectedSearch: "",
+		},
+		{
 			query:          "0x6982508145454ce325ddbe47a25d4ec3d2311933",
 			expectedNet:    "eth",
 			expectedAddr:   "0x6982508145454ce325ddbe47a25d4ec3d2311933",
